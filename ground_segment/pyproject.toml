@@ -1,0 +1,32 @@
+[project]
+name = "orion"
+version = "0.0.1"
+description = "Orbital Real-time Inference and Observation Network"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "requests",
+    "numpy",
+    "pre-commit",
+    "pillow",
+    "torch",
+    "torchvision",
+    "transformers",
+    "accelerate",
+    "peft",
+    "datasets",
+    "bitsandbytes"
+]
+
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cu126", marker = "sys_platform != 'darwin'" },
+]
+torchvision = [
+    { index = "pytorch-cu126", marker = "sys_platform != 'darwin'" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cu126"
+url = "https://download.pytorch.org/whl/cu126"
+explicit = true

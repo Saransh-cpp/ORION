@@ -1,0 +1,457 @@
+import requests
+import json
+import os
+import time
+import random
+import math
+
+SIMSAT_STATIC_API = "http://localhost:9005/data/image/mapbox"
+DATASET_DIR = "orion_dataset"
+IMAGES_DIR = os.path.join(DATASET_DIR, "images")
+TRAIN_FILE = os.path.join(DATASET_DIR, "train_dataset.jsonl")
+TEST_FILE = os.path.join(DATASET_DIR, "test_dataset.jsonl")
+
+# --- THE GOLD STANDARD DATASET ---
+# (You can easily expand these lists to 100+ items each later)
+
+LOW_TARGETS = [
+    # --- MORPHOLOGY 1: STANDARD VOIDS - OCEANS & WATER (20 targets) ---
+    {"name": "low_ocean_pacific_nemo", "lon": -123.39, "lat": -48.87, "cat": "LOW", "reason": "Featureless deep blue oceanic expanse with no discernible landmass."},
+    {"name": "low_ocean_atlantic_mid", "lon": -30.00, "lat": 0.00, "cat": "LOW", "reason": "Unbroken, uniform dark water surface."},
+    {"name": "low_ocean_indian_south", "lon": 90.00, "lat": -40.00, "cat": "LOW", "reason": "Vast empty expanse of open ocean waves."},
+    {"name": "low_ocean_arctic_ice", "lon": 150.00, "lat": 82.00, "cat": "LOW", "reason": "Dark oceanic water interspersed with natural, irregular sea ice fracturing."},
+    {"name": "low_ocean_pacific_equator", "lon": -140.00, "lat": 10.00, "cat": "LOW", "reason": "Completely blank, featureless water topography."},
+    {"name": "low_ocean_southern", "lon": 0.00, "lat": -55.00, "cat": "LOW", "reason": "Uniform dark marine expanse void of geometric structures."},
+    {"name": "low_ocean_pacific_east", "lon": -100.00, "lat": -30.00, "cat": "LOW", "reason": "Empty, deep-water pelagic zone."},
+    {"name": "low_ocean_atlantic_north", "lon": -40.00, "lat": 45.00, "cat": "LOW", "reason": "Featureless open water showing only natural wave textures."},
+    {"name": "low_ocean_indian_equator", "lon": 75.00, "lat": -5.00, "cat": "LOW", "reason": "Uninterrupted tropical marine surface."},
+    {"name": "low_ocean_philippine_sea", "lon": 135.00, "lat": 15.00, "cat": "LOW", "reason": "Vast expanse of open ocean devoid of human activity."},
+    {"name": "low_ocean_tasman", "lon": 160.00, "lat": -40.00, "cat": "LOW", "reason": "Featureless deep ocean surface."},
+    {"name": "low_ocean_bering", "lon": 175.00, "lat": 58.00, "cat": "LOW", "reason": "Empty, dark frigid marine expanse."},
+    {"name": "low_ocean_sargasso", "lon": -60.00, "lat": 28.00, "cat": "LOW", "reason": "Uniform water surface completely lacking terrestrial features."},
+    {"name": "low_ocean_weddell", "lon": -45.00, "lat": -72.00, "cat": "LOW", "reason": "Open water heavily textured by natural floating pack ice."},
+    {"name": "low_ocean_barents", "lon": 40.00, "lat": 75.00, "cat": "LOW", "reason": "Featureless dark polar water."},
+    {"name": "low_lake_superior_center", "lon": -87.00, "lat": 47.50, "cat": "LOW", "reason": "Massive unbroken expanse of deep freshwater."},
+    {"name": "low_lake_baikal_center", "lon": 108.00, "lat": 53.50, "cat": "LOW", "reason": "Featureless dark water surface of a massive inland lake."},
+    {"name": "low_lake_victoria_center", "lon": 33.00, "lat": -1.00, "cat": "LOW", "reason": "Empty, uniform tropical freshwater expanse."},
+    {"name": "low_ocean_gulf_alaska", "lon": -145.00, "lat": 55.00, "cat": "LOW", "reason": "Deep, featureless northern oceanic water."},
+    {"name": "low_ocean_coral_sea", "lon": 155.00, "lat": -15.00, "cat": "LOW", "reason": "Uniform tropical ocean surface devoid of human navigation."},
+
+    # --- MORPHOLOGY 2: STANDARD VOIDS - DESERTS, ICE, & CANOPY (20 targets) ---
+    {"name": "low_desert_sahara_dunes", "lon": 11.26, "lat": 24.32, "cat": "LOW", "reason": "Continuous, unbroken arid sand dune geometry."},
+    {"name": "low_desert_rub_al_khali", "lon": 51.00, "lat": 20.00, "cat": "LOW", "reason": "Endless, repetitive natural wave patterns of desert sand."},
+    {"name": "low_desert_atacama", "lon": -69.50, "lat": -24.50, "cat": "LOW", "reason": "Hyper-arid, featureless rocky plateau."},
+    {"name": "low_desert_gobi", "lon": 105.00, "lat": 43.00, "cat": "LOW", "reason": "Barren, textured dirt and rock landscape."},
+    {"name": "low_desert_outback", "lon": 130.00, "lat": -25.00, "cat": "LOW", "reason": "Uniform reddish-brown terrestrial expanse."},
+    {"name": "low_desert_kalahari", "lon": 22.00, "lat": -23.00, "cat": "LOW", "reason": "Semi-arid sandy savanna showing only natural vegetation scrub."},
+    {"name": "low_ice_antarctica_dome_c", "lon": 123.00, "lat": -75.00, "cat": "LOW", "reason": "Vast, uniform high-albedo ice sheet devoid of anomalies."},
+    {"name": "low_ice_greenland_center", "lon": -40.00, "lat": 75.00, "cat": "LOW", "reason": "Completely featureless, flat white glacial ice cap."},
+    {"name": "low_ice_ross_shelf", "lon": -170.00, "lat": -80.00, "cat": "LOW", "reason": "Endless, uninterrupted frozen shelf geometry."},
+    {"name": "low_ice_ellesmere", "lon": -75.00, "lat": 80.00, "cat": "LOW", "reason": "Remote, barren high-arctic snow and ice terrain."},
+    {"name": "low_ice_marie_byrd", "lon": -120.00, "lat": -80.00, "cat": "LOW", "reason": "Blank, deep continental snow void."},
+    {"name": "low_forest_amazon_deep", "lon": -65.00, "lat": -5.00, "cat": "LOW", "reason": "Dense, uninterrupted fractal canopy of deep tropical vegetation."},
+    {"name": "low_forest_congo_basin", "lon": 22.00, "lat": 0.00, "cat": "LOW", "reason": "Continuous, featureless expanse of dense equatorial rainforest."},
+    {"name": "low_forest_siberian_taiga", "lon": 110.00, "lat": 55.00, "cat": "LOW", "reason": "Endless, unbroken dark green boreal woodland."},
+    {"name": "low_forest_canadian_boreal", "lon": -100.00, "lat": 55.00, "cat": "LOW", "reason": "Uniform pine forest canopy void of roads or clearings."},
+    {"name": "low_tundra_siberia", "lon": 100.00, "lat": 70.00, "cat": "LOW", "reason": "Barren, textured rocky permafrost."},
+    {"name": "low_tundra_nunavut", "lon": -95.00, "lat": 65.00, "cat": "LOW", "reason": "Empty Canadian shield landscape consisting of rock and scrub."},
+    {"name": "low_steppe_tibet", "lon": 88.00, "lat": 34.00, "cat": "LOW", "reason": "High-altitude barren plateau with entirely natural topography."},
+    {"name": "low_steppe_patagonia", "lon": -69.00, "lat": -48.00, "cat": "LOW", "reason": "Wind-swept, featureless scrubland void of human structures."},
+    {"name": "low_steppe_mongolia", "lon": 105.00, "lat": 47.00, "cat": "LOW", "reason": "Vast, uninterrupted grassy plains devoid of roads or settlements."},
+
+    # --- MORPHOLOGY 3: HARD LOW - SHARP COASTLINES & BOUNDARIES (20 targets) ---
+    # Visual Signature: High contrast linear demarcations that look like artificial walls/docks but are just cliffs or beaches.
+    {"name": "low_hard_namibia_coast", "lon": 14.50, "lat": -23.00, "cat": "LOW", "reason": "High-contrast linear boundary between barren desert and ocean."},
+    {"name": "low_hard_norway_fjord", "lon": 6.10, "lat": 59.00, "cat": "LOW", "reason": "Sharp, jagged natural rock formations intersecting with deep water channels."},
+    {"name": "low_hard_nullarbor_cliffs", "lon": 130.35, "lat": -31.58, "cat": "LOW", "reason": "Massive, perfectly sheer natural limestone cliff line meeting the ocean."},
+    {"name": "low_hard_na_pali", "lon": -159.65, "lat": 22.17, "cat": "LOW", "reason": "Highly corrugated, linear natural ridgelines abruptly dropping into water."},
+    {"name": "low_hard_skeleton_coast", "lon": 12.50, "lat": -19.00, "cat": "LOW", "reason": "Stark, featureless sandy coastline creating a sharp terrestrial/marine boundary."},
+    {"name": "low_hard_ilulissat_fjord", "lon": -49.80, "lat": 69.16, "cat": "LOW", "reason": "Deeply incised natural water channel packed entirely with jagged calving glacial ice."},
+    {"name": "low_hard_baja_coast", "lon": -114.00, "lat": 28.00, "cat": "LOW", "reason": "Arid, completely undeveloped linear coastline."},
+    {"name": "low_hard_moher_cliffs", "lon": -9.42, "lat": 52.97, "cat": "LOW", "reason": "Dark, continuous sheer natural rock wall dropping vertically into the sea."},
+    {"name": "low_hard_dover_cliffs", "lon": 1.35, "lat": 51.13, "cat": "LOW", "reason": "High-albedo natural chalk cliffs creating a sharp, unnatural-looking coastal boundary."},
+    {"name": "low_hard_big_sur", "lon": -121.67, "lat": 36.16, "cat": "LOW", "reason": "Rugged, undeveloped linear collision between mountains and ocean."},
+    {"name": "low_hard_perito_moreno", "lon": -73.04, "lat": -50.49, "cat": "LOW", "reason": "Perfectly sheer, linear natural ice wall dropping into dark water."},
+    {"name": "low_hard_sian_kaan", "lon": -87.60, "lat": 19.30, "cat": "LOW", "reason": "Dense natural coastal vegetation creating a sharp marine boundary."},
+    {"name": "low_hard_patagonia_fjords", "lon": -74.00, "lat": -50.00, "cat": "LOW", "reason": "Complex, highly articulated natural rock boundaries against isolated water."},
+    {"name": "low_hard_kimeridge_bay", "lon": -2.12, "lat": 50.61, "cat": "LOW", "reason": "Natural, geometric linear rock ledges extending into the sea."},
+    {"name": "low_hard_zangezur", "lon": 46.10, "lat": 39.10, "cat": "LOW", "reason": "Sharp, linear natural mountain ridge completely devoid of infrastructure."},
+    {"name": "low_hard_andes_ridgeline", "lon": -70.00, "lat": -32.00, "cat": "LOW", "reason": "Massive continuous linear rock spine separating two topographies."},
+    {"name": "low_hard_rift_valley_escarpment", "lon": 36.00, "lat": -0.50, "cat": "LOW", "reason": "Pronounced, sheer natural drop-off dividing a barren plain."},
+    {"name": "low_hard_victoria_falls_gorge", "lon": 25.85, "lat": -17.92, "cat": "LOW", "reason": "Extremely sharp, zigzagging natural canyon carved into rock."},
+    {"name": "low_hard_grand_canyon_edge", "lon": -112.10, "lat": 36.10, "cat": "LOW", "reason": "Massive, abrupt terraced geological drop-off."},
+    {"name": "low_hard_tepuis", "lon": -62.00, "lat": 5.00, "cat": "LOW", "reason": "Perfectly flat-topped natural rock mesas with sheer vertical sides."},
+
+    # --- MORPHOLOGY 4: HARD LOW - GEOLOGICAL ANOMALIES (20 targets) ---
+    # Visual Signature: Massive circles, cones, and geometric rock formations that mimic mines, dams, or stadiums.
+    {"name": "low_hard_richat_structure", "lon": -11.40, "lat": 21.12, "cat": "LOW", "reason": "Massive, perfectly circular natural concentric geological rings."},
+    {"name": "low_hard_meteor_crater", "lon": -111.02, "lat": 35.02, "cat": "LOW", "reason": "Perfectly circular, deep terrestrial impact anomaly with raised rim."},
+    {"name": "low_hard_mt_fuji_crater", "lon": 138.72, "lat": 35.36, "cat": "LOW", "reason": "Massive symmetrical natural cone terminating in a central circular depression."},
+    {"name": "low_hard_uluru", "lon": 131.03, "lat": -25.34, "cat": "LOW", "reason": "Massive, highly anomalous singular elliptical rock formation in flat desert."},
+    {"name": "low_hard_brandberg_massif", "lon": 14.53, "lat": -21.13, "cat": "LOW", "reason": "Gigantic circular mountain rising abruptly from featureless plains."},
+    {"name": "low_hard_valles_caldera", "lon": -106.53, "lat": 35.87, "cat": "LOW", "reason": "Enormous circular volcanic depression surrounded by natural ridges."},
+    {"name": "low_hard_ngorongoro", "lon": 35.58, "lat": -3.17, "cat": "LOW", "reason": "Massive, perfectly intact circular natural caldera wall."},
+    {"name": "low_hard_arouane_crater", "lon": -6.50, "lat": 18.90, "cat": "LOW", "reason": "Circular natural sand depression highly contrasting with surrounding dunes."},
+    {"name": "low_hard_spider_crater", "lon": 126.08, "lat": -16.73, "cat": "LOW", "reason": "Highly geometric natural geological spider-web formation."},
+    {"name": "low_hard_manicouagan", "lon": -68.70, "lat": 51.38, "cat": "LOW", "reason": "Massive, perfect circular ring lake formed by natural terrestrial impact."},
+    {"name": "low_hard_gosses_bluff", "lon": 132.30, "lat": -23.82, "cat": "LOW", "reason": "Striking circular natural rock ring protruding from desert floor."},
+    {"name": "low_hard_tenoumer_crater", "lon": -10.40, "lat": 22.92, "cat": "LOW", "reason": "Distinct circular impact geometry interrupting linear desert sand."},
+    {"name": "low_hard_wolves_crater", "lon": 19.33, "lat": -19.20, "cat": "LOW", "reason": "Natural, geometrically sharp circular void in remote landscape."},
+    {"name": "low_hard_pingualuit", "lon": -73.66, "lat": 61.27, "cat": "LOW", "reason": "Perfectly circular, deep-blue water body contained by a natural rim."},
+    {"name": "low_hard_brossel_crater", "lon": 18.00, "lat": -20.00, "cat": "LOW", "reason": "Faint, massive circular geological footprint on barren earth."},
+    {"name": "low_hard_mt_st_helens", "lon": -122.18, "lat": 46.19, "cat": "LOW", "reason": "Massive asymmetrical natural blast zone and crater void."},
+    {"name": "low_hard_krakatoa", "lon": 105.42, "lat": -6.10, "cat": "LOW", "reason": "Broken circular volcanic archipelago surrounding a central cone."},
+    {"name": "low_hard_kelimutu", "lon": 121.82, "lat": -8.76, "cat": "LOW", "reason": "Three perfectly adjacent circular volcanic lakes with highly contrasting natural colors."},
+    {"name": "low_hard_devils_tower", "lon": -104.71, "lat": 44.59, "cat": "LOW", "reason": "Hyper-isolated, massive cylindrical natural rock intrusion."},
+    {"name": "low_hard_wave_rock", "lon": 118.89, "lat": -32.39, "cat": "LOW", "reason": "Long, perfectly smooth, sweeping natural granite curvature."},
+
+    # --- MORPHOLOGY 5: HARD LOW - FRACTALS & TEXTURES (20 targets) ---
+    # Visual Signature: Braided rivers, salt flats, and coral reefs that mimic city streets, agriculture, or airports.
+    {"name": "low_hard_salar_de_uyuni", "lon": -67.50, "lat": -20.10, "cat": "LOW", "reason": "High-albedo, flat geometric polygon fracturing caused by natural salt crusts."},
+    {"name": "low_hard_dried_riverbed", "lon": 137.00, "lat": -28.00, "cat": "LOW", "reason": "Branching, dendritic natural erosion patterns mimicking road networks."},
+    {"name": "low_hard_lena_delta", "lon": 126.00, "lat": 73.00, "cat": "LOW", "reason": "Highly complex, sprawling fractal networks of natural river channels."},
+    {"name": "low_hard_great_barrier_reef", "lon": 149.19, "lat": -19.75, "cat": "LOW", "reason": "Submerged, highly textured geometric organic formations in shallow water."},
+    {"name": "low_hard_bahamas_banks", "lon": -76.66, "lat": 24.38, "cat": "LOW", "reason": "Striking linear underwater sand ridges created entirely by natural currents."},
+    {"name": "low_hard_dakhla_oasis", "lon": 28.95, "lat": 25.50, "cat": "LOW", "reason": "Highly concentrated patch of natural green vegetation bounded sharply by desert."},
+    {"name": "low_hard_makgadikgadi_pans", "lon": 25.50, "lat": -20.70, "cat": "LOW", "reason": "Vast, bright white natural salt flat with irregular jagged edges."},
+    {"name": "low_hard_lake_eyre", "lon": 137.30, "lat": -28.40, "cat": "LOW", "reason": "Massive natural dry lake bed exhibiting high-contrast white and brown geometries."},
+    {"name": "low_hard_okavango_delta", "lon": 22.50, "lat": -19.00, "cat": "LOW", "reason": "Dense, chaotic fractal patterns of natural marsh and waterways."},
+    {"name": "low_hard_brahma_putra_braid", "lon": 94.00, "lat": 27.50, "cat": "LOW", "reason": "Massive, highly intersecting natural sandbars in a wide river system."},
+    {"name": "low_hard_wadden_sea", "lon": 8.00, "lat": 53.80, "cat": "LOW", "reason": "Intricate tidal mudflat textures exposed during low tide."},
+    {"name": "low_hard_yellowstone_prismatic", "lon": -110.82, "lat": 44.52, "cat": "LOW", "reason": "Highly unnatural-looking concentric rings of bright biological coloring."},
+    {"name": "low_hard_dallol", "lon": 40.30, "lat": 14.24, "cat": "LOW", "reason": "Extreme-contrast geometric salt and acid formations in volcanic crater."},
+    {"name": "low_hard_pamukkale", "lon": 29.12, "lat": 37.92, "cat": "LOW", "reason": "Tiered, semi-circular bright white natural travertine terraces."},
+    {"name": "low_hard_huanglong", "lon": 103.82, "lat": 32.75, "cat": "LOW", "reason": "Dense network of small, adjacent natural geometric calcite pools."},
+    {"name": "low_hard_bisti_badlands", "lon": -108.25, "lat": 36.26, "cat": "LOW", "reason": "Highly textured, repeating natural hoodoo rock formations."},
+    {"name": "low_hard_chocolate_hills", "lon": 124.16, "lat": 9.91, "cat": "LOW", "reason": "Repetitive, perfectly conical natural grassy mounds."},
+    {"name": "low_hard_giant_causeway", "lon": -6.51, "lat": 55.24, "cat": "LOW", "reason": "Dense cluster of perfectly hexagonal natural basalt columns."},
+    {"name": "low_hard_stone_forest", "lon": 103.32, "lat": 24.81, "cat": "LOW", "reason": "Tall, tightly packed vertical natural rock pillars resembling buildings."},
+    {"name": "low_hard_white_sands", "lon": -106.30, "lat": 32.80, "cat": "LOW", "reason": "Brilliant white undulating dunes mimicking snow or artificial surfaces."}
+]
+
+MEDIUM_TARGETS = [
+    # --- MORPHOLOGY 1: URBAN GRIDS (20 targets) ---
+    # Visual Signature: Standard dense orthogonal city blocks, commercial high-rises, and tight residential networks.
+    {"name": "med_city_chicago", "lon": -87.65, "lat": 41.88, "cat": "MEDIUM", "reason": "Standard orthogonal urban street grid and high-density commercial buildings."},
+    {"name": "med_city_paris", "lon": 2.35, "lat": 48.85, "cat": "MEDIUM", "reason": "Dense, uniform historical urban block geometry and radial avenues."},
+    {"name": "med_city_barcelona", "lon": 2.16, "lat": 41.38, "cat": "MEDIUM", "reason": "Highly repetitive, chamfered square residential block patterns."},
+    {"name": "med_city_tokyo", "lon": 139.65, "lat": 35.64, "cat": "MEDIUM", "reason": "Extremely dense, irregular low-rise residential and commercial canopy."},
+    {"name": "med_city_brooklyn", "lon": -73.94, "lat": 40.67, "cat": "MEDIUM", "reason": "Standard continuous terraced housing and urban neighborhood grids."},
+    {"name": "med_city_mexico", "lon": -99.13, "lat": 19.43, "cat": "MEDIUM", "reason": "Sprawling, high-density generic urban infrastructure."},
+    {"name": "med_city_mumbai", "lon": 72.87, "lat": 19.07, "cat": "MEDIUM", "reason": "Extremely high-density, irregular urban residential geometry."},
+    {"name": "med_city_cairo", "lon": 31.23, "lat": 30.04, "cat": "MEDIUM", "reason": "Dense, uniform flat-roofed residential structures bounded by roads."},
+    {"name": "med_city_buenos_aires", "lon": -58.38, "lat": -34.60, "cat": "MEDIUM", "reason": "Standard continuous square-grid urban block layout."},
+    {"name": "med_city_london", "lon": -0.12, "lat": 51.49, "cat": "MEDIUM", "reason": "Irregular, dense historical urban street network and mixed residential."},
+    {"name": "med_city_melbourne", "lon": 144.96, "lat": -37.81, "cat": "MEDIUM", "reason": "Orthogonal central business district bounded by standard residential sprawl."},
+    {"name": "med_city_toronto", "lon": -79.38, "lat": 43.65, "cat": "MEDIUM", "reason": "Dense rectangular grid of commercial and residential high-rises."},
+    {"name": "med_city_berlin", "lon": 13.40, "lat": 52.52, "cat": "MEDIUM", "reason": "Standard European mixed-density urban block layout."},
+    {"name": "med_city_johannesburg", "lon": 28.04, "lat": -26.20, "cat": "MEDIUM", "reason": "Dense geometric urban grid transitioning into standard residential areas."},
+    {"name": "med_city_bogota", "lon": -74.07, "lat": 4.71, "cat": "MEDIUM", "reason": "Sprawling, highly compressed urban block and street geometry."},
+    {"name": "med_city_seoul", "lon": 126.97, "lat": 37.56, "cat": "MEDIUM", "reason": "Dense combination of orthogonal and irregular urban city blocks."},
+    {"name": "med_city_madrid", "lon": -3.70, "lat": 40.41, "cat": "MEDIUM", "reason": "Dense historic street geometry interlocked with standard residential."},
+    {"name": "med_city_lagos", "lon": 3.37, "lat": 6.52, "cat": "MEDIUM", "reason": "Hyper-dense, irregular urban roofing and street networks."},
+    {"name": "med_city_tehran", "lon": 51.38, "lat": 35.68, "cat": "MEDIUM", "reason": "Continuous, high-density standard urban infrastructure."},
+    {"name": "med_city_bangkok", "lon": 100.50, "lat": 13.75, "cat": "MEDIUM", "reason": "Sprawling mix of standard high-rise and dense low-rise urban development."},
+
+    # --- MORPHOLOGY 2: SUBURBAN SPRAWL (20 targets) ---
+    # Visual Signature: Winding cul-de-sacs, low-density housing, visible yards, repetitive roofs.
+    {"name": "med_suburb_levittown", "lon": -73.51, "lat": 40.72, "cat": "MEDIUM", "reason": "Repetitive low-density residential geometry and winding street networks."},
+    {"name": "med_suburb_phoenix", "lon": -112.10, "lat": 33.60, "cat": "MEDIUM", "reason": "Standard grid of single-family homes with uniform roofing and pools."},
+    {"name": "med_suburb_plano", "lon": -96.75, "lat": 33.05, "cat": "MEDIUM", "reason": "Sprawling residential subdivisions and branching road layouts."},
+    {"name": "med_suburb_orlando", "lon": -81.40, "lat": 28.55, "cat": "MEDIUM", "reason": "Curved residential street patterns intermixed with small artificial water bodies."},
+    {"name": "med_suburb_sydney", "lon": 150.90, "lat": -33.80, "cat": "MEDIUM", "reason": "Standard low-density suburban housing plots with distinct red/dark roofing."},
+    {"name": "med_suburb_calgary", "lon": -114.07, "lat": 51.10, "cat": "MEDIUM", "reason": "Uniform residential cul-de-sac geometry cutting through natural terrain."},
+    {"name": "med_suburb_surrey", "lon": -0.32, "lat": 51.32, "cat": "MEDIUM", "reason": "Semi-dense suburban residential rows interspersed with trees."},
+    {"name": "med_suburb_atlanta", "lon": -84.30, "lat": 33.90, "cat": "MEDIUM", "reason": "Low-density housing networks heavily obscured by tree canopy."},
+    {"name": "med_suburb_henderson", "lon": -115.05, "lat": 36.00, "cat": "MEDIUM", "reason": "High-contrast, densely packed residential plots in arid environment."},
+    {"name": "med_suburb_sf_valley", "lon": -118.50, "lat": 34.20, "cat": "MEDIUM", "reason": "Endless continuous grid of standard residential parcels and light commercial."},
+    {"name": "med_suburb_houston", "lon": -95.50, "lat": 29.80, "cat": "MEDIUM", "reason": "Dendritic suburban street networks branching off standard arterial roads."},
+    {"name": "med_suburb_denver", "lon": -104.90, "lat": 39.60, "cat": "MEDIUM", "reason": "Low-density orthogonal residential blocks with detached housing."},
+    {"name": "med_suburb_auckland", "lon": 174.80, "lat": -36.90, "cat": "MEDIUM", "reason": "Patchwork of standard suburban residential parcels near coastline."},
+    {"name": "med_suburb_cape_town", "lon": 18.50, "lat": -33.90, "cat": "MEDIUM", "reason": "Uniform grid of small-plot residential structures."},
+    {"name": "med_suburb_brisbane", "lon": 153.00, "lat": -27.50, "cat": "MEDIUM", "reason": "Curving suburban road networks following undulating local topography."},
+    {"name": "med_suburb_naperville", "lon": -88.15, "lat": 41.75, "cat": "MEDIUM", "reason": "Standard low-density residential developments separated by green spaces."},
+    {"name": "med_suburb_munich", "lon": 11.45, "lat": 48.10, "cat": "MEDIUM", "reason": "Standard European semi-detached suburban residential geometry."},
+    {"name": "med_suburb_bellevue", "lon": -122.15, "lat": 47.60, "cat": "MEDIUM", "reason": "Low-density housing plots highly integrated with natural tree cover."},
+    {"name": "med_suburb_miami", "lon": -80.35, "lat": 25.70, "cat": "MEDIUM", "reason": "Extremely dense grid of uniform suburban roofing and paved plots."},
+    {"name": "med_suburb_mississauga", "lon": -79.65, "lat": 43.60, "cat": "MEDIUM", "reason": "Continuous winding layouts of standard residential housing."},
+
+    # --- MORPHOLOGY 3: AGRICULTURE (20 targets) ---
+    # Visual Signature: Checkerboard crop fields, pivot irrigation circles, topographical terracing.
+    {"name": "med_agri_kansas_pivot", "lon": -100.50, "lat": 37.80, "cat": "MEDIUM", "reason": "Highly repetitive, massive circular crop geometries."},
+    {"name": "med_agri_iowa_grid", "lon": -93.50, "lat": 42.00, "cat": "MEDIUM", "reason": "Standard checkerboard pattern of rectangular agricultural fields."},
+    {"name": "med_agri_fresno_valley", "lon": -119.80, "lat": 36.70, "cat": "MEDIUM", "reason": "Dense, linear rows of ordinary agricultural crop infrastructure."},
+    {"name": "med_agri_france_rural", "lon": 2.00, "lat": 47.00, "cat": "MEDIUM", "reason": "Irregular, patchwork geometric shapes of standard farming plots."},
+    {"name": "med_agri_netherlands", "lon": 5.50, "lat": 52.50, "cat": "MEDIUM", "reason": "Highly structured, perfectly linear agricultural strips cut by small canals."},
+    {"name": "med_agri_punjab", "lon": 75.50, "lat": 30.50, "cat": "MEDIUM", "reason": "Dense mosaic of small-scale, standard agricultural plots."},
+    {"name": "med_agri_mato_grosso", "lon": -55.00, "lat": -12.00, "cat": "MEDIUM", "reason": "Massive, uniform rectangular commercial farming clearings."},
+    {"name": "med_agri_nile_delta", "lon": 31.00, "lat": 30.80, "cat": "MEDIUM", "reason": "Extremely dense, fragmented micro-farming geometry abutting a river."},
+    {"name": "med_agri_pampas", "lon": -60.00, "lat": -35.00, "cat": "MEDIUM", "reason": "Vast, featureless plain broken only by standard crop demarcations."},
+    {"name": "med_agri_sichuan", "lon": 104.00, "lat": 30.00, "cat": "MEDIUM", "reason": "Topographical terraced farming patterns conforming to hill elevations."},
+    {"name": "med_agri_central_valley", "lon": -120.50, "lat": 36.00, "cat": "MEDIUM", "reason": "Rectilinear agricultural parcels with uniform crop lines."},
+    {"name": "med_agri_ukraine_steppe", "lon": 33.00, "lat": 48.00, "cat": "MEDIUM", "reason": "Extensive, unbroken checkerboard of large-scale farming fields."},
+    {"name": "med_agri_mekong", "lon": 105.50, "lat": 10.00, "cat": "MEDIUM", "reason": "Dense, water-logged grid of small rectangular agricultural paddies."},
+    {"name": "med_agri_andalucia", "lon": -5.00, "lat": 37.50, "cat": "MEDIUM", "reason": "Vast rolling terrain marked by regular rows of agricultural planting."},
+    {"name": "med_agri_wheatbelt", "lon": 118.00, "lat": -32.00, "cat": "MEDIUM", "reason": "Massive, highly angular, low-contrast farming geometries."},
+    {"name": "med_agri_goias", "lon": -49.00, "lat": -16.00, "cat": "MEDIUM", "reason": "Concentrated circular center-pivot irrigation shapes cut into scrubland."},
+    {"name": "med_agri_nile_linear", "lon": 32.00, "lat": 26.00, "cat": "MEDIUM", "reason": "Sharp, highly contrasting boundary between rectangular green plots and barren desert."},
+    {"name": "med_agri_po_valley", "lon": 10.50, "lat": 45.00, "cat": "MEDIUM", "reason": "Structured orthogonal agricultural grid integrated with small canals."},
+    {"name": "med_agri_bavaria", "lon": 11.50, "lat": 48.50, "cat": "MEDIUM", "reason": "Multi-colored patchwork of standard agricultural plot geometries."},
+    {"name": "med_agri_japan_rice", "lon": 139.00, "lat": 37.50, "cat": "MEDIUM", "reason": "Compact, irregular grid of terraced standard agricultural plots."},
+
+    # --- MORPHOLOGY 4: STANDARD INFRA & NEGATIVE-HIGH (20 targets) ---
+    # Visual Signature: Single runways, small localized industrial, standard commercial roofs, basic intersections.
+    {"name": "med_water_standard_lock", "lon": -88.08, "lat": 41.56, "cat": "MEDIUM", "reason": "Small-scale linear concrete river lock meant for standard barge traffic."},
+    {"name": "med_water_local_canal", "lon": 4.90, "lat": 52.37, "cat": "MEDIUM", "reason": "Narrow, localized urban waterway integrated into standard city grid."},
+    {"name": "med_water_city_bridge", "lon": -90.18, "lat": 38.62, "cat": "MEDIUM", "reason": "Standard concrete/steel linear structure crossing a natural waterway."},
+    {"name": "med_water_rural_bridge", "lon": -95.00, "lat": 40.00, "cat": "MEDIUM", "reason": "Small linear strip of asphalt crossing a minor natural river."},
+    {"name": "med_aero_regional_strip", "lon": -104.85, "lat": 39.57, "cat": "MEDIUM", "reason": "Single narrow asphalt strip with minimal supporting infrastructure."},
+    {"name": "med_aero_local_airfield", "lon": -80.00, "lat": 35.00, "cat": "MEDIUM", "reason": "Small-scale runway flanked by standard grassy fields and minimal tarmac."},
+    {"name": "med_energy_local_substation", "lon": -97.10, "lat": 32.70, "cat": "MEDIUM", "reason": "Small, localized geometric grid of electrical transformers within a residential zone."},
+    {"name": "med_energy_wind_farm", "lon": -100.00, "lat": 35.00, "cat": "MEDIUM", "reason": "Dispersed, small white linear structures scattered across standard farmland."},
+    {"name": "med_port_local_marina", "lon": -4.13, "lat": 50.36, "cat": "MEDIUM", "reason": "Small-scale recreational boat docks and standard coastal development."},
+    {"name": "med_port_fishing_pier", "lon": -3.00, "lat": 47.60, "cat": "MEDIUM", "reason": "Minimal concrete piers blending into standard civilian coastal architecture."},
+    {"name": "med_infra_highway_interchange", "lon": -96.85, "lat": 32.85, "cat": "MEDIUM", "reason": "Standard sweeping concrete highway interchange and overpasses."},
+    {"name": "med_infra_rail_yard", "lon": -100.80, "lat": 41.14, "cat": "MEDIUM", "reason": "Linear parallel metal tracks and standard logistics queuing."},
+    {"name": "med_infra_water_treatment", "lon": -87.80, "lat": 41.80, "cat": "MEDIUM", "reason": "Standard municipal utility infrastructure with small circular clarifiers."},
+    {"name": "med_infra_shopping_mall", "lon": -93.24, "lat": 44.85, "cat": "MEDIUM", "reason": "Standard large flat-roofed commercial building surrounded by massive parking lot geometry."},
+    {"name": "med_infra_university", "lon": -122.17, "lat": 37.42, "cat": "MEDIUM", "reason": "Standard campus layout with mixed building sizes and green spaces."},
+    {"name": "med_infra_golf_course", "lon": -82.02, "lat": 33.50, "cat": "MEDIUM", "reason": "Sculpted green recreational terrain interspersed with sand traps and trees."},
+    {"name": "med_infra_warehouse_park", "lon": -117.50, "lat": 34.05, "cat": "MEDIUM", "reason": "Repetitive, massive rectangular white-roofed light industrial buildings."},
+    {"name": "med_infra_strip_mall", "lon": -84.00, "lat": 34.00, "cat": "MEDIUM", "reason": "Small linear commercial structure fronted by flat asphalt parking."},
+    {"name": "med_infra_high_school", "lon": -90.00, "lat": 30.00, "cat": "MEDIUM", "reason": "Small geometric structure paired with standard rectangular athletic fields."},
+    {"name": "med_infra_gravel_pit", "lon": -110.00, "lat": 40.00, "cat": "MEDIUM", "reason": "Small-scale localized earth disruption next to standard road network."},
+
+    # --- MORPHOLOGY 5: TOWNS & SETTLEMENTS (20 targets) ---
+    # Visual Signature: Isolated clusters of standard residential/commercial footprints in varied terrain.
+    {"name": "med_town_alpine", "lon": 8.03, "lat": 46.62, "cat": "MEDIUM", "reason": "Small, dense cluster of buildings constrained by surrounding mountainous terrain."},
+    {"name": "med_town_coastal", "lon": 14.48, "lat": 40.62, "cat": "MEDIUM", "reason": "Standard human settlement built directly into coastal cliffs/shoreline."},
+    {"name": "med_town_desert", "lon": 133.88, "lat": -23.69, "cat": "MEDIUM", "reason": "Isolated, standard low-rise settlement surrounded by barren arid terrain."},
+    {"name": "med_town_island", "lon": 73.50, "lat": 4.17, "cat": "MEDIUM", "reason": "Standard dense residential footprint covering a small atoll/island."},
+    {"name": "med_town_river", "lon": 7.60, "lat": 50.20, "cat": "MEDIUM", "reason": "Linear settlement geometry following the natural curve of a river system."},
+    {"name": "med_town_forest", "lon": 8.30, "lat": 48.50, "cat": "MEDIUM", "reason": "Small clearings of human residential activity amidst dense woodland."},
+    {"name": "med_town_arctic", "lon": 15.64, "lat": 78.22, "cat": "MEDIUM", "reason": "Small, isolated standard structures set against a snowy/glacial backdrop."},
+    {"name": "med_town_rural_africa", "lon": 35.00, "lat": 0.50, "cat": "MEDIUM", "reason": "Small, scattered residential footprint in a rural savanna environment."},
+    {"name": "med_town_mining", "lon": -106.30, "lat": 39.60, "cat": "MEDIUM", "reason": "Small-scale residential settlement adjacent to local mountainous terrain."},
+    {"name": "med_town_mediterranean", "lon": 25.33, "lat": 36.40, "cat": "MEDIUM", "reason": "Dense, bright-white standard residential structures clustered on a hillside."},
+    {"name": "med_town_appalachian", "lon": -81.00, "lat": 37.00, "cat": "MEDIUM", "reason": "Linear settlement tracing the bottom of a forested valley."},
+    {"name": "med_town_fjord", "lon": 6.00, "lat": 60.00, "cat": "MEDIUM", "reason": "Small cluster of standard residential structures hugging a deep coastal inlet."},
+    {"name": "med_town_andean", "lon": -72.00, "lat": -13.00, "cat": "MEDIUM", "reason": "Compact, grid-based settlement nestled in high-altitude topography."},
+    {"name": "med_town_midwest", "lon": -95.00, "lat": 42.00, "cat": "MEDIUM", "reason": "Isolated small orthogonal residential grid surrounded completely by farmland."},
+    {"name": "med_town_oasis", "lon": 28.00, "lat": 29.00, "cat": "MEDIUM", "reason": "Dense human settlement concentrated entirely around localized natural vegetation in desert."},
+    {"name": "med_town_steppe", "lon": 100.00, "lat": 46.00, "cat": "MEDIUM", "reason": "Small footprint of low-density structures breaking up vast grassland."},
+    {"name": "med_town_jungle", "lon": -60.00, "lat": -3.00, "cat": "MEDIUM", "reason": "Minor human architectural footprint carved into dense tropical canopy."},
+    {"name": "med_town_tundra", "lon": 55.00, "lat": 68.00, "cat": "MEDIUM", "reason": "Sparse, isolated structures set upon desolate permafrost terrain."},
+    {"name": "med_town_himalayan", "lon": 85.00, "lat": 28.00, "cat": "MEDIUM", "reason": "Minute terraced settlement conforming to extreme high-altitude slopes."},
+    {"name": "med_town_highway", "lon": -105.00, "lat": 35.00, "cat": "MEDIUM", "reason": "Small linear arrangement of commercial and residential structures anchored to a single road."}
+]
+
+HIGH_TARGETS = [
+    # --- ARCHEOLOGY 1: MEGA-PORTS (20 targets) ---
+    # Visual Signature: Extreme-density rectangular grids (containers), linear artificial coastlines, and massive vessel staging.
+    {"name": "high_port_rotterdam", "lon": 4.05, "lat": 51.95, "cat": "HIGH", "reason": "Extreme-density geometric cargo terminals and massive vessel berthing."},
+    {"name": "high_port_singapore", "lon": 103.75, "lat": 1.26, "cat": "HIGH", "reason": "High-density maritime staging area with extensive artificial coastline."},
+    {"name": "high_port_la", "lon": -118.25, "lat": 33.75, "cat": "HIGH", "reason": "Massive concentration of rectangular container geometry and ship berths."},
+    {"name": "high_port_busan", "lon": 129.08, "lat": 35.10, "cat": "HIGH", "reason": "Extensive linear docks and concentrated industrial geometry."},
+    {"name": "high_port_jebel_ali", "lon": 55.05, "lat": 25.00, "cat": "HIGH", "reason": "Massive artificial harbor excavation and geometric terminals."},
+    {"name": "high_port_antwerp", "lon": 4.33, "lat": 51.28, "cat": "HIGH", "reason": "Sprawling inland waterway locks and dense industrial staging."},
+    {"name": "high_port_hamburg", "lon": 9.93, "lat": 53.53, "cat": "HIGH", "reason": "Complex network of industrial river docks and cargo grids."},
+    {"name": "high_port_yangshan", "lon": 122.06, "lat": 30.62, "cat": "HIGH", "reason": "Massive artificial island entirely covered in cargo grid patterns."},
+    {"name": "high_port_yantian", "lon": 114.27, "lat": 22.57, "cat": "HIGH", "reason": "Dense concentration of massive vessel infrastructure."},
+    {"name": "high_port_newark", "lon": -74.15, "lat": 40.68, "cat": "HIGH", "reason": "Sprawling geometric cargo grid integrated into coastal infrastructure."},
+    {"name": "high_port_ningbo", "lon": 121.85, "lat": 29.93, "cat": "HIGH", "reason": "Unnatural linear island structures completely dominated by container grids."},
+    {"name": "high_port_qingdao", "lon": 120.31, "lat": 36.01, "cat": "HIGH", "reason": "Massive artificial peninsula featuring dense orthogonal cargo arrays."},
+    {"name": "high_port_tianjin", "lon": 117.73, "lat": 38.97, "cat": "HIGH", "reason": "Extensive coastal excavation with perfectly linear ship channels."},
+    {"name": "high_port_hedland", "lon": 118.58, "lat": -20.30, "cat": "HIGH", "reason": "Massive dark stockpile geometry and bulk carrier berthing."},
+    {"name": "high_port_houston", "lon": -95.07, "lat": 29.73, "cat": "HIGH", "reason": "Dense industrial channel lined with extreme geometric petrochemical storage."},
+    {"name": "high_port_vancouver", "lon": -123.11, "lat": 49.29, "cat": "HIGH", "reason": "Concentrated industrial cargo grid extending into a natural inlet."},
+    {"name": "high_port_nagoya", "lon": 136.83, "lat": 35.04, "cat": "HIGH", "reason": "Dense artificial island grid heavily packed with vehicle export arrays."},
+    {"name": "high_port_keelung", "lon": 121.74, "lat": 25.13, "cat": "HIGH", "reason": "Deep natural inlet highly engineered with rigid concrete cargo borders."},
+    {"name": "high_port_richards_bay", "lon": 32.03, "lat": -28.79, "cat": "HIGH", "reason": "Massive geometric coal export terminal interrupting coastal topography."},
+    {"name": "high_port_santos", "lon": -46.29, "lat": -23.97, "cat": "HIGH", "reason": "Sprawling linear dock infrastructure wrapping a natural estuarine channel."},
+
+    # --- ARCHEOLOGY 2: MEGA-AIRPORTS (20 targets) ---
+    # Visual Signature: Massive asphalt/concrete strips spanning kilometers, central star/pinwheel terminals, isolated flat topology.
+    {"name": "high_airport_atl", "lon": -84.42, "lat": 33.64, "cat": "HIGH", "reason": "Sprawling parallel runway geometry and massive central terminal complex."},
+    {"name": "high_airport_den", "lon": -104.67, "lat": 39.85, "cat": "HIGH", "reason": "Massive geometric pinwheel runway footprint in isolated terrain."},
+    {"name": "high_airport_dxb", "lon": 55.36, "lat": 25.25, "cat": "HIGH", "reason": "Extreme-scale linear aviation infrastructure."},
+    {"name": "high_airport_daxing", "lon": 116.41, "lat": 39.50, "cat": "HIGH", "reason": "Highly anomalous massive starfish-shaped architectural footprint."},
+    {"name": "high_airport_lhr", "lon": -0.45, "lat": 51.47, "cat": "HIGH", "reason": "Dense concentration of aviation infrastructure and massive aircraft."},
+    {"name": "high_airport_cdg", "lon": 2.54, "lat": 49.00, "cat": "HIGH", "reason": "Sprawling complex of circular and linear aviation terminals."},
+    {"name": "high_airport_dfw", "lon": -97.04, "lat": 32.89, "cat": "HIGH", "reason": "Massive symmetrical linear runway grid and central bisecting highway."},
+    {"name": "high_airport_hnd", "lon": 139.78, "lat": 35.55, "cat": "HIGH", "reason": "Extensive artificial island runway geometry."},
+    {"name": "high_airport_fra", "lon": 8.57, "lat": 50.03, "cat": "HIGH", "reason": "Dense industrial aviation complex adjacent to forest."},
+    {"name": "high_airport_ist", "lon": 28.74, "lat": 41.26, "cat": "HIGH", "reason": "Massive isolated geometric aviation footprint."},
+    {"name": "high_airport_pek", "lon": 116.58, "lat": 40.07, "cat": "HIGH", "reason": "Sprawling dragon-like terminal architecture and parallel strips."},
+    {"name": "high_airport_ord", "lon": -87.90, "lat": 41.97, "cat": "HIGH", "reason": "Chaotic, intersecting extreme-scale runway geometry."},
+    {"name": "high_airport_lax", "lon": -118.40, "lat": 33.94, "cat": "HIGH", "reason": "Dense central U-shaped architecture surrounded by heavy parallel concrete."},
+    {"name": "high_airport_kix", "lon": 135.24, "lat": 34.43, "cat": "HIGH", "reason": "Perfectly rectangular massive artificial island in open water."},
+    {"name": "high_airport_hkg", "lon": 113.91, "lat": 22.30, "cat": "HIGH", "reason": "Extensive land reclamation hosting massive linear aviation footprint."},
+    {"name": "high_airport_icn", "lon": 126.44, "lat": 37.46, "cat": "HIGH", "reason": "Symmetrical, hyper-massive terminal geometry on coastal fill."},
+    {"name": "high_airport_schiphol", "lon": 4.76, "lat": 52.31, "cat": "HIGH", "reason": "Highly dispersed, multi-directional runway layout cutting through agriculture."},
+    {"name": "high_airport_mad", "lon": -3.56, "lat": 40.49, "cat": "HIGH", "reason": "Extreme-length parallel strips alongside undulating terminal architecture."},
+    {"name": "high_airport_jfk", "lon": -73.77, "lat": 40.64, "cat": "HIGH", "reason": "Irregular network of extreme-scale runways intersecting a bay."},
+    {"name": "high_airport_dmm", "lon": 49.79, "lat": 26.47, "cat": "HIGH", "reason": "Massive geometric aviation layout surrounded by barren desert."},
+
+    # --- ARCHEOLOGY 3: ENERGY & DAMS (20 targets) ---
+    # Visual Signature: Circular cooling towers, massive reflective arrays, concrete barriers crossing waterways.
+    {"name": "high_energy_palo_verde", "lon": -112.86, "lat": 33.38, "cat": "HIGH", "reason": "Circular cooling towers and sprawling geometric arrays in isolated desert."},
+    {"name": "high_energy_bruce", "lon": -81.59, "lat": 44.32, "cat": "HIGH", "reason": "Massive coastal industrial structures with distinct cooling infrastructure."},
+    {"name": "high_energy_kashiwazaki", "lon": 138.60, "lat": 37.42, "cat": "HIGH", "reason": "Dense coastal grid of massive containment buildings."},
+    {"name": "high_energy_zaporizhzhia", "lon": 34.58, "lat": 47.51, "cat": "HIGH", "reason": "Concentrated row of massive dome structures and cooling ponds."},
+    {"name": "high_energy_cattenom", "lon": 6.21, "lat": 49.41, "cat": "HIGH", "reason": "Cluster of massive, uniform circular cooling towers."},
+    {"name": "high_energy_gravelines", "lon": 2.13, "lat": 51.01, "cat": "HIGH", "reason": "Linear array of geometric containment facilities on coastline."},
+    {"name": "high_energy_three_gorges", "lon": 111.00, "lat": 30.82, "cat": "HIGH", "reason": "Massive linear concrete barrier interrupting a major river system."},
+    {"name": "high_energy_itaipu", "lon": -54.59, "lat": -25.40, "cat": "HIGH", "reason": "Massive artificial geometric barrier and spillway infrastructure."},
+    {"name": "high_energy_hoover", "lon": -114.73, "lat": 36.01, "cat": "HIGH", "reason": "Highly distinct curved concrete arch wedged in deep natural canyon."},
+    {"name": "high_energy_grand_coulee", "lon": -118.98, "lat": 47.95, "cat": "HIGH", "reason": "Colossal linear concrete retaining structure spanning wide river."},
+    {"name": "high_energy_bhadla_solar", "lon": 72.00, "lat": 27.53, "cat": "HIGH", "reason": "Sprawling, unnatural geometric grid of reflective panels in barren terrain."},
+    {"name": "high_energy_ouarzazate", "lon": -6.86, "lat": 30.99, "cat": "HIGH", "reason": "Massive curved arrays of concentrated reflective infrastructure."},
+    {"name": "high_energy_tengger", "lon": 105.00, "lat": 37.55, "cat": "HIGH", "reason": "Extensive dark geometric grid anomaly covering desert landscape."},
+    {"name": "high_energy_pavagada", "lon": 77.26, "lat": 14.09, "cat": "HIGH", "reason": "Hyper-massive rectangular block pattern of dark reflective panels."},
+    {"name": "high_energy_benban", "lon": 32.73, "lat": 24.45, "cat": "HIGH", "reason": "Perfectly orthogonal array of dark solar grids carved into desert."},
+    {"name": "high_energy_belchatow", "lon": 19.32, "lat": 51.26, "cat": "HIGH", "reason": "Massive terrestrial excavation scar adjacent to heavy industrial plant."},
+    {"name": "high_energy_jamnagar", "lon": 69.83, "lat": 22.34, "cat": "HIGH", "reason": "Extreme-density geometric array of petrochemical storage tanks."},
+    {"name": "high_energy_ras_tanura", "lon": 50.15, "lat": 26.65, "cat": "HIGH", "reason": "Sprawling complex of circular chemical storage and refining geometry."},
+    {"name": "high_energy_jubail", "lon": 49.56, "lat": 27.05, "cat": "HIGH", "reason": "Uninterrupted, hyper-dense industrial pipe and tank geometry."},
+    {"name": "high_energy_tarfaya_wind", "lon": -12.87, "lat": 27.87, "cat": "HIGH", "reason": "Massive, highly repetitive grid of isolated vertical structures in desert."},
+
+    # --- ARCHEOLOGY 4: MEGA-MINES & EXTREME INDUSTRIAL (20 targets) ---
+    # Visual Signature: Concentric terraced pits, massive unnatural scars, heavy processing infrastructure.
+    {"name": "high_mine_bingham", "lon": -112.15, "lat": 40.52, "cat": "HIGH", "reason": "Massive terraced terrestrial excavation scar."},
+    {"name": "high_mine_chuquicamata", "lon": -68.90, "lat": -22.30, "cat": "HIGH", "reason": "Gigantic elliptical open-pit excavation anomaly."},
+    {"name": "high_mine_grasberg", "lon": 137.11, "lat": -4.05, "cat": "HIGH", "reason": "Extreme environmental scarring and terraced pit in high-altitude terrain."},
+    {"name": "high_mine_mir", "lon": 113.99, "lat": 62.52, "cat": "HIGH", "reason": "Perfectly circular, deep terrestrial vortex anomaly."},
+    {"name": "high_mine_garzweiler", "lon": 6.50, "lat": 51.06, "cat": "HIGH", "reason": "Sprawling, active geometric earth-moving scar across landscape."},
+    {"name": "high_mine_hambach", "lon": 6.51, "lat": 50.91, "cat": "HIGH", "reason": "Colossal stepped terrestrial void carved into rural topography."},
+    {"name": "high_mine_escondida", "lon": -69.06, "lat": -24.27, "cat": "HIGH", "reason": "Massive dual open-pit geometry and highly contrasting tailings pools."},
+    {"name": "high_mine_carajas", "lon": -50.17, "lat": -6.06, "cat": "HIGH", "reason": "Stark, geometric rust-colored excavation disrupting dense green canopy."},
+    {"name": "high_mine_super_pit", "lon": 121.50, "lat": -30.77, "cat": "HIGH", "reason": "Highly pronounced elliptical terraced void adjacent to settlement."},
+    {"name": "high_mine_diavik", "lon": -111.33, "lat": 64.49, "cat": "HIGH", "reason": "Geometric extraction pits situated on an isolated frozen island."},
+    {"name": "high_mine_ekati", "lon": -110.61, "lat": 64.71, "cat": "HIGH", "reason": "Multiple circular terrestrial impact-like excavation sites."},
+    {"name": "high_mine_oyu_tolgoi", "lon": 106.04, "lat": 43.01, "cat": "HIGH", "reason": "Massive isolated industrial processing geometry in empty desert."},
+    {"name": "high_mine_norilsk", "lon": 88.16, "lat": 69.33, "cat": "HIGH", "reason": "Dense, heavily polluted heavy industrial footprint in remote tundra."},
+    {"name": "high_mine_kiruna", "lon": 20.18, "lat": 67.84, "cat": "HIGH", "reason": "Massive linear subsidence scar dominating the adjacent landscape."},
+    {"name": "high_mine_bayan_obo", "lon": 109.97, "lat": 41.79, "cat": "HIGH", "reason": "Extensive, high-contrast terraced pits and artificial chemical lakes."},
+    {"name": "high_ind_taweelah", "lon": 54.69, "lat": 24.77, "cat": "HIGH", "reason": "Hyper-dense, sprawling metal refining structures on artificial coast."},
+    {"name": "high_ind_fukushima", "lon": 141.03, "lat": 37.42, "cat": "HIGH", "reason": "Dense grid of massive circular containment tanks on coast."},
+    {"name": "high_ind_chernobyl", "lon": 30.09, "lat": 51.38, "cat": "HIGH", "reason": "Massive anomalous arch structure surrounded by over-grown infrastructure."},
+    {"name": "high_mine_eshidiya", "lon": 36.01, "lat": 29.98, "cat": "HIGH", "reason": "Massive anomalous earth disruption and linear extraction lines in desert."},
+    {"name": "high_mine_cerrejon", "lon": -72.65, "lat": 11.08, "cat": "HIGH", "reason": "Vast, dark linear earthworks heavily contrasting with natural terrain."},
+
+    # --- ARCHEOLOGY 5: SPACE, MILITARY, & CHOKEPOINTS (20 targets) ---
+    # Visual Signature: Isolated high-security grids, launch pads, radar pyramids, extreme artificial waterways.
+    {"name": "high_space_ksc_39a", "lon": -80.60, "lat": 28.60, "cat": "HIGH", "reason": "Massive isolated launch pad geometry and heavy crawlerway tracks."},
+    {"name": "high_space_baikonur", "lon": 63.30, "lat": 45.96, "cat": "HIGH", "reason": "Large-scale isolated geometric structures in barren steppe."},
+    {"name": "high_space_boca_chica", "lon": -97.15, "lat": 25.99, "cat": "HIGH", "reason": "Concentrated cluster of massive vertical cylindrical structures."},
+    {"name": "high_space_vandenberg", "lon": -120.62, "lat": 34.63, "cat": "HIGH", "reason": "Highly secure geometric launch infrastructure built into coastal cliffs."},
+    {"name": "high_mil_pentagon", "lon": -77.05, "lat": 38.87, "cat": "HIGH", "reason": "Highly anomalous massive pentagonal architectural footprint."},
+    {"name": "high_mil_norfolk", "lon": -76.32, "lat": 36.94, "cat": "HIGH", "reason": "Dense concentration of massive military vessel berthing."},
+    {"name": "high_mil_newport_news", "lon": -76.43, "lat": 36.98, "cat": "HIGH", "reason": "Massive drydock infrastructure and strategic naval vessel construction."},
+    {"name": "high_mil_diego_garcia", "lon": 72.40, "lat": -7.30, "cat": "HIGH", "reason": "Massive runway and infrastructure complex occupying an entire isolated atoll."},
+    {"name": "high_mil_minot_bunkers", "lon": -101.33, "lat": 48.42, "cat": "HIGH", "reason": "Highly secured, isolated geometric bunkers indicating strategic military storage."},
+    {"name": "high_mil_fylingdales", "lon": -0.66, "lat": 54.36, "cat": "HIGH", "reason": "Anomalous towering geometric radar installation in isolated terrain."},
+    {"name": "high_mil_engels_base", "lon": 46.21, "lat": 51.48, "cat": "HIGH", "reason": "Massive isolated military airstrip and heavy bomber aprons."},
+    {"name": "high_mil_rota", "lon": -6.33, "lat": 36.64, "cat": "HIGH", "reason": "Extensive geometric naval and aviation infrastructure on strategic coastline."},
+    {"name": "high_mil_yokosuka", "lon": 139.66, "lat": 35.29, "cat": "HIGH", "reason": "Heavily fortified geometric piers and naval drydocks."},
+    {"name": "high_mil_guam_andersen", "lon": 144.92, "lat": 13.58, "cat": "HIGH", "reason": "Massive dual parallel airstrips terminating abruptly at coastal cliffs."},
+    {"name": "high_mil_pine_gap", "lon": 133.73, "lat": -23.79, "cat": "HIGH", "reason": "Isolated cluster of multiple distinct white geodesic domes in desert."},
+    {"name": "high_choke_panama_gatun", "lon": -79.92, "lat": 9.27, "cat": "HIGH", "reason": "Massive artificial lock geometry and concentrated vessel queuing."},
+    {"name": "high_choke_suez", "lon": 32.34, "lat": 30.60, "cat": "HIGH", "reason": "Distinct linear artificial waterway bisecting barren terrain."},
+    {"name": "high_choke_kiel", "lon": 9.14, "lat": 53.88, "cat": "HIGH", "reason": "Massive linear lock infrastructure crossing terrestrial landscape."},
+    {"name": "high_choke_corinth", "lon": 22.99, "lat": 37.93, "cat": "HIGH", "reason": "Extremely narrow, perfectly straight, sheer-walled artificial canal."},
+    {"name": "high_choke_bosphorus", "lon": 29.09, "lat": 41.12, "cat": "HIGH", "reason": "Extremely narrow strategic maritime chokepoint bisecting dense urban and industrial infrastructure."},
+]
+
+ALL_TARGETS = LOW_TARGETS + MEDIUM_TARGETS + HIGH_TARGETS
+
+def get_prompt(lon, lat):
+    return f"""You are an autonomous orbital triage assistant. Analyze this high-resolution RGB satellite image captured at Longitude: {lon}, Latitude: {lat}.
+Strictly use one of these categories based on visual morphology:
+- HIGH: Extreme-scale strategic anomalies, dense geometric cargo/vessel infrastructure, massive cooling towers, sprawling runways, or distinct geological/artificial chokepoints.
+- MEDIUM: Standard human civilization. Ordinary urban grids, low-density suburban sprawl, regular checkerboard agriculture, or localized infrastructure (malls, regional strips).
+- LOW: Complete absence of human infrastructure. Featureless deep oceans, unbroken canopy, barren deserts, or purely natural geological formations (craters, natural cliffs).
+You MUST output your response as a valid JSON object with exactly two keys: "category" and "reason"."""
+
+def haversine(lon1, lat1, lon2, lat2):
+    """Calculates the distance in kilometers between two points."""
+    R = 6371  # Earth radius in km
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = math.sin(dlat/2)**2 + math.cos(math.radians(lat1)) * \
+        math.cos(math.radians(lat2)) * math.sin(dlon/2)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+    return R * c
+
+def filter_overlaps(targets, min_dist_km=2.0):
+    """Removes targets that are geographically too close to each other."""
+    unique_targets = []
+    skipped = 0
+    for t in targets:
+        is_too_close = False
+        for u in unique_targets:
+            if haversine(t['lon'], t['lat'], u['lon'], u['lat']) < min_dist_km:
+                is_too_close = True
+                break
+        if not is_too_close:
+            unique_targets.append(t)
+        else:
+            skipped += 1
+    print(f"[🛡️] Proximity Filter: Kept {len(unique_targets)} targets, skipped {skipped} overlaps.")
+    return unique_targets
+
+def setup_dirs():
+    os.makedirs(IMAGES_DIR, exist_ok=True)
+    for f in [TRAIN_FILE, TEST_FILE]:
+        if os.path.exists(f): os.remove(f)
+
+def fetch_image(lon, lat, filename):
+    params = {"lon_target": lon, "lat_target": lat, "lon_satellite": lon, "lat_satellite": lat, "alt_satellite": 500.0}
+    try:
+        res = requests.get(SIMSAT_STATIC_API, params=params, timeout=10)
+        res.raise_for_status()
+        with open(filename, "wb") as f:
+            f.write(res.content)
+        return True
+    except Exception:
+        return False
+
+def main():
+    setup_dirs()
+    
+    # 1. Deduplicate based on distance
+    clean_targets = filter_overlaps(ALL_TARGETS)
+    
+    # 2. Shuffle and Split
+    random.shuffle(clean_targets)
+    split_idx = int(len(clean_targets) * 0.8)
+    train_set = clean_targets[:split_idx]
+    test_set = clean_targets[split_idx:]
+    
+    print(f"🚀 Starting Capture: {len(train_set)} Train | {len(test_set)} Test")
+    
+    for idx, sample in enumerate(clean_targets):
+        img_filename = f"{sample['name']}.png"
+        img_path = os.path.join(IMAGES_DIR, img_filename)
+        
+        print(f"[{idx+1}/{len(clean_targets)}] Fetching {sample['name']}...", end="\r")
+        
+        if fetch_image(sample['lon'], sample['lat'], img_path):
+            record = {
+                "image": img_path,
+                "conversations": [
+                    {"role": "user", "content": f"<image>\n{get_prompt(sample['lon'], sample['lat'])}"},
+                    {"role": "assistant", "content": json.dumps({"category": sample["cat"], "reason": sample["reason"]})}
+                ]
+            }
+            
+            target_file = TRAIN_FILE if sample in train_set else TEST_FILE
+            with open(target_file, "a") as f:
+                f.write(json.dumps(record) + "\n")
+        
+        time.sleep(0.5) # Speed up slightly, SimSat should handle 2 req/sec
+
+    print("\n\n✅ Dataset generated successfully.")
+
+if __name__ == "__main__":
+    main()
