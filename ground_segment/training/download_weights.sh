@@ -13,7 +13,7 @@ LOCAL_WEIGHTS_DIR="./orion_lora_weights"
 
 # Paths to nuke on the server
 SERVER_REPO_PATH="~/code/extras/ORION"
-SERVER_DATA_PATH="~/hdd/gaze/datasets/orion_dataset"
+SERVER_DATA_PATH="~/hdd/gaze/datasets/extras/orion_dataset"
 
 # 1. Pre-Flight Check (Verify weights exist on server)
 echo "🔍 Verifying payload existence on server..."

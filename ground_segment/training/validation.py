@@ -28,7 +28,7 @@ def extract_json(text):
 
 
 def run_inference(model, processor, image, prompt):
-    """Runs a single image+prompt through the VLM."""
+    """Runs a single image+prompt through the VLM and returns parsed JSON + raw text."""
     messages = [{"role": "user", "content": f"<image>\n{prompt}"}]
     text_input = processor.apply_chat_template(
         messages, tokenize=False, add_generation_prompt=True
@@ -46,27 +46,38 @@ def run_inference(model, processor, image, prompt):
     generated_text = processor.decode(
         output[0][inputs["input_ids"].shape[1] :], skip_special_tokens=True
     )
-    print("Generated Text:", generated_text)
-    return extract_json(generated_text)
+
+    # Return both the parsed dictionary and the raw string for debugging
+    return extract_json(generated_text), generated_text
 
 
 def print_confusion_matrix(truths, preds, condition_name):
-    """Prints a per-class accuracy breakdown and an aggregate total."""
+    """Prints a per-class Recall and Precision breakdown, plus an aggregate total."""
     print(f"\n--- {condition_name} ---")
     total_correct = 0
     total_samples = len(truths)
 
     for c in ["HIGH", "MEDIUM", "LOW"]:
-        total = truths.count(c)
-        if total == 0:
+        total_actual = truths.count(c)
+        if total_actual == 0:
             continue
+
+        total_predicted = preds.count(c)
         correct = sum(1 for t, p in zip(truths, preds) if t == c and p == c)
         total_correct += correct
-        print(f"{c:6s}: {correct:2d}/{total:2d} ({(correct / total) * 100:.1f}%)")
+
+        recall_pct = (correct / total_actual) * 100
+        precision_pct = (
+            (correct / total_predicted) * 100 if total_predicted > 0 else 0.0
+        )
+
+        print(
+            f"{c:6s}: {correct:2d}/{total_actual:2d} ({recall_pct:.1f}% Recall) | Precision: {correct:2d}/{total_predicted:<2d} ({precision_pct:.1f}%)"
+        )
 
     if total_samples > 0:
         print(
-            f"TOTAL : {total_correct:2d}/{total_samples:2d} ({(total_correct / total_samples) * 100:.1f}%)"
+            f"TOTAL : {total_correct:2d}/{total_samples:2d} ({(total_correct / total_samples) * 100:.1f}% Overall Accuracy)"
         )
 
 
@@ -119,9 +130,10 @@ def main():
     mismatch_map = {"HIGH": "LOW", "LOW": "HIGH", "MEDIUM": "HIGH"}
 
     for idx, row in enumerate(test_data):
-        print(f"--- Evaluating Sample {idx + 1}/{len(test_data)} ---")
+        print(f"\n--- Evaluating Sample {idx + 1}/{len(test_data)} ---")
 
-        real_image = Image.open(f"../data/{row['image']}").convert("RGB")
+        image_path = f"../data/{row['image']}"
+        real_image = Image.open(image_path).convert("RGB")
         ground_truth = json.loads(row["conversations"][1]["content"])["category"]
         full_prompt = row["conversations"][0]["content"].replace("<image>\n", "")
 
@@ -144,11 +156,15 @@ def main():
         )
         mismatched_gt = target_mismatch
 
-        # Execute Inferences
-        res_a = run_inference(model, processor, real_image, full_prompt)
-        res_b = run_inference(model, processor, real_image, vision_only_prompt)
-        res_c = run_inference(model, processor, noise_image, full_prompt)
-        res_d = run_inference(model, processor, real_image, mismatched_prompt)
+        # Execute Inferences (Now unpacking the tuple: dict, raw_text)
+        res_a, raw_text_a = run_inference(model, processor, real_image, full_prompt)
+        res_b, _ = run_inference(model, processor, real_image, vision_only_prompt)
+        res_c, _ = run_inference(model, processor, noise_image, full_prompt)
+        res_d, _ = run_inference(model, processor, real_image, mismatched_prompt)
+
+        # --- DEBUG OUTPUT ---
+        print(f"🖼️  Image Path: {image_path}")
+        print(f"📝 Raw Output (Cond A): {raw_text_a}")
 
         metrics["A"]["truths"].append(ground_truth)
         metrics["A"]["preds"].append(res_a.get("category"))
@@ -169,7 +185,7 @@ def main():
         conflict_metrics["total"] += 1
 
         print(
-            f"Truth: {ground_truth} | A: {res_a.get('category')} | B: {res_b.get('category')} | C: {res_c.get('category')} | D: {pred_d} (Fake Coords were {mismatched_gt})"
+            f"📊 Truth: {ground_truth} | A: {res_a.get('category')} | B: {res_b.get('category')} | C: {res_c.get('category')} | D: {pred_d} (Fake Coords: {mismatched_gt})"
         )
 
     # Final Output Matrix

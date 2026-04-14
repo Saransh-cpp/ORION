@@ -7,7 +7,7 @@ if [ -z "$SERVER" ]; then
 fi
 
 # --- CONFIGURATION ---
-SERVER_HDD_PATH="~/hdd/gaze/datasets"
+SERVER_HDD_PATH="~/hdd/gaze/datasets/extras"
 LOCAL_DATA_DIR="orion_dataset"
 ARCHIVE_NAME="orion_data.tar.gz"
 REPO_DIR="~/code/extras"
@@ -25,7 +25,7 @@ echo "🚀 INITIATING UPLOAD PROTOCOL TO: $SERVER..."
 
 # 1. Compress the data locally
 echo "📦 1/3 Compressing dataset..."
-tar -czf $ARCHIVE_NAME $LOCAL_DATA_DIR
+env COPYFILE_DISABLE=1 tar -czf $ARCHIVE_NAME $LOCAL_DATA_DIR
 
 # 2. Transfer to the server's HDD
 echo "📡 2/3 Transferring data to server HDD..."
@@ -46,7 +46,7 @@ ssh -T $SERVER << EOF
 
     # Unpack the new data
     echo "   -> Extracting new dataset..."
-    tar -xzf $ARCHIVE_NAME
+    env COPYFILE_DISABLE=1 tar -xzf $ARCHIVE_NAME
 
     # Remove the heavy archive from the server
     echo "   -> Cleaning up server archive..."
