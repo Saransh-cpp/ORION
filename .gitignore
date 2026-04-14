@@ -203,3 +203,7 @@ pyrightconfig.json
 
 # data
 ground_segment/data/orion_dataset/images/*
+*.tar.gz
+
+# weights
+ground_segment/training/orion_lora_weights/*

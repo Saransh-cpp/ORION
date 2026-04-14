@@ -5,9 +5,11 @@ import random
 import numpy as np
 from PIL import Image
 from transformers import AutoProcessor, AutoModelForImageTextToText
+from peft import PeftModel
 
-# Exact case-sensitive Hugging Face Hub ID
-MODEL_ID = "LiquidAI/LFM2.5-VL-1.6B"
+# --- CONFIGURATION ---
+BASE_MODEL_ID = "LiquidAI/LFM2.5-VL-1.6B"
+LORA_WEIGHTS_PATH = "./orion_lora_weights"
 TEST_FILE = "../data/orion_dataset/test_dataset.jsonl"
 random.seed(42)
 
@@ -22,7 +24,6 @@ def extract_json(text):
     except json.JSONDecodeError:
         pass
 
-    # Complete failure (Model output blank or hallucinated garbage)
     return {"category": "ERROR", "reason": f"Raw: {text.strip()[:50]}"}
 
 
@@ -33,12 +34,13 @@ def run_inference(model, processor, image, prompt):
         messages, tokenize=False, add_generation_prompt=True
     )
 
+    # Use the device of the model (handles both CUDA and MPS seamlessly)
+    device = next(model.parameters()).device
     inputs = processor(images=[image], text=[text_input], return_tensors="pt").to(
-        model.device
+        device, torch.float16
     )
 
     with torch.no_grad():
-        # Using greedy decoding (do_sample=False) for strict JSON classification
         output = model.generate(**inputs, max_new_tokens=200, do_sample=False)
 
     generated_text = processor.decode(
@@ -69,14 +71,26 @@ def print_confusion_matrix(truths, preds, condition_name):
 
 
 def main():
-    print("🚀 Loading Liquid VLM for Strict Ablation Study...")
-    processor = AutoProcessor.from_pretrained(MODEL_ID, trust_remote_code=True)
+    print("🚀 Initializing Fine-Tuned ORION Ablation Protocol...")
 
-    model = AutoModelForImageTextToText.from_pretrained(
-        MODEL_ID, device_map="auto", torch_dtype=torch.float16, trust_remote_code=True
+    # 1. Load Processor
+    processor = AutoProcessor.from_pretrained(BASE_MODEL_ID, trust_remote_code=True)
+
+    # 2. Load Base Model (Hardware agnostic auto-routing)
+    print("📦 Loading Base Model...")
+    base_model = AutoModelForImageTextToText.from_pretrained(
+        BASE_MODEL_ID,
+        device_map="auto",
+        torch_dtype=torch.float16,
+        trust_remote_code=True,
     )
+
+    # 3. Inject LoRA Weights
+    print("🧠 Grafting Custom LoRA Adapters...")
+    model = PeftModel.from_pretrained(base_model, LORA_WEIGHTS_PATH)
     model.eval()
 
+    # Load Data
     test_data = []
     with open(TEST_FILE, "r") as f:
         for line in f:
@@ -90,7 +104,6 @@ def main():
         "B": {"truths": [], "preds": []},
         "C": {"truths": [], "preds": []},
     }
-
     conflict_metrics = {
         "trusted_vision": 0,
         "trusted_coords": 0,
@@ -98,12 +111,11 @@ def main():
         "total": 0,
     }
 
-    # Generate purely random Gaussian noise for Condition C to prevent "ocean" bias
+    # Noise image for Condition C
     np.random.seed(42)
     noise_array = np.random.randint(0, 256, (512, 512, 3), dtype=np.uint8)
     noise_image = Image.fromarray(noise_array)
 
-    # Pre-calculate mapping to force extreme mismatches for Condition D
     mismatch_map = {"HIGH": "LOW", "LOW": "HIGH", "MEDIUM": "HIGH"}
 
     for idx, row in enumerate(test_data):
@@ -118,7 +130,7 @@ def main():
             r" at Longitude: [-\d.]+, Latitude: [-\d.]+", "", full_prompt
         )
 
-        # Condition D: Force an extreme mismatched coordinate
+        # Condition D: Force mismatched coordinate
         target_mismatch = mismatch_map[ground_truth]
         mismatched_pool = [
             item
@@ -138,7 +150,6 @@ def main():
         res_c = run_inference(model, processor, noise_image, full_prompt)
         res_d = run_inference(model, processor, real_image, mismatched_prompt)
 
-        # Log standard conditions
         metrics["A"]["truths"].append(ground_truth)
         metrics["A"]["preds"].append(res_a.get("category"))
 
@@ -148,7 +159,6 @@ def main():
         metrics["C"]["truths"].append(ground_truth)
         metrics["C"]["preds"].append(res_c.get("category"))
 
-        # Log conflict condition
         pred_d = res_d.get("category")
         if pred_d == ground_truth:
             conflict_metrics["trusted_vision"] += 1
@@ -162,9 +172,9 @@ def main():
             f"Truth: {ground_truth} | A: {res_a.get('category')} | B: {res_b.get('category')} | C: {res_c.get('category')} | D: {pred_d} (Fake Coords were {mismatched_gt})"
         )
 
-    # --- PRINT FINAL MATRIX ---
+    # Final Output Matrix
     print("\n" + "=" * 55)
-    print("🏆 ABLATION STUDY RESULTS (PER-CLASS & AGGREGATE) 🏆")
+    print("🏆 POST-LORA ABLATION STUDY RESULTS 🏆")
     print("=" * 55)
 
     print_confusion_matrix(
