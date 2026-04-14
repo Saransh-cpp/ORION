@@ -7,10 +7,19 @@ if [ -z "$SERVER" ]; then
 fi
 
 # --- CONFIGURATION ---
-SERVER_HDD_PATH="~/hdd/gaze/datasets/"      # <-- REPLACE WITH ACTUAL HDD MOUNT PATH
-LOCAL_DATA_DIR="orion_dataset"           # The folder containing your generated data
+SERVER_HDD_PATH="~/hdd/gaze/datasets"
+LOCAL_DATA_DIR="orion_dataset"
 ARCHIVE_NAME="orion_data.tar.gz"
 REPO_DIR="~/code/extras"
+
+# 0. Pre-Flight Check (Verify local data exists)
+echo "🔍 Verifying local dataset existence..."
+if [ ! -d "$LOCAL_DATA_DIR" ]; then
+    echo "❌ ERROR: Local dataset directory '$LOCAL_DATA_DIR' not found!"
+    echo "⚠️ ABORTING UPLOAD. Please run your data generation script first."
+    exit 1
+fi
+echo "✅ Local dataset located."
 
 echo "🚀 INITIATING UPLOAD PROTOCOL TO: $SERVER..."
 
@@ -20,16 +29,28 @@ tar -czf $ARCHIVE_NAME $LOCAL_DATA_DIR
 
 # 2. Transfer to the server's HDD
 echo "📡 2/3 Transferring data to server HDD..."
+# Ensure the parent directory exists on the server first
+ssh -T $SERVER "mkdir -p $SERVER_HDD_PATH"
 rsync -avz --progress $ARCHIVE_NAME $SERVER:$SERVER_HDD_PATH/
 
 # 3. Remote Execution: Unpack data and handle GitHub repo
 echo "💻 3/3 Executing remote setup commands..."
 ssh -T $SERVER << EOF
-    # Unpack the data on the HDD
-    echo "   -> Extracting dataset on server..."
     cd $SERVER_HDD_PATH
+
+    # WIPE the old dataset to prevent data merging
+    if [ -d "$LOCAL_DATA_DIR" ]; then
+        echo "   -> Nuking old dataset directory on server..."
+        rm -rf $LOCAL_DATA_DIR
+    fi
+
+    # Unpack the new data
+    echo "   -> Extracting new dataset..."
     tar -xzf $ARCHIVE_NAME
-    rm $ARCHIVE_NAME # Clean up the archive to save space
+
+    # Remove the heavy archive from the server
+    echo "   -> Cleaning up server archive..."
+    rm $ARCHIVE_NAME
 
     # Setup the GitHub Repository
     echo "   -> Checking ORION repository status..."
@@ -45,5 +66,9 @@ ssh -T $SERVER << EOF
         git pull origin main
     fi
 EOF
+
+# 4. Local Cleanup
+echo "🧹 Cleaning up local archive..."
+rm $ARCHIVE_NAME
 
 echo "✅ UPLOAD COMPLETE. Server is ready for training."
