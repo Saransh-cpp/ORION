@@ -216,3 +216,4 @@ flight_segment/orion/build-fprime-*
 flight_segment/orion/*-template
 flight_segment/orion/*.template.cpp
 flight_segment/orion/*.template.hpp
+!flight_segment/orion/lib/
