@@ -207,3 +207,12 @@ ground_segment/data/orion_dataset/images/*
 
 # weights
 ground_segment/training/orion_lora_weights/*
+
+# fprime items
+flight_segment/orion/logs/
+flight_segment/orion/cmake-build-*
+flight_segment/orion/build-artifacts/
+flight_segment/orion/build-fprime-*
+flight_segment/orion/*-template
+flight_segment/orion/*.template.cpp
+flight_segment/orion/*.template.hpp
