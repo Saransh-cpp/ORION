@@ -3,6 +3,11 @@ ci:
   autofix_commit_msg: "style: pre-commit fixes"
 
 repos:
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: v21.1.8
+    hooks:
+      - id: clang-format
+
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
