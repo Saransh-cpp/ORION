@@ -15,7 +15,8 @@ dependencies = [
     "accelerate",
     "peft",
     "datasets",
-    "bitsandbytes"
+    "bitsandbytes",
+    "gguf>=0.18.0",
 ]
 
 [tool.uv.sources]

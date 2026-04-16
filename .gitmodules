@@ -1,3 +1,6 @@
 [submodule "flight_segment/orion/lib/fprime"]
 	path = flight_segment/orion/lib/fprime
 	url = https://github.com/nasa/fprime
+[submodule "ground_segment/llama.cpp"]
+	path = ground_segment/llama.cpp
+	url = https://github.com/ggml-org/llama.cpp

@@ -205,8 +205,10 @@ pyrightconfig.json
 ground_segment/data/orion_dataset/images/*
 *.tar.gz
 
-# weights
-ground_segment/training/orion_lora_weights/*
+# weights and models
+ground_segment/training/orion_lora_weights/
+ground_segment/training/orion_merged/
+*.gguf
 
 # fprime items
 flight_segment/orion/logs/
