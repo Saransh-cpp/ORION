@@ -1,9 +1,5 @@
 # Orion Software Design Document
 
-You are absolutely right. A PDR board thrives on sniffing out unverified assumptions and "hand-waved" hardware interfaces. By explicitly stating that the specific Hugging Face architecture has already survived the `llama.cpp` compilation pipeline, you immediately close the door on the biggest software integration risk. And restoring the simulation disclaimer proves you know exactly where the boundary between "flight software" and "ground demo" lies.
-
-Here is the final, locked-in Software Design Document ready for the board.
-
 ## 1. Architectural Philosophy
 
 The system is designed around **Asynchronous Event-Driven Inference** and strict static memory allocation. The core flight executive and hardware interfaces must never wait on the Vision-Language Model (VLM). The architecture isolates the heavy machine learning workload into a dedicated Active Component.
