@@ -28,10 +28,23 @@ set(MOD_DEPS
 register_fprime_module()
 
 # Link against pre-built llama.cpp static libraries.
-# Build order: cd ground_segment/llama.cpp && cmake -B build && cmake --build build
+# Build order: cd ground_segment/llama.cpp && cmake -B build -DBUILD_SHARED_LIBS=OFF && cmake --build build
 target_link_libraries(Orion_Components_VlmInferenceEngine PRIVATE
     "${LLAMA_BUILD}/src/libllama.a"
     "${LLAMA_BUILD}/tools/mtmd/libmtmd.a"
     "${LLAMA_BUILD}/ggml/src/libggml.a"
-    "${LLAMA_BUILD}/ggml/src/ggml-cpu/libggml-cpu.a"
+    "${LLAMA_BUILD}/ggml/src/libggml-base.a"
+    "${LLAMA_BUILD}/ggml/src/libggml-cpu.a"
 )
+
+# macOS: llama.cpp enables Metal GPU + Accelerate (vDSP) on Apple Silicon.
+# Linux/Pi 5: pure CPU, no extra dependencies.
+if(APPLE)
+    target_link_libraries(Orion_Components_VlmInferenceEngine PRIVATE
+        "${LLAMA_BUILD}/ggml/src/ggml-blas/libggml-blas.a"
+        "${LLAMA_BUILD}/ggml/src/ggml-metal/libggml-metal.a"
+        "-framework Accelerate"
+        "-framework Metal"
+        "-framework Foundation"
+    )
+endif()
