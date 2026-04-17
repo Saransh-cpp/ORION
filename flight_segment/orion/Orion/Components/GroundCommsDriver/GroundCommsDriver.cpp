@@ -5,13 +5,21 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <cstdlib>
 #include <cstring>
 
 namespace Orion {
 
-// Ground station address — Pi 5 and ground laptop share the same Wi-Fi LAN.
-static constexpr const char* GDS_HOST = "192.168.1.100";
-static constexpr U16 GDS_PORT = 50000;
+// Ground station address.
+// Override via env vars: ORION_getGdsHost(), ORION_getGdsPort()
+static const char* getGdsHost() {
+    const char* p = ::getenv("ORION_getGdsHost()");
+    return p ? p : "127.0.0.1";
+}
+static U16 getGdsPort() {
+    const char* p = ::getenv("ORION_getGdsPort()");
+    return p ? static_cast<U16>(::atoi(p)) : 50000;
+}
 
 // 8-byte frame header prepended to every downlinked image:
 //   Bytes 0-3 : magic "ORIO" (0x4F52494F) in network byte order
@@ -57,9 +65,9 @@ bool GroundCommsDriver::transmit(const Fw::Buffer& buffer) {
     struct sockaddr_in addr;
     ::memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
-    addr.sin_port = htons(GDS_PORT);
+    addr.sin_port = htons(getGdsPort());
 
-    if (::inet_pton(AF_INET, GDS_HOST, &addr.sin_addr) <= 0) {
+    if (::inet_pton(AF_INET, getGdsHost(), &addr.sin_addr) <= 0) {
         ::close(sock);
         return false;
     }

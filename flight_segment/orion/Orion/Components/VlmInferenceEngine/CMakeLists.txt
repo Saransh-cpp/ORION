@@ -37,8 +37,7 @@ target_link_libraries(Orion_Components_VlmInferenceEngine PRIVATE
     "${LLAMA_BUILD}/ggml/src/libggml-cpu.a"
 )
 
-# macOS: llama.cpp enables Metal GPU + Accelerate (vDSP) on Apple Silicon.
-# Linux/Pi 5: pure CPU, no extra dependencies.
+# macOS: Metal GPU + Accelerate (vDSP) on Apple Silicon
 if(APPLE)
     target_link_libraries(Orion_Components_VlmInferenceEngine PRIVATE
         "${LLAMA_BUILD}/ggml/src/ggml-blas/libggml-blas.a"
@@ -47,4 +46,9 @@ if(APPLE)
         "-framework Metal"
         "-framework Foundation"
     )
+endif()
+
+# Linux/Pi 5: OpenMP for CPU parallelism
+if(UNIX AND NOT APPLE)
+    target_link_libraries(Orion_Components_VlmInferenceEngine PRIVATE gomp)
 endif()

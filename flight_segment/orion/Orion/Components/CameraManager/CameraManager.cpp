@@ -1,14 +1,25 @@
 #include "CameraManager.hpp"
 
+#include <cstdio>
 #include <cstring>
+
+#include "Os/File.hpp"
 
 namespace Orion {
 
 // Image buffer size must match the BufferManager pool allocation.
 static constexpr FwSizeType IMAGE_BUFFER_SIZE = 512 * 512 * 3;  // 786,432 bytes
 
+// Pre-converted 512x512 raw RGB test images.
+// Override via env var: ORION_TEST_IMAGE_DIR
+static const char* getTestImageDir() {
+    const char* p = ::getenv("ORION_TEST_IMAGE_DIR");
+    return p ? p : "/home/pi/ORION/ground_segment/data/test_raw/";
+}
+static constexpr U32 NUM_TEST_IMAGES = 300;
+
 CameraManager::CameraManager(const char* compName)
-    : CameraManagerComponentBase(compName), m_imagesCaptured(0), m_capturesFailed(0) {}
+    : CameraManagerComponentBase(compName), m_imagesCaptured(0), m_capturesFailed(0), m_imageIndex(0) {}
 
 CameraManager::~CameraManager() {}
 
@@ -63,10 +74,27 @@ void CameraManager::TRIGGER_CAPTURE_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) 
 // ---------------------------------------------------------------------------
 
 bool CameraManager::captureIntoBuffer(Fw::Buffer& buf) {
-    // TODO: Replace with libcamera API call for Pi Camera Module.
-    // libcamera::CameraManager, Request, and FrameBuffer will be wired here.
-    // For now, zero-fill the buffer to simulate a valid frame.
-    memset(buf.getData(), 0, buf.getSize());
+    // Load a pre-converted 512x512 raw RGB test image from disk.
+    // On the Pi 5, replace this with libcamera API calls.
+    char path[256];
+    snprintf(path, sizeof(path), "%simage_%04u.raw", getTestImageDir(), m_imageIndex % NUM_TEST_IMAGES);
+    m_imageIndex++;
+
+    Os::File file;
+    if (file.open(path, Os::File::OPEN_READ) != Os::File::OP_OK) {
+        // Fall back to zero-fill if test images aren't available.
+        memset(buf.getData(), 0, buf.getSize());
+        return true;
+    }
+
+    FwSizeType size = buf.getSize();
+    Os::File::Status status = file.read(buf.getData(), size);
+    file.close();
+
+    if (status != Os::File::OP_OK || size != IMAGE_BUFFER_SIZE) {
+        memset(buf.getData(), 0, buf.getSize());
+    }
+
     return true;
 }
 

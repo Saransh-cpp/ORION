@@ -23,7 +23,8 @@ class CameraManager final : public CameraManagerComponentBase {
     // -----------------------------------------------------------------------
 
     //! Fills the buffer with raw pixel data from the camera hardware.
-    //! On the Pi 5 this calls libcamera. Stubbed for initial integration.
+    //! On the Pi 5 this calls libcamera. For demo, loads pre-converted
+    //! test images from ground_segment/data/test_raw/.
     bool captureIntoBuffer(Fw::Buffer& buf);
 
     // -----------------------------------------------------------------------
@@ -32,6 +33,7 @@ class CameraManager final : public CameraManagerComponentBase {
 
     U32 m_imagesCaptured;
     U32 m_capturesFailed;
+    U32 m_imageIndex;  //!< Cycles through available test images.
 };
 
 }  // namespace Orion

@@ -19,10 +19,17 @@
 namespace Orion {
 
 // ---------------------------------------------------------------------------
-// Model paths — stored on the Pi 5 microSD card alongside the MEDIUM frames.
+// Model paths — text decoder and vision encoder are separate GGUF files.
+// Override via env vars: ORION_getGgufPath(), ORION_getMmprojPath()
 // ---------------------------------------------------------------------------
-static constexpr const char* GGUF_PATH = "/media/sd/orion/lfm2.5-vl-1.6b-q4.gguf";
-static constexpr const char* MMPROJ_PATH = "/media/sd/orion/lfm2.5-vl-1.6b-mmproj.gguf";
+static const char* getGgufPath() {
+    const char* p = ::getenv("ORION_getGgufPath()");
+    return p ? p : "/home/pi/ORION/ground_segment/training/orion-q4_k_m.gguf";
+}
+static const char* getMmprojPath() {
+    const char* p = ::getenv("ORION_getMmprojPath()");
+    return p ? p : "/home/pi/ORION/ground_segment/training/orion-mmproj-f16.gguf";
+}
 
 // ---------------------------------------------------------------------------
 // Inference parameters
@@ -62,15 +69,19 @@ void VlmInferenceEngine::LOAD_MODEL_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) 
     }
 
     // Load text model (700 MB .gguf). CPU-only: n_gpu_layers = 0.
+    fprintf(stderr, "[VLM] Loading model from: %s\n", getGgufPath());
+
     llama_model_params mparams = llama_model_default_params();
     mparams.n_gpu_layers = 0;
 
-    m_model = llama_model_load_from_file(GGUF_PATH, mparams);
+    m_model = llama_model_load_from_file(getGgufPath(), mparams);
     if (!m_model) {
-        this->log_WARNING_HI_ModelLoadFailed(Fw::String(GGUF_PATH));
+        fprintf(stderr, "[VLM] llama_model_load_from_file FAILED\n");
+        this->log_WARNING_HI_ModelLoadFailed(Fw::String(getGgufPath()));
         this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::EXECUTION_ERROR);
         return;
     }
+    fprintf(stderr, "[VLM] Text model loaded OK\n");
 
     // Create inference context.
     llama_context_params cparams = llama_context_default_params();
@@ -82,25 +93,27 @@ void VlmInferenceEngine::LOAD_MODEL_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) 
     if (!m_ctx) {
         llama_model_free(m_model);
         m_model = nullptr;
-        this->log_WARNING_HI_ModelLoadFailed(Fw::String(GGUF_PATH));
+        this->log_WARNING_HI_ModelLoadFailed(Fw::String(getGgufPath()));
         this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::EXECUTION_ERROR);
         return;
     }
 
-    // Load vision encoder (mmproj). CPU-only.
+    // Load vision encoder from the same combined GGUF. CPU-only.
     mtmd_context_params vparams = mtmd_context_params_default();
     vparams.use_gpu = false;
     vparams.print_timings = false;
     vparams.n_threads = N_THREADS;
     vparams.image_max_tokens = IMAGE_MAX_TOKENS;
 
-    m_mtmd = mtmd_init_from_file(MMPROJ_PATH, m_model, vparams);
+    fprintf(stderr, "[VLM] Loading vision encoder from: %s\n", getMmprojPath());
+    m_mtmd = mtmd_init_from_file(getMmprojPath(), m_model, vparams);
     if (!m_mtmd) {
+        fprintf(stderr, "[VLM] mtmd_init_from_file FAILED\n");
         llama_free(m_ctx);
         llama_model_free(m_model);
         m_ctx = nullptr;
         m_model = nullptr;
-        this->log_WARNING_HI_ModelLoadFailed(Fw::String(MMPROJ_PATH));
+        this->log_WARNING_HI_ModelLoadFailed(Fw::String(getGgufPath()));
         this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::EXECUTION_ERROR);
         return;
     }
