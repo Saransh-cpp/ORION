@@ -1,0 +1,27 @@
+FROM orion-base AS builder
+
+WORKDIR /orion
+
+# Copy the full repo
+COPY . .
+
+# Build llama.cpp (static, CPU-only, no tests/examples)
+RUN cd ground_segment/llama.cpp && \
+    cmake -B build \
+        -DBUILD_SHARED_LIBS=OFF \
+        -DLLAMA_BUILD_TESTS=OFF \
+        -DLLAMA_BUILD_EXAMPLES=OFF \
+        -DLLAMA_BUILD_SERVER=OFF && \
+    cmake --build build -j$(nproc)
+
+# Build the F-Prime flight segment
+RUN cd flight_segment/orion && \
+    fprime-util generate && \
+    fprime-util build --all -j$(nproc)
+
+# Minimal output stage — just the binary
+FROM arm64v8/ubuntu:22.04 AS output
+
+COPY --from=builder /orion/flight_segment/orion/build-fprime-automatic-native/bin/Linux/Orion /output/Orion
+
+CMD ["cp", "/output/Orion", "/build-output/Orion"]

@@ -1,0 +1,14 @@
+**/.git
+**/.venv
+**/venv
+**/__pycache__
+**/build-fprime-automatic-native
+**/build-output
+**/node_modules
+**/*.pyc
+**/.DS_Store
+**/build
+**/*.gguf
+**/*.o
+**/*.a
+**/*.dylib

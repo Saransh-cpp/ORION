@@ -16,6 +16,8 @@ Orbital Real-time Inference and Observation Network.
   - [ ] Validation
 - [ ] F-prime application
   - [ ] F-prime code
+    - [ ] Downlink Medium files
+    - [ ] Docker
   - [ ] Model format + connect it to the F-prime app
 - [ ] Deployment
   - [ ] Learn Raspberry Pi

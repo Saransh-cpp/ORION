@@ -1,0 +1,16 @@
+services:
+  base:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.base
+    image: orion-base
+
+  pi-build:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.pi
+    depends_on:
+      base:
+        condition: service_completed_successfully
+    volumes:
+      - ./build-output:/build-output

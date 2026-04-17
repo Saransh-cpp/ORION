@@ -204,6 +204,8 @@ pyrightconfig.json
 # data
 ground_segment/data/orion_dataset/images/*
 *.tar.gz
+ground_segment/data/test_raw/*
+ground_segment/orion_downlink/*
 
 # weights and models
 ground_segment/training/orion_lora_weights/
@@ -219,3 +221,6 @@ flight_segment/orion/*-template
 flight_segment/orion/*.template.cpp
 flight_segment/orion/*.template.hpp
 !flight_segment/orion/lib/
+
+# build
+build-output/

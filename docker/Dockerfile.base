@@ -1,0 +1,25 @@
+FROM arm64v8/ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    cmake \
+    g++ \
+    git \
+    libgomp1 \
+    libomp-dev \
+    python3 \
+    python3-pip \
+    python3-venv \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create a venv for F-Prime Python tooling
+ENV VIRTUAL_ENV=/opt/venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+# Install F-Prime Python dependencies (cached unless requirements.txt changes)
+COPY flight_segment/orion/requirements.txt /tmp/requirements.txt
+COPY flight_segment/orion/lib/fprime/requirements.txt /tmp/fprime-requirements.txt
+RUN pip install --no-cache-dir -r /tmp/fprime-requirements.txt
