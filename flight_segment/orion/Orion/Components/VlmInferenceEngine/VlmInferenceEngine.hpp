@@ -44,7 +44,7 @@ class VlmInferenceEngine final : public VlmInferenceEngineComponentBase {
     bool runInference(const Fw::Buffer& buffer, F64 lat, F64 lon, Orion::TriagePriority& verdict, char* reason,
                       FwSizeType reasonLen);
 
-    //! Parses {"verdict": "HIGH"|"MEDIUM"|"LOW", "reason": "..."} from raw text.
+    //! Parses {"category": "HIGH"|"MEDIUM"|"LOW", "reason": "..."} from raw text.
     static void parseVerdictJson(const char* json, Orion::TriagePriority& verdict, char* reason, FwSizeType reasonLen);
 
     static const char* verdictToStr(const Orion::TriagePriority& v);

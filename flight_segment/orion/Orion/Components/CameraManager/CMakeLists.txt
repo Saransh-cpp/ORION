@@ -6,6 +6,7 @@ set(SOURCE_FILES
 set(MOD_DEPS
   Orion_Types
   Orion_Ports
+  Orion_Utils
 )
 
 register_fprime_module()

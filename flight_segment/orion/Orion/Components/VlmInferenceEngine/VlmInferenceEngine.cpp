@@ -23,11 +23,11 @@ namespace Orion {
 // Override via env vars: ORION_getGgufPath(), ORION_getMmprojPath()
 // ---------------------------------------------------------------------------
 static const char* getGgufPath() {
-    const char* p = ::getenv("ORION_getGgufPath()");
+    const char* p = ::getenv("ORION_GGUF_PATH");
     return p ? p : "/home/pi/ORION/ground_segment/training/orion-q4_k_m.gguf";
 }
 static const char* getMmprojPath() {
-    const char* p = ::getenv("ORION_getMmprojPath()");
+    const char* p = ::getenv("ORION_MMPROJ_PATH");
     return p ? p : "/home/pi/ORION/ground_segment/training/orion-mmproj-f16.gguf";
 }
 
@@ -39,7 +39,7 @@ static constexpr int IMAGE_H = 512;
 static constexpr int N_CTX = 4096;
 static constexpr int N_BATCH = 512;
 static constexpr int N_THREADS = 4;  // Pi 5 Cortex-A76 quad-core
-static constexpr int MAX_RESPONSE_TOKENS = 128;
+static constexpr int MAX_RESPONSE_TOKENS = 200;
 static constexpr int IMAGE_MAX_TOKENS = 1024;  // cap to save KV space
 
 // ---------------------------------------------------------------------------
@@ -166,7 +166,7 @@ void VlmInferenceEngine::inferenceRequestIn_handler(FwIndexType portNum, Fw::Buf
         m_totalInferences++;
         this->tlmWrite_TotalInferences(m_totalInferences);
         this->tlmWrite_InferenceTime_Ms(elapsed_ms);
-        this->log_ACTIVITY_LO_InferenceComplete(Fw::String(verdictToStr(verdict)), elapsed_ms);
+        this->log_ACTIVITY_HI_InferenceComplete(Fw::String(verdictToStr(verdict)), Fw::String(reason), elapsed_ms);
 
         // Buffer ownership transfers to TriageRouter.
         Fw::String reasonStr(reason);
@@ -189,18 +189,32 @@ bool VlmInferenceEngine::runInference(const Fw::Buffer& buffer, F64 lat, F64 lon
     // mtmd_default_marker() returns the model-specific image placeholder token
     // (e.g. "<|image_1|>" for Phi-3 Vision). mtmd_tokenize() replaces it with
     // the actual vision encoder output tokens.
-    char prompt[768];
+    // Build prompt matching the fine-tuning chat template (ChatML format).
+    // HuggingFace apply_chat_template() for LFM2.5-VL produces:
+    //   <|startoftext|><|im_start|>user\n<image>\n{prompt}<|im_end|>\n<|im_start|>assistant\n
+    // mtmd_default_marker() returns the model's image placeholder token.
+    const char* imgMarker = mtmd_default_marker();
+
+    char prompt[1536];
     ::snprintf(prompt, sizeof(prompt),
-               "<|user|>\n%s\n"
-               "GPS: Lat=%.6f, Lon=%.6f\n"
-               "Classify this satellite image as HIGH, MEDIUM, or LOW priority.\n"
-               "  HIGH   : military assets, infrastructure damage, emergency events\n"
-               "  MEDIUM : vessels, agriculture, construction, urban activity\n"
-               "  LOW    : open ocean, desert, cloud cover, featureless terrain\n"
-               "Respond ONLY with JSON: "
-               "{\"verdict\": \"HIGH\"|\"MEDIUM\"|\"LOW\", \"reason\": \"<25 words\"}\n"
-               "<|end|>\n<|assistant|>",
-               mtmd_default_marker(), lat, lon);
+               "<|im_start|>user\n%s\n"
+               "You are an autonomous orbital triage assistant. "
+               "Analyze this high-resolution RGB satellite image "
+               "captured at Longitude: %.6f, Latitude: %.6f.\n"
+               "Strictly use one of these categories based on visual morphology:\n"
+               "- HIGH: Extreme-scale strategic anomalies, dense geometric cargo/vessel "
+               "infrastructure, massive cooling towers, sprawling runways, or distinct "
+               "geological/artificial chokepoints.\n"
+               "- MEDIUM: Standard human civilization. Ordinary urban grids, low-density "
+               "suburban sprawl, regular checkerboard agriculture, or localized "
+               "infrastructure (malls, regional strips).\n"
+               "- LOW: Complete absence of human infrastructure. Featureless deep oceans, "
+               "unbroken canopy, barren deserts, or purely natural geological formations "
+               "(craters, natural cliffs).\n"
+               "You MUST output your response as a valid JSON object. To ensure accurate "
+               "visual reasoning, you must output the \"reason\" key FIRST, followed by "
+               "the \"category\" key.<|im_end|>\n<|im_start|>assistant\n",
+               imgMarker, lon, lat);
 
     // Wrap the raw 512×512 RGB pixel data from the buffer.
     mtmd_bitmap* bmp =
@@ -264,6 +278,7 @@ bool VlmInferenceEngine::runInference(const Fw::Buffer& buffer, F64 lat, F64 lon
     llama_memory_clear(llama_get_memory(m_ctx), false);
     llama_sampler_reset(m_sampler);
 
+    fprintf(stderr, "[VLM] Raw response (%d tokens): %s\n", rpos, response);
     parseVerdictJson(response, verdict, reason, reasonLen);
     return true;
 }
@@ -276,36 +291,56 @@ void VlmInferenceEngine::parseVerdictJson(const char* json, Orion::TriagePriorit
                                           FwSizeType reasonLen) {
     verdict = TriagePriority::LOW;
 
-    const char* vp = ::strstr(json, "\"verdict\"");
-    if (vp) {
-        if (::strstr(vp, "\"HIGH\""))
-            verdict = TriagePriority::HIGH;
-        else if (::strstr(vp, "\"MEDIUM\""))
-            verdict = TriagePriority::MEDIUM;
-    }
+    // Search the whole response for category keywords (case-insensitive position)
+    if (::strstr(json, "\"HIGH\"") || ::strstr(json, "\"high\""))
+        verdict = TriagePriority::HIGH;
+    else if (::strstr(json, "\"MEDIUM\"") || ::strstr(json, "\"medium\""))
+        verdict = TriagePriority::MEDIUM;
 
+    // Extract the reason value. The model outputs JSON like:
+    // {"reason": "some text here", "category": "LOW"}
+    // We find "reason" key, then extract the string value by finding
+    // the opening quote after ':' and scanning for the closing quote
+    // while skipping escaped quotes.
     const char* rp = ::strstr(json, "\"reason\"");
     if (rp) {
-        const char* start = ::strchr(rp, ':');
-        if (start) {
-            start = ::strchr(start, '"');
+        const char* colon = ::strchr(rp, ':');
+        if (colon) {
+            const char* start = ::strchr(colon, '"');
             if (start) {
-                ++start;
-                const char* end = ::strchr(start, '"');
-                if (end) {
-                    FwSizeType len = static_cast<FwSizeType>(end - start);
+                ++start;  // skip opening quote
+                // Find closing quote, handling escaped quotes
+                const char* p = start;
+                while (*p && !(*p == '"' && *(p - 1) != '\\')) {
+                    p++;
+                }
+                if (*p == '"') {
+                    FwSizeType len = static_cast<FwSizeType>(p - start);
                     if (len >= reasonLen) len = reasonLen - 1;
                     ::memcpy(reason, start, len);
                     reason[len] = '\0';
                     return;
                 }
+                // No closing quote found — take everything until end
+                FwSizeType len = static_cast<FwSizeType>(::strlen(start));
+                if (len >= reasonLen) len = reasonLen - 1;
+                ::memcpy(reason, start, len);
+                reason[len] = '\0';
+                return;
             }
         }
     }
 
-    // Malformed JSON — provide a safe fallback.
-    ::strncpy(reason, "Unstructured model response", static_cast<size_t>(reasonLen) - 1);
-    reason[reasonLen - 1] = '\0';
+    // No "reason" key found — use the whole response as the reason
+    FwSizeType len = static_cast<FwSizeType>(::strlen(json));
+    if (len >= reasonLen) len = reasonLen - 1;
+    if (len > 0) {
+        ::memcpy(reason, json, len);
+        reason[len] = '\0';
+    } else {
+        ::strncpy(reason, "Empty model response", static_cast<size_t>(reasonLen) - 1);
+        reason[reasonLen - 1] = '\0';
+    }
 }
 
 const char* VlmInferenceEngine::verdictToStr(const Orion::TriagePriority& v) {

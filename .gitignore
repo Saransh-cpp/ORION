@@ -205,7 +205,8 @@ pyrightconfig.json
 ground_segment/data/orion_dataset/images/*
 *.tar.gz
 ground_segment/data/test_raw/*
-ground_segment/orion_downlink/*
+ground_segment/data/orion_downlink/*
+ground_segment/data/orion_medium/*
 
 # weights and models
 ground_segment/training/orion_lora_weights/

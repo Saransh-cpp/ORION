@@ -2,6 +2,11 @@
 
 Orbital Real-time Inference and Observation Network.
 
+export ORION_GGUF_PATH="/Users/schopra/Code/Personal/LiquidAIDPhiHack/ORION/ground_segment/training/orion-q4_k_m.gguf"
+export ORION_MMPROJ_PATH="/Users/schopra/Code/Personal/LiquidAIDPhiHack/ORION/ground_segment/training/orion-mmproj-f16.gguf"
+export ORION_MEDIUM_STORAGE_DIR="/Users/schopra/Code/Personal/LiquidAIDPhiHack/ORION/ground_segment/data/orion_medium/"
+export ORION_DOWNLINK_QUEUE_DIR="/Users/schopra/Code/Personal/LiquidAIDPhiHack/ORION/ground_segment/data/orion_downlink_queue/"
+
 ## TODO
 
 - [ ] Check which HIGH are actually being misclassified

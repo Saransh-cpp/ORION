@@ -1,29 +1,21 @@
 module Orion {
 
-  @ Passive component that acts as the satellite's source of truth for position.
-  @ Stores the last known GPS state and serves it synchronously on demand.
-  @ In flight, state is driven by a hardware UART/GPIO driver.
-  @ In the Pi 5 demo, state is updated via GDS commands.
-  passive component NavTelemetry {
+  @ Active component that manages the satellite's position state.
+  @ Polls SimSat's orbital propagator for position updates and computes
+  @ whether the satellite is within the ground station comm window.
+  @ In flight, state would be driven by a hardware GNSS receiver.
+  active component NavTelemetry {
 
     # --------------------------------------------------------------------------
     # Custom ports
     # --------------------------------------------------------------------------
 
-    @ Synchronous getter called by CameraManager at the moment of image capture.
-    @ Uses the component mutex to prevent tearing if a SET_POSITION command is writing.
+    @ Synchronous getter called by CameraManager (and GroundCommsDriver) at
+    @ decision time. Uses the component mutex to prevent tearing.
     guarded input port navStateGet: NavStatePort
 
-    # --------------------------------------------------------------------------
-    # Commands
-    # --------------------------------------------------------------------------
-
-    @ Updates the stored GPS position from the ground or a simulation driver.
-    @ In a production system this port would be replaced by a hardware driver.
-    guarded command SET_POSITION(
-      lat: F64 @< Geodetic latitude in decimal degrees
-      lon: F64 @< Geodetic longitude in decimal degrees
-    ) opcode 0x00
+    @ Rate group schedule input — drives periodic SimSat polling.
+    async input port schedIn: Svc.Sched
 
     # --------------------------------------------------------------------------
     # Telemetry
@@ -35,18 +27,43 @@ module Orion {
     @ Last known longitude downlinked continuously for ground monitoring.
     telemetry CurrentLon: F64 id 0x01
 
+    @ Last known altitude in km from the orbital propagator.
+    telemetry CurrentAlt: F64 id 0x02
+
+    @ Whether the satellite is currently in the ground station comm window.
+    telemetry InCommWindow: bool id 0x03
+
     # --------------------------------------------------------------------------
     # Events
     # --------------------------------------------------------------------------
 
-    @ Emitted when the ground successfully updates the GPS position.
-    event PositionUpdated(
+    @ Emitted when SimSat provides an updated position.
+    event SimSatPositionUpdate(
       lat: F64
       lon: F64
+      alt: F64
     ) \
-      severity activity high \
+      severity activity low \
       id 0x00 \
-      format "NavTelemetry: Position forcefully updated to Lat: {}, Lon: {}"
+      format "NavTelemetry: SimSat position Lat={}, Lon={}, Alt={}km"
+
+    @ Emitted when the satellite enters the ground station comm window.
+    event CommWindowOpened \
+      severity activity high \
+      id 0x01 \
+      format "NavTelemetry: Comm window OPEN — satellite in range of ground station"
+
+    @ Emitted when the satellite exits the ground station comm window.
+    event CommWindowClosed \
+      severity activity high \
+      id 0x02 \
+      format "NavTelemetry: Comm window CLOSED — satellite out of range"
+
+    @ Emitted when the HTTP connection to SimSat fails.
+    event SimSatConnectionFailed \
+      severity warning high \
+      id 0x03 \
+      format "NavTelemetry: Failed to reach SimSat API"
 
     # --------------------------------------------------------------------------
     # Required F-Prime framework ports

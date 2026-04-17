@@ -12,18 +12,28 @@ class NavTelemetry final : public NavTelemetryComponentBase {
 
   private:
     // -----------------------------------------------------------------------
-    // Port handler
+    // Port handlers
     // -----------------------------------------------------------------------
 
-    //! Returns the last cached NavState to the caller (CameraManager).
+    //! Returns the last cached NavState to the caller.
     NavState navStateGet_handler(FwIndexType portNum) override;
 
+    //! Rate group schedule handler — polls SimSat periodically.
+    void schedIn_handler(FwIndexType portNum, U32 context) override;
+
     // -----------------------------------------------------------------------
-    // Command handler
+    // Internal helpers
     // -----------------------------------------------------------------------
 
-    //! Updates the stored position. Called from GDS in the Pi 5 demo.
-    void SET_POSITION_cmdHandler(FwOpcodeType opCode, U32 cmdSeq, F64 lat, F64 lon) override;
+    //! Poll SimSat for current position and update state.
+    void pollSimSat();
+
+    //! Compute great-circle distance (Haversine) between two lat/lon points.
+    //! Returns distance in kilometers.
+    static F64 haversineDistanceKm(F64 lat1, F64 lon1, F64 lat2, F64 lon2);
+
+    //! Update comm window state based on current position vs ground station.
+    void updateCommWindow();
 
     // -----------------------------------------------------------------------
     // State
@@ -31,6 +41,15 @@ class NavTelemetry final : public NavTelemetryComponentBase {
 
     F64 m_lat;
     F64 m_lon;
+    F64 m_alt;
+    bool m_inCommWindow;
+    bool m_prevCommWindow;  ///< Previous state for edge detection (opened/closed events)
+    U32 m_schedCounter;     ///< Counts schedIn ticks for polling interval
+
+    // Ground station configuration (read from env vars at construction)
+    F64 m_gsLat;
+    F64 m_gsLon;
+    F64 m_gsRangeKm;
 };
 
 }  // namespace Orion

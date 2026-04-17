@@ -1,13 +1,20 @@
 #include "TriageRouter.hpp"
 
+#include <sys/stat.h>
+
 #include <cstdio>
+#include <cstdlib>
 
 #include "Os/File.hpp"
 
 namespace Orion {
 
-// Root path for MEDIUM bulk storage on the Pi 5 microSD card.
-static constexpr const char* MEDIUM_STORAGE_PATH = "/media/sd/orion/medium/";
+// Root path for MEDIUM bulk storage.
+// Override via env var for Mac dev; defaults to Pi 5 microSD path.
+static const char* getMediumStoragePath() {
+    const char* p = ::getenv("ORION_MEDIUM_STORAGE_DIR");
+    return p ? p : "/media/sd/orion/medium/";
+}
 
 TriageRouter::TriageRouter(const char* compName)
     : TriageRouterComponentBase(compName), m_highRouted(0), m_mediumSaved(0), m_lowDiscarded(0), m_mediumFileIndex(0) {}
@@ -49,9 +56,12 @@ void TriageRouter::routeHigh(const Fw::StringBase& reason, Fw::Buffer& buffer) {
 }
 
 void TriageRouter::routeMedium(Fw::Buffer& buffer) {
-    // Build a unique filename for this frame on the microSD card.
-    char path[128];
-    snprintf(path, sizeof(path), "%sorion_medium_%05u.raw", MEDIUM_STORAGE_PATH, m_mediumFileIndex++);
+    // Ensure storage directory exists and build a unique filename.
+    const char* storageDir = getMediumStoragePath();
+    ::mkdir(storageDir, 0755);
+
+    char path[256];
+    snprintf(path, sizeof(path), "%sorion_medium_%05u.raw", storageDir, m_mediumFileIndex++);
 
     Os::File file;
     Os::File::Status status = file.open(path, Os::File::OPEN_WRITE);

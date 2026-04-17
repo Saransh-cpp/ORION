@@ -4,7 +4,7 @@ import os
 
 # Configuration
 LISTEN_IP = "0.0.0.0"  # Listen on all network interfaces
-LISTEN_PORT = 50000
+LISTEN_PORT = 50050
 OUTPUT_DIR = "./orion_downlink"
 
 

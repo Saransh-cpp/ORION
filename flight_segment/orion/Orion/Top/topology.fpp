@@ -70,7 +70,7 @@ module Orion {
       # Linux timer drives the rate group driver at 1 Hz
       linuxTimer.CycleOut -> rateGroupDriverComp.CycleIn
 
-      # Rate group 1 (1 Hz) — telemetry, file downlink, comms
+      # Rate group 1 (1 Hz) — telemetry, file downlink, comms, SimSat polling, auto-capture
       rateGroupDriverComp.CycleOut[Ports_RateGroups.rateGroup1] -> rateGroup1Comp.CycleIn
       rateGroup1Comp.RateGroupMemberOut[0] -> CdhCore.Subtopology.tlmSendRun
       rateGroup1Comp.RateGroupMemberOut[1] -> FileHandling.Subtopology.fileDownlinkRun
@@ -78,6 +78,9 @@ module Orion {
       rateGroup1Comp.RateGroupMemberOut[3] -> ComCcsds.Subtopology.comQueueRun
       rateGroup1Comp.RateGroupMemberOut[4] -> CdhCore.Subtopology.cmdDispRun
       rateGroup1Comp.RateGroupMemberOut[5] -> ComCcsds.Subtopology.aggregatorTimeout
+      rateGroup1Comp.RateGroupMemberOut[6] -> navTelemetry.schedIn
+      rateGroup1Comp.RateGroupMemberOut[7] -> cameraManager.schedIn
+      rateGroup1Comp.RateGroupMemberOut[8] -> groundCommsDriver.schedIn
 
       # Rate group 2 (0.5 Hz) — sequencer
       rateGroupDriverComp.CycleOut[Ports_RateGroups.rateGroup2] -> rateGroup2Comp.CycleIn
@@ -163,6 +166,9 @@ module Orion {
 
       # TriageRouter returns MEDIUM/LOW buffers to pool
       triageRouter.bufferReturnOut -> bufferManager.bufferSendIn
+
+      # GroundCommsDriver checks comm window state before transmitting
+      groundCommsDriver.navStateIn -> navTelemetry.navStateGet
 
       # GroundCommsDriver returns buffer after TCP transmit
       groundCommsDriver.bufferReturnOut -> bufferManager.bufferSendIn

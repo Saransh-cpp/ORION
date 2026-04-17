@@ -17,6 +17,7 @@ dependencies = [
     "datasets",
     "bitsandbytes",
     "gguf>=0.18.0",
+    "matplotlib>=3.10.8",
 ]
 
 [tool.uv.sources]

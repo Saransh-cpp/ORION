@@ -79,10 +79,19 @@ module Orion {
   instance comDriver: Drv.TcpClient base id 0x10025000
 
   # ----------------------------------------------------------------------
-  # Passive component instances — ORION mission
+  # Active component instances — ORION mission (NavTelemetry)
   # ----------------------------------------------------------------------
 
-  instance navTelemetry: Orion.NavTelemetry base id 0x10015000
+  # NavTelemetry polls SimSat for orbital position every 5 seconds
+  # and computes comm window state. Priority above VLM but below comms.
+  instance navTelemetry: Orion.NavTelemetry base id 0x10015000 \
+    queue size Default.QUEUE_SIZE \
+    stack size Default.STACK_SIZE \
+    priority 35
+
+  # ----------------------------------------------------------------------
+  # Passive component instances — ORION mission
+  # ----------------------------------------------------------------------
 
   # Static pool of 20 × 786432-byte (512×512×3 RGB) image buffers.
   # ~15.7 MB total; remaining Pi 5 RAM is dedicated to the VLM weights.

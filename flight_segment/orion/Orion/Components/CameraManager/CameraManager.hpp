@@ -12,20 +12,36 @@ class CameraManager final : public CameraManagerComponentBase {
 
   private:
     // -----------------------------------------------------------------------
-    // Command handler
+    // Command handlers
     // -----------------------------------------------------------------------
 
     //! Executes the full capture-fuse-dispatch pipeline on the component thread.
     void TRIGGER_CAPTURE_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) override;
 
+    //! Enables autonomous periodic capture at the given interval.
+    void ENABLE_AUTO_CAPTURE_cmdHandler(FwOpcodeType opCode, U32 cmdSeq, U32 interval) override;
+
+    //! Disables autonomous periodic capture.
+    void DISABLE_AUTO_CAPTURE_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) override;
+
+    // -----------------------------------------------------------------------
+    // Port handlers
+    // -----------------------------------------------------------------------
+
+    //! Rate group schedule handler — drives auto-capture timing.
+    void schedIn_handler(FwIndexType portNum, U32 context) override;
+
     // -----------------------------------------------------------------------
     // Helpers
     // -----------------------------------------------------------------------
 
-    //! Fills the buffer with raw pixel data from the camera hardware.
-    //! On the Pi 5 this calls libcamera. For demo, loads pre-converted
-    //! test images from ground_segment/data/test_raw/.
+    //! Fills the buffer with raw pixel data from SimSat's Mapbox API.
+    //! Falls back to test images if SimSat is unreachable.
     bool captureIntoBuffer(Fw::Buffer& buf);
+
+    //! Performs the full capture-fuse-dispatch pipeline (shared by
+    //! TRIGGER_CAPTURE command and auto-capture timer).
+    void doCapture();
 
     // -----------------------------------------------------------------------
     // State
@@ -33,7 +49,10 @@ class CameraManager final : public CameraManagerComponentBase {
 
     U32 m_imagesCaptured;
     U32 m_capturesFailed;
-    U32 m_imageIndex;  //!< Cycles through available test images.
+    U32 m_imageIndex;           //!< Cycles through test images (fallback mode)
+    bool m_autoCaptureEnabled;  //!< True when autonomous capture is active
+    U32 m_autoCaptureInterval;  //!< Seconds between auto-captures
+    U32 m_schedCounter;         //!< Counts schedIn ticks for auto-capture timing
 };
 
 }  // namespace Orion

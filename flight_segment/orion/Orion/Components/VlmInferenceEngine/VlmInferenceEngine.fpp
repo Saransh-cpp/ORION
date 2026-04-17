@@ -87,14 +87,15 @@ module Orion {
       id 0x03 \
       format "VlmInferenceEngine: Inference failed — buffer returned to pool"
 
-    @ Emitted on every successful classification.
+    @ Emitted on every successful classification with the VLM's reasoning.
     event InferenceComplete(
-      verdict: string size 16
+      category: string size 16
+      reason: string size 200
       time_ms: U32
     ) \
-      severity activity low \
+      severity activity high \
       id 0x04 \
-      format "VlmInferenceEngine: {} classified in {} ms"
+      format "VLM RESULT: {} — {} ({}ms)"
 
     # --------------------------------------------------------------------------
     # Ping ports (for Health Watchdog)

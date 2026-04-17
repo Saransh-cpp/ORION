@@ -1,9 +1,9 @@
 module Orion {
 
-  @ Active component that interfaces with the Pi Camera Module.
-  @ Captures images into a pre-allocated buffer, fuses GPS telemetry,
-  @ and dispatches the payload asynchronously to the VlmInferenceEngine.
-  @ The camera thread never blocks on VLM inference timing.
+  @ Active component that acquires Earth observation imagery.
+  @ In autonomous mode, periodically fetches Mapbox satellite images from
+  @ SimSat, fuses GPS telemetry, and dispatches to the VlmInferenceEngine.
+  @ Also supports manual TRIGGER_CAPTURE for ground-commanded operation.
   active component CameraManager {
 
     # --------------------------------------------------------------------------
@@ -13,6 +13,21 @@ module Orion {
     @ Manually triggers a single image capture from the GDS or sequencer.
     async command TRIGGER_CAPTURE opcode 0x00
 
+    @ Enables autonomous periodic capture at the given interval in seconds.
+    async command ENABLE_AUTO_CAPTURE(
+      interval: U32 @< Seconds between captures (default 45)
+    ) opcode 0x01
+
+    @ Disables autonomous periodic capture.
+    async command DISABLE_AUTO_CAPTURE opcode 0x02
+
+    # --------------------------------------------------------------------------
+    # Input ports
+    # --------------------------------------------------------------------------
+
+    @ Rate group schedule input — drives auto-capture timing.
+    async input port schedIn: Svc.Sched
+
     # --------------------------------------------------------------------------
     # Output ports
     # --------------------------------------------------------------------------
@@ -21,11 +36,9 @@ module Orion {
     output port bufferGetOut: Fw.BufferGet
 
     @ Synchronous call to NavTelemetry for GPS coordinates at capture time.
-    @ Coordinates are time-aligned to the frame, not retrieved after the fact.
     output port navStateOut: NavStatePort
 
     @ Fires the captured image buffer and fused coordinates to the VLM queue.
-    @ Asynchronous: CameraManager returns immediately after invoking this port.
     output port inferenceRequestOut: InferenceRequestPort
 
     @ Returns an empty or failed buffer back to the pool.
@@ -55,18 +68,37 @@ module Orion {
       format "CameraManager: Image dispatched at Lat={}, Lon={}"
 
     @ Emitted when the buffer pool is exhausted and a capture is dropped.
-    @ Ground must pace CMD_TRIGGER_CAPTURE to stay within the 13-image LEO budget.
     event BufferPoolExhausted \
       severity warning high \
       id 0x01 \
       format "CameraManager: Buffer pool exhausted — capture dropped"
 
-    @ Emitted when the Pi Camera hardware fails to acquire a frame.
-    @ The allocated buffer is safely returned to the pool.
+    @ Emitted when the camera/SimSat image acquisition fails.
     event CameraHardwareError \
       severity warning high \
       id 0x02 \
-      format "CameraManager: Hardware read failed — buffer returned to pool"
+      format "CameraManager: Image acquisition failed — buffer returned to pool"
+
+    @ Emitted when autonomous capture mode is enabled.
+    event AutoCaptureEnabled(
+      interval: U32
+    ) \
+      severity activity high \
+      id 0x03 \
+      format "CameraManager: Auto-capture enabled every {} seconds"
+
+    @ Emitted when autonomous capture mode is disabled.
+    event AutoCaptureDisabled \
+      severity activity high \
+      id 0x04 \
+      format "CameraManager: Auto-capture disabled"
+
+    @ Emitted when SimSat reports no image available for current position.
+    event SimSatImageUnavailable \
+      severity activity low \
+      id 0x05 \
+      format "CameraManager: SimSat image unavailable (over ocean or target not visible)"
+
     # --------------------------------------------------------------------------
     # Required F-Prime framework ports
     # --------------------------------------------------------------------------

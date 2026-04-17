@@ -1,26 +1,31 @@
 module Orion {
 
   @ Active component that manages the simulated X-Band / S-Band radio link.
-  @ Receives HIGH-priority image frames from TriageRouter and transmits them
-  @ to the ground station over Wi-Fi/Ethernet (TCP, simulating radio downlink).
-  @ Always returns the image buffer to the pool after transmission or failure.
+  @ Receives HIGH-priority image frames from TriageRouter and either transmits
+  @ them immediately (during a comm window) or queues them to disk for later
+  @ downlink. When a comm window opens, queued frames are flushed first.
   active component GroundCommsDriver {
 
     # --------------------------------------------------------------------------
     # Input ports
     # --------------------------------------------------------------------------
 
-    @ Receives HIGH-priority image buffers from TriageRouter for immediate downlink.
-    @ Asynchronous: frames queue here while a prior transmission is in progress.
+    @ Receives HIGH-priority image buffers from TriageRouter for downlink.
     async input port fileDownlinkIn: FileDownlinkPort
+
+    @ Rate group schedule input — periodically flushes the disk queue
+    @ when the comm window is open.
+    async input port schedIn: Svc.Sched
 
     # --------------------------------------------------------------------------
     # Output ports
     # --------------------------------------------------------------------------
 
     @ Returns image buffers to the BufferManager pool after transmit completes.
-    @ Called unconditionally — whether transmit succeeded or failed.
     output port bufferReturnOut: Fw.BufferSend
+
+    @ Synchronous call to NavTelemetry to check comm window state.
+    output port navStateIn: NavStatePort
 
     # --------------------------------------------------------------------------
     # Telemetry
@@ -34,6 +39,9 @@ module Orion {
 
     @ Running count of frames lost due to radio link or socket failure.
     telemetry TransmitFailures: U32 id 0x02
+
+    @ Running count of frames queued to disk (outside comm window).
+    telemetry FramesQueued: U32 id 0x03
 
     # --------------------------------------------------------------------------
     # Events
@@ -52,6 +60,20 @@ module Orion {
       severity warning high \
       id 0x01 \
       format "GroundCommsDriver: Transmit failed — buffer returned to pool"
+
+    @ Emitted when a frame is queued to disk because comm window is closed.
+    event FrameQueued \
+      severity activity low \
+      id 0x02 \
+      format "GroundCommsDriver: Frame queued to disk — outside comm window"
+
+    @ Emitted when queued frames are flushed during a comm window.
+    event QueueFlushed(
+      count: U32
+    ) \
+      severity activity high \
+      id 0x03 \
+      format "GroundCommsDriver: Flushed {} queued frames during comm window"
 
     # --------------------------------------------------------------------------
     # Required F-Prime framework ports
