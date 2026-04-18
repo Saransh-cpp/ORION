@@ -18,6 +18,21 @@
 
 namespace Orion {
 
+static const char* modeStr(MissionMode mode) {
+    switch (mode.e) {
+        case MissionMode::IDLE:
+            return "IDLE";
+        case MissionMode::MEASURE:
+            return "MEASURE";
+        case MissionMode::DOWNLINK:
+            return "DOWNLINK";
+        case MissionMode::SAFE:
+            return "SAFE";
+        default:
+            return "UNKNOWN";
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Model paths — text decoder and vision encoder are separate GGUF files.
 // Override via env vars: ORION_getGgufPath(), ORION_getMmprojPath()
@@ -63,6 +78,11 @@ VlmInferenceEngine::~VlmInferenceEngine() { freeModel(); }
 // ---------------------------------------------------------------------------
 
 void VlmInferenceEngine::LOAD_MODEL_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) {
+    if (m_currentMode.e != MissionMode::MEASURE && m_currentMode.e != MissionMode::DOWNLINK) {
+        this->log_WARNING_LO_LoadModelRejectedWrongMode(Fw::String(modeStr(m_currentMode)));
+        this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::EXECUTION_ERROR);
+        return;
+    }
     bool ok = loadModel();
     this->cmdResponse_out(opCode, cmdSeq, ok ? Fw::CmdResponse::OK : Fw::CmdResponse::EXECUTION_ERROR);
 }
@@ -109,6 +129,7 @@ void VlmInferenceEngine::inferenceRequestIn_handler(FwIndexType portNum, Fw::Buf
 
     if (!m_model || !m_ctx || !m_mtmd) {
         // Model not resident — drop the frame and recycle the buffer.
+        this->log_WARNING_LO_FrameDroppedModelNotLoaded();
         this->bufferReturnOut_out(0, buffer);
         return;
     }

@@ -1,6 +1,7 @@
 #include "CameraManager.hpp"
 
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 
 #include "Os/File.hpp"
@@ -20,6 +21,21 @@ static const char* getTestImageDir() {
 }
 static constexpr U32 NUM_TEST_IMAGES = 300;
 
+static const char* modeStr(MissionMode mode) {
+    switch (mode.e) {
+        case MissionMode::IDLE:
+            return "IDLE";
+        case MissionMode::MEASURE:
+            return "MEASURE";
+        case MissionMode::DOWNLINK:
+            return "DOWNLINK";
+        case MissionMode::SAFE:
+            return "SAFE";
+        default:
+            return "UNKNOWN";
+    }
+}
+
 CameraManager::CameraManager(const char* compName)
     : CameraManagerComponentBase(compName),
       m_imagesCaptured(0),
@@ -37,11 +53,21 @@ CameraManager::~CameraManager() {}
 // ---------------------------------------------------------------------------
 
 void CameraManager::TRIGGER_CAPTURE_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) {
+    if (m_currentMode.e != MissionMode::MEASURE) {
+        this->log_WARNING_LO_CommandRejectedWrongMode(Fw::String(modeStr(m_currentMode)));
+        this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::EXECUTION_ERROR);
+        return;
+    }
     doCapture();
     this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::OK);
 }
 
 void CameraManager::ENABLE_AUTO_CAPTURE_cmdHandler(FwOpcodeType opCode, U32 cmdSeq, U32 interval) {
+    if (m_currentMode.e != MissionMode::MEASURE) {
+        this->log_WARNING_LO_CommandRejectedWrongMode(Fw::String(modeStr(m_currentMode)));
+        this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::EXECUTION_ERROR);
+        return;
+    }
     m_autoCaptureEnabled = true;
     m_autoCaptureInterval = (interval > 0) ? interval : 45;
     m_schedCounter = 0;
@@ -149,9 +175,7 @@ bool CameraManager::captureIntoBuffer(Fw::Buffer& buf) {
 
     Os::File file;
     if (file.open(path, Os::File::OPEN_READ) != Os::File::OP_OK) {
-        // Last resort: zero-fill.
-        memset(buf.getData(), 0, buf.getSize());
-        return true;
+        return false;
     }
 
     FwSizeType size = buf.getSize();
@@ -159,7 +183,7 @@ bool CameraManager::captureIntoBuffer(Fw::Buffer& buf) {
     file.close();
 
     if (status != Os::File::OP_OK || size != IMAGE_BUFFER_SIZE) {
-        memset(buf.getData(), 0, buf.getSize());
+        return false;
     }
 
     return true;

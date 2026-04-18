@@ -103,6 +103,14 @@ module Orion {
       id 0x05 \
       format "CameraManager: SimSat image unavailable (over ocean or target not visible)"
 
+    @ Emitted when a capture or auto-capture command is rejected due to wrong mode.
+    event CommandRejectedWrongMode(
+      currentMode: string size 16
+    ) \
+      severity warning low \
+      id 0x06 \
+      format "CameraManager: Command rejected — not in MEASURE (current: {})"
+
     # --------------------------------------------------------------------------
     # Required F-Prime framework ports
     # --------------------------------------------------------------------------

@@ -91,6 +91,20 @@ module Orion {
       id 0x03 \
       format "VlmInferenceEngine: Inference failed — buffer returned to pool"
 
+    @ Emitted when a frame is dropped because the model is not loaded.
+    event FrameDroppedModelNotLoaded \
+      severity warning low \
+      id 0x05 \
+      format "VlmInferenceEngine: Frame dropped — model not loaded"
+
+    @ Emitted when LOAD_MODEL is rejected due to wrong mode.
+    event LoadModelRejectedWrongMode(
+      currentMode: string size 16
+    ) \
+      severity warning low \
+      id 0x06 \
+      format "VlmInferenceEngine: LOAD_MODEL rejected — not in MEASURE or DOWNLINK (current: {})"
+
     @ Emitted on every successful classification with the VLM's reasoning.
     event InferenceComplete(
       category: string size 16

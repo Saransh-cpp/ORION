@@ -62,7 +62,7 @@ void EventAction::schedIn_handler(FwIndexType portNum, U32 context) {
                         continue;
                     }
 
-                    char srcPath[100];
+                    char srcPath[256];
                     ::snprintf(srcPath, sizeof(srcPath), "%s%s", storageDir, entry->d_name);
 
                     Svc::SendFileResponse resp =

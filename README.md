@@ -17,11 +17,15 @@ export ORION_SIMSAT_URL=http://192.168.1.183:9005
 
 ## TODO
 
-P0 — Demo-critical:
+Pi deployment.
 
-Pi deployment — Docker needs updating for the new libcurl-dev dependency in Dockerfile.pi. Build, scp binary + model + test images, verify it runs. The ORION_SIMSAT_URL needs to point to the Mac/host running SimSat since the Pi won't run it locally.
+Stress testing — rapid captures (lower interval to 10s), SimSat going down mid-capture, receiver not running, buffer pool exhaustion (fill the VLM queue). Verify graceful degradation everywhere.
 
-P1 — Robustness: 3. Stress testing — rapid captures (lower interval to 10s), SimSat going down mid-capture, receiver not running, buffer pool exhaustion (fill the VLM queue). Verify graceful degradation everywhere. 4. CI pipeline — fprime-util build in a GitHub Action. The main challenge is llama.cpp static libs + libcurl. A Docker-based CI using your existing Dockerfile.base would be the fastest path. 5. Ground receiver improvements — auto-convert .raw to .png on receive, maybe a simple web dashboard showing received frames + VLM verdicts in real-time.
+CI pipeline — fprime-util build in a GitHub Action. The main challenge is llama.cpp static libs + libcurl. A Docker-based CI using your existing Dockerfile.base would be the fastest path.
+
+Ground receiver improvements — auto-convert .raw to .png on receive, + show VLM verdicts in real-time.
+
+Docs site?
 
 - [ ] Check which HIGH are actually being misclassified
 - [ ] Old images from disasters
