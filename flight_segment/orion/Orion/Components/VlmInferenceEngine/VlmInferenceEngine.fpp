@@ -31,6 +31,10 @@ module Orion {
     @ timeout below 60 s for this component.
     async input port inferenceRequestIn: InferenceRequestPort
 
+    @ Receives mode changes from EventAction.
+    @ In SAFE mode, drops all incoming frames immediately.
+    async input port modeChangeIn: ModeChangePort
+
     # --------------------------------------------------------------------------
     # Output ports
     # --------------------------------------------------------------------------

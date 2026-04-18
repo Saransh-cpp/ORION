@@ -31,6 +31,9 @@ class VlmInferenceEngine final : public VlmInferenceEngineComponentBase {
 
     void inferenceRequestIn_handler(FwIndexType portNum, Fw::Buffer& buffer, F64 lat, F64 lon) override;
 
+    //! Mode change handler — stores the current mission mode.
+    void modeChangeIn_handler(FwIndexType portNum, const Orion::MissionMode& mode) override;
+
     // Health Watchdog: echo the key back immediately when dequeued.
     void pingIn_handler(FwIndexType portNum, U32 key) override;
 
@@ -49,6 +52,10 @@ class VlmInferenceEngine final : public VlmInferenceEngineComponentBase {
 
     static const char* verdictToStr(const Orion::TriagePriority& v);
 
+    //! Loads the GGUF model and vision encoder. Returns true on success.
+    //! Idempotent if already loaded.
+    bool loadModel();
+
     //! Frees all llama.cpp state. Safe to call when already unloaded.
     void freeModel();
 
@@ -63,6 +70,7 @@ class VlmInferenceEngine final : public VlmInferenceEngineComponentBase {
 
     U32 m_totalInferences;
     U32 m_inferenceFailures;
+    MissionMode m_currentMode;
 };
 
 }  // namespace Orion

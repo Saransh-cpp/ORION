@@ -17,7 +17,12 @@ static const char* getMediumStoragePath() {
 }
 
 TriageRouter::TriageRouter(const char* compName)
-    : TriageRouterComponentBase(compName), m_highRouted(0), m_mediumSaved(0), m_lowDiscarded(0), m_mediumFileIndex(0) {}
+    : TriageRouterComponentBase(compName),
+      m_highRouted(0),
+      m_mediumSaved(0),
+      m_lowDiscarded(0),
+      m_mediumFileIndex(0),
+      m_currentMode(MissionMode::IDLE) {}
 
 TriageRouter::~TriageRouter() {}
 
@@ -25,8 +30,17 @@ TriageRouter::~TriageRouter() {}
 // Port handler — dispatches to the appropriate routing arm
 // ---------------------------------------------------------------------------
 
+void TriageRouter::modeChangeIn_handler(FwIndexType portNum, const Orion::MissionMode& mode) { m_currentMode = mode; }
+
 void TriageRouter::triageDecisionIn_handler(FwIndexType portNum, const Orion::TriagePriority& verdict,
                                             const Fw::StringBase& reason, Fw::Buffer& buffer) {
+    // In SAFE mode, drop all frames immediately
+    if (m_currentMode.e == MissionMode::SAFE) {
+        this->bufferReturnOut_out(0, buffer);
+        this->log_ACTIVITY_LO_LowTargetDiscarded();
+        return;
+    }
+
     switch (verdict.e) {
         case TriagePriority::HIGH:
             routeHigh(reason, buffer);
@@ -76,7 +90,7 @@ void TriageRouter::routeMedium(Fw::Buffer& buffer) {
     status = file.write(buffer.getData(), bytesWritten);
     file.close();
 
-    if (status != Os::File::OP_OK) {
+    if (status != Os::File::OP_OK || bytesWritten != buffer.getSize()) {
         this->log_WARNING_HI_StorageWriteFailed();
     } else {
         m_mediumSaved++;

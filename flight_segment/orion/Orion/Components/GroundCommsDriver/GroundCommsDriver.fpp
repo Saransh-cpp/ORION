@@ -14,8 +14,12 @@ module Orion {
     async input port fileDownlinkIn: FileDownlinkPort
 
     @ Rate group schedule input — periodically flushes the disk queue
-    @ when the comm window is open.
+    @ when in DOWNLINK mode.
     async input port schedIn: Svc.Sched
+
+    @ Receives mode changes from EventAction.
+    @ Only transmits in DOWNLINK mode; queues to disk otherwise.
+    async input port modeChangeIn: ModeChangePort
 
     # --------------------------------------------------------------------------
     # Output ports
@@ -23,9 +27,6 @@ module Orion {
 
     @ Returns image buffers to the BufferManager pool after transmit completes.
     output port bufferReturnOut: Fw.BufferSend
-
-    @ Synchronous call to NavTelemetry to check comm window state.
-    output port navStateIn: NavStatePort
 
     # --------------------------------------------------------------------------
     # Telemetry
@@ -74,6 +75,12 @@ module Orion {
       severity activity high \
       id 0x03 \
       format "GroundCommsDriver: Flushed {} queued frames during comm window"
+
+    @ Emitted when writing a frame to the disk queue fails.
+    event QueueWriteFailed \
+      severity warning high \
+      id 0x04 \
+      format "GroundCommsDriver: Failed to write frame to disk queue — frame lost"
 
     # --------------------------------------------------------------------------
     # Required F-Prime framework ports

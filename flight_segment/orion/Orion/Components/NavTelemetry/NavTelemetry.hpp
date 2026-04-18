@@ -42,9 +42,9 @@ class NavTelemetry final : public NavTelemetryComponentBase {
     F64 m_lat;
     F64 m_lon;
     F64 m_alt;
+    F64 m_gsDistanceKm;  ///< Cached great-circle distance to ground station
     bool m_inCommWindow;
-    bool m_prevCommWindow;  ///< Previous state for edge detection (opened/closed events)
-    U32 m_schedCounter;     ///< Counts schedIn ticks for polling interval
+    U32 m_schedCounter;  ///< Counts schedIn ticks for polling interval
 
     // Ground station configuration (read from env vars at construction)
     F64 m_gsLat;

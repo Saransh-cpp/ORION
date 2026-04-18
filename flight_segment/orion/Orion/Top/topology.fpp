@@ -36,6 +36,7 @@ module Orion {
     instance cmdSeq
 
     # ORION mission instances
+    instance eventAction
     instance navTelemetry
     instance cameraManager
     instance vlmInferenceEngine
@@ -81,6 +82,7 @@ module Orion {
       rateGroup1Comp.RateGroupMemberOut[6] -> navTelemetry.schedIn
       rateGroup1Comp.RateGroupMemberOut[7] -> cameraManager.schedIn
       rateGroup1Comp.RateGroupMemberOut[8] -> groundCommsDriver.schedIn
+      rateGroup1Comp.RateGroupMemberOut[9] -> eventAction.schedIn
 
       # Rate group 2 (0.5 Hz) — sequencer
       rateGroupDriverComp.CycleOut[Ports_RateGroups.rateGroup2] -> rateGroup2Comp.CycleIn
@@ -167,11 +169,20 @@ module Orion {
       # TriageRouter returns MEDIUM/LOW buffers to pool
       triageRouter.bufferReturnOut -> bufferManager.bufferSendIn
 
-      # GroundCommsDriver checks comm window state before transmitting
-      groundCommsDriver.navStateIn -> navTelemetry.navStateGet
-
       # GroundCommsDriver returns buffer after TCP transmit
       groundCommsDriver.bufferReturnOut -> bufferManager.bufferSendIn
+
+      # EventAction queries NavTelemetry for position and comm window state
+      eventAction.navStateIn -> navTelemetry.navStateGet
+
+      # EventAction broadcasts mode changes to all pipeline components
+      eventAction.modeChangeOut[0] -> cameraManager.modeChangeIn
+      eventAction.modeChangeOut[1] -> groundCommsDriver.modeChangeIn
+      eventAction.modeChangeOut[2] -> vlmInferenceEngine.modeChangeIn
+      eventAction.modeChangeOut[3] -> triageRouter.modeChangeIn
+
+      # EventAction queues MEDIUM file downloads via F-Prime FileDownlink
+      eventAction.sendFileOut -> FileHandling.Subtopology.fileDownlinkSendFile
     }
 
   }

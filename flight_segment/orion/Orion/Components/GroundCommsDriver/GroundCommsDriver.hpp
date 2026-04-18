@@ -17,8 +17,11 @@ class GroundCommsDriver final : public GroundCommsDriverComponentBase {
 
     void fileDownlinkIn_handler(FwIndexType portNum, Fw::Buffer& buffer, const Fw::StringBase& reason) override;
 
-    //! Rate group handler — flushes disk queue when comm window is open.
+    //! Rate group handler — flushes disk queue when in DOWNLINK mode.
     void schedIn_handler(FwIndexType portNum, U32 context) override;
+
+    //! Mode change handler — stores the current mission mode.
+    void modeChangeIn_handler(FwIndexType portNum, const Orion::MissionMode& mode) override;
 
     // -----------------------------------------------------------------------
     // Helpers
@@ -46,7 +49,8 @@ class GroundCommsDriver final : public GroundCommsDriverComponentBase {
     U32 m_bytesDownlinked;
     U32 m_transmitFailures;
     U32 m_framesQueued;
-    U32 m_queueFileIndex;  //!< Monotonic counter for queue filenames
+    U32 m_queueFileIndex;       //!< Monotonic counter for queue filenames
+    MissionMode m_currentMode;  //!< Current mission mode from EventAction
 };
 
 }  // namespace Orion

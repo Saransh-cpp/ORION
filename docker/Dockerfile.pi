@@ -19,8 +19,16 @@ RUN cd flight_segment/orion && \
     fprime-util generate && \
     fprime-util build --all -j$(nproc)
 
-# Minimal output stage — just the binary
+# Minimal output stage — binary + runtime deps
 FROM arm64v8/ubuntu:22.04 AS output
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libcurl4 \
+    libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create storage directories for triage output
+RUN mkdir -p /media/sd/orion/medium /media/sd/orion/downlink_queue
 
 COPY --from=builder /orion/flight_segment/orion/build-fprime-automatic-native/bin/Linux/Orion /output/Orion
 

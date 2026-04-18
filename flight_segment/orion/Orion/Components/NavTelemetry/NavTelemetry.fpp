@@ -47,22 +47,10 @@ module Orion {
       id 0x00 \
       format "NavTelemetry: SimSat position Lat={}, Lon={}, Alt={}km"
 
-    @ Emitted when the satellite enters the ground station comm window.
-    event CommWindowOpened \
-      severity activity high \
-      id 0x01 \
-      format "NavTelemetry: Comm window OPEN — satellite in range of ground station"
-
-    @ Emitted when the satellite exits the ground station comm window.
-    event CommWindowClosed \
-      severity activity high \
-      id 0x02 \
-      format "NavTelemetry: Comm window CLOSED — satellite out of range"
-
     @ Emitted when the HTTP connection to SimSat fails.
     event SimSatConnectionFailed \
       severity warning high \
-      id 0x03 \
+      id 0x01 \
       format "NavTelemetry: Failed to reach SimSat API"
 
     # --------------------------------------------------------------------------

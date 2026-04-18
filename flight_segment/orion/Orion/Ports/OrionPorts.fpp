@@ -39,4 +39,14 @@ module Orion {
     reason: string size 256
   )
 
+  # ModeChangePort
+  # Type    : Asynchronous (broadcast from EventAction to all pipeline components)
+  # Payload : The new MissionMode the satellite has transitioned to
+  # Purpose : Notifies components of global mode changes so they can gate their
+  #           behavior accordingly (e.g. only capture in MEASURE, only downlink
+  #           in DOWNLINK, suspend everything in SAFE).
+  port ModeChangePort(
+    mode: MissionMode
+  )
+
 }

@@ -64,6 +64,13 @@ module Orion {
     stack size Default.STACK_SIZE \
     priority 20
 
+  # EventAction owns the mission mode state machine. Highest ORION
+  # priority — mode decisions must not be preempted by pipeline work.
+  instance eventAction: Orion.EventAction base id 0x10009000 \
+    queue size Default.QUEUE_SIZE \
+    stack size Default.STACK_SIZE \
+    priority 38
+
   # ----------------------------------------------------------------------
   # Passive component instances — standard F-Prime infrastructure
   # ----------------------------------------------------------------------

@@ -18,6 +18,9 @@ class TriageRouter final : public TriageRouterComponentBase {
     void triageDecisionIn_handler(FwIndexType portNum, const Orion::TriagePriority& verdict,
                                   const Fw::StringBase& reason, Fw::Buffer& buffer) override;
 
+    //! Mode change handler — stores the current mission mode.
+    void modeChangeIn_handler(FwIndexType portNum, const Orion::MissionMode& mode) override;
+
     // -----------------------------------------------------------------------
     // Routing helpers
     // -----------------------------------------------------------------------
@@ -38,7 +41,8 @@ class TriageRouter final : public TriageRouterComponentBase {
     U32 m_highRouted;
     U32 m_mediumSaved;
     U32 m_lowDiscarded;
-    U32 m_mediumFileIndex;  //!< Monotonic counter for unique MEDIUM filenames.
+    U32 m_mediumFileIndex;      //!< Monotonic counter for unique MEDIUM filenames.
+    MissionMode m_currentMode;  //!< Current mission mode from EventAction
 };
 
 }  // namespace Orion

@@ -53,7 +53,8 @@ VlmInferenceEngine::VlmInferenceEngine(const char* compName)
       m_mtmd(nullptr),
       m_sampler(nullptr),
       m_totalInferences(0),
-      m_inferenceFailures(0) {}
+      m_inferenceFailures(0),
+      m_currentMode(MissionMode::IDLE) {}
 
 VlmInferenceEngine::~VlmInferenceEngine() { freeModel(); }
 
@@ -62,69 +63,8 @@ VlmInferenceEngine::~VlmInferenceEngine() { freeModel(); }
 // ---------------------------------------------------------------------------
 
 void VlmInferenceEngine::LOAD_MODEL_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) {
-    if (m_model) {
-        // Already loaded — treat as success.
-        this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::OK);
-        return;
-    }
-
-    // Load text model (700 MB .gguf). CPU-only: n_gpu_layers = 0.
-    fprintf(stderr, "[VLM] Loading model from: %s\n", getGgufPath());
-
-    llama_model_params mparams = llama_model_default_params();
-    mparams.n_gpu_layers = 0;
-
-    m_model = llama_model_load_from_file(getGgufPath(), mparams);
-    if (!m_model) {
-        fprintf(stderr, "[VLM] llama_model_load_from_file FAILED\n");
-        this->log_WARNING_HI_ModelLoadFailed(Fw::String(getGgufPath()));
-        this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::EXECUTION_ERROR);
-        return;
-    }
-    fprintf(stderr, "[VLM] Text model loaded OK\n");
-
-    // Create inference context.
-    llama_context_params cparams = llama_context_default_params();
-    cparams.n_ctx = static_cast<uint32_t>(N_CTX);
-    cparams.n_batch = static_cast<uint32_t>(N_BATCH);
-    cparams.n_threads = N_THREADS;
-
-    m_ctx = llama_init_from_model(m_model, cparams);
-    if (!m_ctx) {
-        llama_model_free(m_model);
-        m_model = nullptr;
-        this->log_WARNING_HI_ModelLoadFailed(Fw::String(getGgufPath()));
-        this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::EXECUTION_ERROR);
-        return;
-    }
-
-    // Load vision encoder from the same combined GGUF. CPU-only.
-    mtmd_context_params vparams = mtmd_context_params_default();
-    vparams.use_gpu = false;
-    vparams.print_timings = false;
-    vparams.n_threads = N_THREADS;
-    vparams.image_max_tokens = IMAGE_MAX_TOKENS;
-
-    fprintf(stderr, "[VLM] Loading vision encoder from: %s\n", getMmprojPath());
-    m_mtmd = mtmd_init_from_file(getMmprojPath(), m_model, vparams);
-    if (!m_mtmd) {
-        fprintf(stderr, "[VLM] mtmd_init_from_file FAILED\n");
-        llama_free(m_ctx);
-        llama_model_free(m_model);
-        m_ctx = nullptr;
-        m_model = nullptr;
-        this->log_WARNING_HI_ModelLoadFailed(Fw::String(getGgufPath()));
-        this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::EXECUTION_ERROR);
-        return;
-    }
-
-    // Greedy sampler: temperature 0 gives deterministic classification.
-    llama_sampler_chain_params sparams = llama_sampler_chain_default_params();
-    m_sampler = llama_sampler_chain_init(sparams);
-    llama_sampler_chain_add(m_sampler, llama_sampler_init_greedy());
-
-    this->log_ACTIVITY_HI_ModelLoaded();
-    this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::OK);
+    bool ok = loadModel();
+    this->cmdResponse_out(opCode, cmdSeq, ok ? Fw::CmdResponse::OK : Fw::CmdResponse::EXECUTION_ERROR);
 }
 
 void VlmInferenceEngine::UNLOAD_MODEL_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) {
@@ -144,7 +84,29 @@ void VlmInferenceEngine::pingIn_handler(FwIndexType portNum, U32 key) {
     this->pingOut_out(0, key);
 }
 
+void VlmInferenceEngine::modeChangeIn_handler(FwIndexType portNum, const Orion::MissionMode& mode) {
+    m_currentMode = mode;
+
+    if (mode.e == MissionMode::MEASURE && !m_model) {
+        // Entering MEASURE — auto-load the model
+        loadModel();
+    } else if (mode.e == MissionMode::IDLE || mode.e == MissionMode::SAFE) {
+        // In IDLE or SAFE — unload to free RAM
+        if (m_model) {
+            freeModel();
+            this->log_ACTIVITY_HI_ModelUnloaded();
+        }
+    }
+    // DOWNLINK: model stays loaded (short pass, reload is expensive)
+}
+
 void VlmInferenceEngine::inferenceRequestIn_handler(FwIndexType portNum, Fw::Buffer& buffer, F64 lat, F64 lon) {
+    // In SAFE mode, drop all frames immediately
+    if (m_currentMode.e == MissionMode::SAFE) {
+        this->bufferReturnOut_out(0, buffer);
+        return;
+    }
+
     if (!m_model || !m_ctx || !m_mtmd) {
         // Model not resident — drop the frame and recycle the buffer.
         this->bufferReturnOut_out(0, buffer);
@@ -354,6 +316,63 @@ const char* VlmInferenceEngine::verdictToStr(const Orion::TriagePriority& v) {
         default:
             return "UNKNOWN";
     }
+}
+
+bool VlmInferenceEngine::loadModel() {
+    if (m_model) {
+        return true;  // Already loaded
+    }
+
+    fprintf(stderr, "[VLM] Loading model from: %s\n", getGgufPath());
+
+    llama_model_params mparams = llama_model_default_params();
+    mparams.n_gpu_layers = 0;
+
+    m_model = llama_model_load_from_file(getGgufPath(), mparams);
+    if (!m_model) {
+        fprintf(stderr, "[VLM] llama_model_load_from_file FAILED\n");
+        this->log_WARNING_HI_ModelLoadFailed(Fw::String(getGgufPath()));
+        return false;
+    }
+    fprintf(stderr, "[VLM] Text model loaded OK\n");
+
+    llama_context_params cparams = llama_context_default_params();
+    cparams.n_ctx = static_cast<uint32_t>(N_CTX);
+    cparams.n_batch = static_cast<uint32_t>(N_BATCH);
+    cparams.n_threads = N_THREADS;
+
+    m_ctx = llama_init_from_model(m_model, cparams);
+    if (!m_ctx) {
+        llama_model_free(m_model);
+        m_model = nullptr;
+        this->log_WARNING_HI_ModelLoadFailed(Fw::String(getGgufPath()));
+        return false;
+    }
+
+    mtmd_context_params vparams = mtmd_context_params_default();
+    vparams.use_gpu = false;
+    vparams.print_timings = false;
+    vparams.n_threads = N_THREADS;
+    vparams.image_max_tokens = IMAGE_MAX_TOKENS;
+
+    fprintf(stderr, "[VLM] Loading vision encoder from: %s\n", getMmprojPath());
+    m_mtmd = mtmd_init_from_file(getMmprojPath(), m_model, vparams);
+    if (!m_mtmd) {
+        fprintf(stderr, "[VLM] mtmd_init_from_file FAILED\n");
+        llama_free(m_ctx);
+        llama_model_free(m_model);
+        m_ctx = nullptr;
+        m_model = nullptr;
+        this->log_WARNING_HI_ModelLoadFailed(Fw::String(getGgufPath()));
+        return false;
+    }
+
+    llama_sampler_chain_params sparams = llama_sampler_chain_default_params();
+    m_sampler = llama_sampler_chain_init(sparams);
+    llama_sampler_chain_add(m_sampler, llama_sampler_init_greedy());
+
+    this->log_ACTIVITY_HI_ModelLoaded();
+    return true;
 }
 
 void VlmInferenceEngine::freeModel() {

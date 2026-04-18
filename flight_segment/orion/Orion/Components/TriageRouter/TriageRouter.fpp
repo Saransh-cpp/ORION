@@ -12,6 +12,10 @@ module Orion {
     @ Receives the VLM's parsed verdict asynchronously from VlmInferenceEngine.
     async input port triageDecisionIn: TriageDecisionPort
 
+    @ Receives mode changes from EventAction.
+    @ In SAFE mode, drops all incoming frames immediately.
+    async input port modeChangeIn: ModeChangePort
+
     # --------------------------------------------------------------------------
     # Output ports
     # --------------------------------------------------------------------------

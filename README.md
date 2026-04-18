@@ -4,10 +4,24 @@ Orbital Real-time Inference and Observation Network.
 
 export ORION_GGUF_PATH="/Users/schopra/Code/Personal/LiquidAIDPhiHack/ORION/ground_segment/training/orion-q4_k_m.gguf"
 export ORION_MMPROJ_PATH="/Users/schopra/Code/Personal/LiquidAIDPhiHack/ORION/ground_segment/training/orion-mmproj-f16.gguf"
-export ORION_MEDIUM_STORAGE_DIR="/Users/schopra/Code/Personal/LiquidAIDPhiHack/ORION/ground_segment/data/orion_medium/"
+export ORION_MEDIUM_STORAGE_DIR="/tmp/orion_medium/"
 export ORION_DOWNLINK_QUEUE_DIR="/Users/schopra/Code/Personal/LiquidAIDPhiHack/ORION/ground_segment/data/orion_downlink_queue/"
 
+Pi:
+
+docker compose build
+scp build-output/Orion saransh@baryon:/home/pi/ORION/
+
+export ORION_SIMSAT_URL=http://192.168.1.183:9005
+./Orion -a 0.0.0.0 -p 50000
+
 ## TODO
+
+P0 — Demo-critical:
+
+Pi deployment — Docker needs updating for the new libcurl-dev dependency in Dockerfile.pi. Build, scp binary + model + test images, verify it runs. The ORION_SIMSAT_URL needs to point to the Mac/host running SimSat since the Pi won't run it locally.
+
+P1 — Robustness: 3. Stress testing — rapid captures (lower interval to 10s), SimSat going down mid-capture, receiver not running, buffer pool exhaustion (fill the VLM queue). Verify graceful degradation everywhere. 4. CI pipeline — fprime-util build in a GitHub Action. The main challenge is llama.cpp static libs + libcurl. A Docker-based CI using your existing Dockerfile.base would be the fastest path. 5. Ground receiver improvements — auto-convert .raw to .png on receive, maybe a simple web dashboard showing received frames + VLM verdicts in real-time.
 
 - [ ] Check which HIGH are actually being misclassified
 - [ ] Old images from disasters
@@ -17,16 +31,16 @@ export ORION_DOWNLINK_QUEUE_DIR="/Users/schopra/Code/Personal/LiquidAIDPhiHack/O
 - [ ] Model
   - [x] Training data
   - [x] Ablation study (need)
-  - [ ] Fine-tuning
-  - [ ] Validation
-- [ ] F-prime application
-  - [ ] F-prime code
-    - [ ] Downlink Medium files
-    - [ ] Docker
-  - [ ] Model format + connect it to the F-prime app
+  - [x] Fine-tuning
+  - [x] Validation
+- [x] F-prime application
+  - [x] F-prime code
+    - [x] Downlink Medium files
+    - [x] Docker
+  - [x] Model format + connect it to the F-prime app
 - [ ] Deployment
-  - [ ] Learn Raspberry Pi
-  - [ ] Compile F-prime code for Raspberry Pi
+  - [x] Learn Raspberry Pi
+  - [x] Compile F-prime code for Raspberry Pi
 
 ## Ablation study results
 

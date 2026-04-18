@@ -1,3 +1,4 @@
+add_fprime_subdirectory("${CMAKE_CURRENT_LIST_DIR}/EventAction")
 add_fprime_subdirectory("${CMAKE_CURRENT_LIST_DIR}/NavTelemetry")
 add_fprime_subdirectory("${CMAKE_CURRENT_LIST_DIR}/CameraManager")
 add_fprime_subdirectory("${CMAKE_CURRENT_LIST_DIR}/TriageRouter")

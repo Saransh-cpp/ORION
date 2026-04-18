@@ -40,7 +40,8 @@ GroundCommsDriver::GroundCommsDriver(const char* compName)
       m_bytesDownlinked(0),
       m_transmitFailures(0),
       m_framesQueued(0),
-      m_queueFileIndex(0) {}
+      m_queueFileIndex(0),
+      m_currentMode(MissionMode::IDLE) {}
 
 GroundCommsDriver::~GroundCommsDriver() {}
 
@@ -49,10 +50,7 @@ GroundCommsDriver::~GroundCommsDriver() {}
 // ---------------------------------------------------------------------------
 
 void GroundCommsDriver::fileDownlinkIn_handler(FwIndexType portNum, Fw::Buffer& buffer, const Fw::StringBase& reason) {
-    // Check comm window state from NavTelemetry
-    NavState nav = this->navStateIn_out(0);
-
-    if (nav.get_inCommWindow()) {
+    if (m_currentMode.e == MissionMode::DOWNLINK) {
         // In comm window — flush any previously queued frames first
         U32 flushed = flushQueue();
         if (flushed > 0) {
@@ -87,9 +85,20 @@ void GroundCommsDriver::fileDownlinkIn_handler(FwIndexType portNum, Fw::Buffer& 
 // Schedule handler — periodic queue flush
 // ---------------------------------------------------------------------------
 
+void GroundCommsDriver::modeChangeIn_handler(FwIndexType portNum, const Orion::MissionMode& mode) {
+    m_currentMode = mode;
+
+    // When entering DOWNLINK, immediately flush the queue
+    if (mode.e == MissionMode::DOWNLINK) {
+        U32 flushed = flushQueue();
+        if (flushed > 0) {
+            this->log_ACTIVITY_HI_QueueFlushed(flushed);
+        }
+    }
+}
+
 void GroundCommsDriver::schedIn_handler(FwIndexType portNum, U32 context) {
-    NavState nav = this->navStateIn_out(0);
-    if (nav.get_inCommWindow()) {
+    if (m_currentMode.e == MissionMode::DOWNLINK) {
         U32 flushed = flushQueue();
         if (flushed > 0) {
             this->log_ACTIVITY_HI_QueueFlushed(flushed);
@@ -167,6 +176,7 @@ void GroundCommsDriver::saveToQueue(const Fw::Buffer& buffer) {
 
     FILE* f = ::fopen(path, "wb");
     if (!f) {
+        this->log_WARNING_HI_QueueWriteFailed();
         return;
     }
     ::fwrite(buffer.getData(), 1, buffer.getSize(), f);
@@ -210,16 +220,24 @@ U32 GroundCommsDriver::flushQueue() {
         size_t bytesRead = ::fread(tmpBuf, 1, static_cast<size_t>(fileSize), f);
         ::fclose(f);
 
+        bool sent = false;
         if (bytesRead == static_cast<size_t>(fileSize)) {
             if (transmitRaw(tmpBuf, static_cast<FwSizeType>(fileSize))) {
                 m_framesDownlinked++;
                 m_bytesDownlinked += static_cast<U32>(fileSize);
                 count++;
+                sent = true;
             }
         }
 
         delete[] tmpBuf;
-        ::unlink(path);  // Remove from queue regardless of transmit success
+
+        if (sent) {
+            ::unlink(path);  // Only delete after successful transmit
+        } else {
+            // Stop flushing — receiver likely down, no point retrying rest
+            break;
+        }
     }
 
     ::closedir(dir);

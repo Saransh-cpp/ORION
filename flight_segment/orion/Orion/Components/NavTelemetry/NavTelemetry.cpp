@@ -33,8 +33,8 @@ NavTelemetry::NavTelemetry(const char* compName)
       m_lat(0.0),
       m_lon(0.0),
       m_alt(0.0),
+      m_gsDistanceKm(0.0),
       m_inCommWindow(false),
-      m_prevCommWindow(false),
       m_schedCounter(0),
       m_gsLat(getGsLat()),
       m_gsLon(getGsLon()),
@@ -52,6 +52,7 @@ NavState NavTelemetry::navStateGet_handler(FwIndexType portNum) {
     state.set_lon(m_lon);
     state.set_alt(m_alt);
     state.set_inCommWindow(m_inCommWindow);
+    state.set_gsDistanceKm(m_gsDistanceKm);
     return state;
 }
 
@@ -115,16 +116,15 @@ F64 NavTelemetry::haversineDistanceKm(F64 lat1, F64 lon1, F64 lat2, F64 lon2) {
 }
 
 void NavTelemetry::updateCommWindow() {
-    F64 distance = haversineDistanceKm(m_lat, m_lon, m_gsLat, m_gsLon);
-    m_inCommWindow = (distance < m_gsRangeKm);
+    m_gsDistanceKm = haversineDistanceKm(m_lat, m_lon, m_gsLat, m_gsLon);
 
-    // Detect state transitions for events
-    if (m_inCommWindow && !m_prevCommWindow) {
-        this->log_ACTIVITY_HI_CommWindowOpened();
-    } else if (!m_inCommWindow && m_prevCommWindow) {
-        this->log_ACTIVITY_HI_CommWindowClosed();
+    // Hysteresis: enter comm window at gsRange, exit at gsRange * 1.1.
+    // Prevents oscillation when the satellite is near the boundary.
+    if (m_inCommWindow) {
+        m_inCommWindow = (m_gsDistanceKm < m_gsRangeKm * 1.1);
+    } else {
+        m_inCommWindow = (m_gsDistanceKm < m_gsRangeKm);
     }
-    m_prevCommWindow = m_inCommWindow;
 }
 
 }  // namespace Orion

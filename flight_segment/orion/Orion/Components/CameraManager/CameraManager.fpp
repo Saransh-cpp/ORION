@@ -28,6 +28,10 @@ module Orion {
     @ Rate group schedule input — drives auto-capture timing.
     async input port schedIn: Svc.Sched
 
+    @ Receives mode changes from EventAction.
+    @ Only auto-captures in MEASURE mode.
+    async input port modeChangeIn: ModeChangePort
+
     # --------------------------------------------------------------------------
     # Output ports
     # --------------------------------------------------------------------------

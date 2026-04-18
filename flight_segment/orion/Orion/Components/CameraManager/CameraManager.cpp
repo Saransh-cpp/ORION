@@ -27,7 +27,8 @@ CameraManager::CameraManager(const char* compName)
       m_imageIndex(0),
       m_autoCaptureEnabled(false),
       m_autoCaptureInterval(45),
-      m_schedCounter(0) {}
+      m_schedCounter(0),
+      m_currentMode(MissionMode::IDLE) {}
 
 CameraManager::~CameraManager() {}
 
@@ -61,8 +62,25 @@ void CameraManager::DISABLE_AUTO_CAPTURE_cmdHandler(FwOpcodeType opCode, U32 cmd
 // Schedule handler — rate group driven auto-capture
 // ---------------------------------------------------------------------------
 
+void CameraManager::modeChangeIn_handler(FwIndexType portNum, const Orion::MissionMode& mode) {
+    m_currentMode = mode;
+
+    if (mode.e == MissionMode::MEASURE) {
+        // Auto-enable capture on MEASURE entry
+        m_autoCaptureEnabled = true;
+        m_schedCounter = 0;
+        this->log_ACTIVITY_HI_AutoCaptureEnabled(m_autoCaptureInterval);
+    } else if (m_autoCaptureEnabled) {
+        // Stop capturing in any other mode
+        m_autoCaptureEnabled = false;
+        m_schedCounter = 0;
+        this->log_ACTIVITY_HI_AutoCaptureDisabled();
+    }
+}
+
 void CameraManager::schedIn_handler(FwIndexType portNum, U32 context) {
-    if (!m_autoCaptureEnabled) {
+    // Only auto-capture in MEASURE mode
+    if (!m_autoCaptureEnabled || m_currentMode.e != MissionMode::MEASURE) {
         return;
     }
 

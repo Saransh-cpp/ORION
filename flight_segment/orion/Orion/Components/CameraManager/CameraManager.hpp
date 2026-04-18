@@ -31,6 +31,9 @@ class CameraManager final : public CameraManagerComponentBase {
     //! Rate group schedule handler — drives auto-capture timing.
     void schedIn_handler(FwIndexType portNum, U32 context) override;
 
+    //! Mode change handler — stores the current mission mode.
+    void modeChangeIn_handler(FwIndexType portNum, const Orion::MissionMode& mode) override;
+
     // -----------------------------------------------------------------------
     // Helpers
     // -----------------------------------------------------------------------
@@ -53,6 +56,7 @@ class CameraManager final : public CameraManagerComponentBase {
     bool m_autoCaptureEnabled;  //!< True when autonomous capture is active
     U32 m_autoCaptureInterval;  //!< Seconds between auto-captures
     U32 m_schedCounter;         //!< Counts schedIn ticks for auto-capture timing
+    MissionMode m_currentMode;  //!< Current mission mode from EventAction
 };
 
 }  // namespace Orion
