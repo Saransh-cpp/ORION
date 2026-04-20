@@ -39,7 +39,6 @@ class CameraManager final : public CameraManagerComponentBase {
     // -----------------------------------------------------------------------
 
     //! Fills the buffer with raw pixel data from SimSat's Mapbox API.
-    //! Falls back to test images if SimSat is unreachable.
     bool captureIntoBuffer(Fw::Buffer& buf);
 
     //! Performs the full capture-fuse-dispatch pipeline (shared by
@@ -52,7 +51,6 @@ class CameraManager final : public CameraManagerComponentBase {
 
     U32 m_imagesCaptured;
     U32 m_capturesFailed;
-    U32 m_imageIndex;           //!< Cycles through test images (fallback mode)
     bool m_autoCaptureEnabled;  //!< True when autonomous capture is active
     U32 m_autoCaptureInterval;  //!< Seconds between auto-captures
     U32 m_schedCounter;         //!< Counts schedIn ticks for auto-capture timing

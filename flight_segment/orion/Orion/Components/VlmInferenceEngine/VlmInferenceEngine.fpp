@@ -120,7 +120,6 @@ module Orion {
     # --------------------------------------------------------------------------
 
     @ Receives ping requests from the system health monitor.
-    @ Due to inference blocking, this component's health timeout MUST be > 60s.
     async input port pingIn: Svc.Ping
 
     @ Returns the ping response to the system health monitor.

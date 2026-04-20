@@ -4,7 +4,7 @@
 
 The `Orion::VlmInferenceEngine` component runs the LFM2.5-VL-1.6B vision-language model on the satellite's CPU. It receives raw 512x512 RGB image frames from [CameraManager](../../CameraManager/docs/sdd.md), constructs a ChatML-formatted prompt with fused GPS coordinates, executes the llama.cpp forward pass, parses the JSON output into a triage verdict (HIGH/MEDIUM/LOW), and emits the result to [TriageRouter](../../TriageRouter/docs/sdd.md).
 
-The model is a ~700 MB Q4_K_M GGUF file loaded into RAM on demand. Inference takes 10-45 seconds per frame on the Pi 5's Cortex-A76 cores (CPU-only, no GPU). The component runs on a dedicated low-priority thread to avoid blocking other flight software.
+The model is a ~700 MB Q4_K_M GGUF file loaded into RAM on demand. Inference takes 50-60 seconds per frame on the Pi 5's Cortex-A76 cores (CPU-only, no GPU). The component runs on a dedicated low-priority thread to avoid blocking other flight software.
 
 ## 2. Requirements
 
@@ -97,20 +97,22 @@ The model auto-loads on MEASURE entry and auto-unloads on IDLE or SAFE entry. Du
 
 ### 3.6 Commands
 
-| Command        | Opcode | Behavior                                                   |
-| -------------- | ------ | ---------------------------------------------------------- |
-| `LOAD_MODEL`   | 0x00   | Loads GGUF text model + mmproj vision encoder. Idempotent. |
-| `UNLOAD_MODEL` | 0x01   | Frees all llama.cpp state from RAM.                        |
+| Command        | Opcode | Behavior                                                                                           |
+| -------------- | ------ | -------------------------------------------------------------------------------------------------- |
+| `LOAD_MODEL`   | 0x00   | Loads GGUF text model + mmproj vision encoder. Idempotent. Rejected if not in MEASURE or DOWNLINK. |
+| `UNLOAD_MODEL` | 0x01   | Frees all llama.cpp state from RAM.                                                                |
 
 ### 3.7 Events
 
-| Event               | Severity    | Description                                                     |
-| ------------------- | ----------- | --------------------------------------------------------------- |
-| `ModelLoaded`       | ACTIVITY_HI | Model and vision encoder loaded into RAM                        |
-| `ModelUnloaded`     | ACTIVITY_HI | Model freed from RAM                                            |
-| `ModelLoadFailed`   | WARNING_HI  | GGUF file or mmproj failed to load (with path)                  |
-| `InferenceFailed`   | WARNING_HI  | Tokenization, eval, or generation failed for a frame            |
-| `InferenceComplete` | ACTIVITY_HI | Successful classification with category, reason, and time in ms |
+| Event                        | Severity    | Description                                                     |
+| ---------------------------- | ----------- | --------------------------------------------------------------- |
+| `ModelLoaded`                | ACTIVITY_HI | Model and vision encoder loaded into RAM                        |
+| `ModelUnloaded`              | ACTIVITY_HI | Model freed from RAM                                            |
+| `ModelLoadFailed`            | WARNING_HI  | GGUF file or mmproj failed to load (with path)                  |
+| `InferenceFailed`            | WARNING_HI  | Tokenization, eval, or generation failed for a frame            |
+| `FrameDroppedModelNotLoaded` | WARNING_LO  | Frame arrived but model not loaded — buffer returned            |
+| `LoadModelRejectedWrongMode` | WARNING_LO  | LOAD_MODEL rejected — not in MEASURE or DOWNLINK                |
+| `InferenceComplete`          | ACTIVITY_HI | Successful classification with category, reason, and time in ms |
 
 ### 3.8 Telemetry
 
@@ -133,14 +135,14 @@ The model auto-loads on MEASURE entry and auto-unloads on IDLE or SAFE entry. Du
 
 ### 3.10 Environment Variables
 
-| Variable            | Default                                                        | Description                                |
-| ------------------- | -------------------------------------------------------------- | ------------------------------------------ |
-| `ORION_GGUF_PATH`   | `/home/pi/ORION/ground_segment/training/orion-q4_k_m.gguf`     | Path to the Q4_K_M quantized text model    |
-| `ORION_MMPROJ_PATH` | `/home/pi/ORION/ground_segment/training/orion-mmproj-f16.gguf` | Path to the FP16 vision encoder projection |
+| Variable            | Default                                 | Description                                |
+| ------------------- | --------------------------------------- | ------------------------------------------ |
+| `ORION_GGUF_PATH`   | `/home/saransh/ORION/orion-q4_k_m.gguf` | Path to the Q4_K_M quantized text model    |
+| `ORION_MMPROJ_PATH` | `/home/saransh/orion-mmproj-f16.gguf`   | Path to the FP16 vision encoder projection |
 
 ## 4. Known Issues
 
-1. **Health ping latency during inference:** The `pingIn` handler is async and queued behind the current inference. If inference takes 45s, the ping response is delayed 45s. The health watchdog timeout for this component must be set above 60s to avoid false fault detection.
+1. **Health ping latency during inference:** The `pingIn` handler is async and queued behind the current inference. If inference takes 60s, the ping response is delayed 60s. The health watchdog is configured with WARN=20 (~80s) and FATAL=30 (~120s) in `OrionTopologyDefs.hpp` to accommodate this.
 
 2. **Response truncation at 510 chars:** The response buffer is 512 bytes. If the model generates a long reason before the `"category"` key, the JSON is truncated and the category defaults to LOW. The 200-token limit usually keeps responses within ~400 chars, but this is not guaranteed.
 
@@ -148,8 +150,10 @@ The model auto-loads on MEASURE entry and auto-unloads on IDLE or SAFE entry. Du
 
 ## 5. Change Log
 
-| Date       | Description                                                                                           |
-| ---------- | ----------------------------------------------------------------------------------------------------- |
-| 2026-04-17 | Initial implementation: llama.cpp integration, ChatML prompt, JSON parser                             |
-| 2026-04-18 | Fixed chat template (Phi-3 → ChatML), token limit 128 → 200, model auto-lifecycle on mode transitions |
-| 2026-04-18 | Fixed model not unloading on DOWNLINK → SAFE transition                                               |
+| Date       | Description                                                               |
+| ---------- | ------------------------------------------------------------------------- |
+| 2026-04-17 | Initial implementation: llama.cpp integration, ChatML prompt, JSON parser |
+| 2026-04-18 | Fixed chat template (Phi-3 to ChatML), token limit, auto-lifecycle        |
+| 2026-04-18 | Fixed model not unloading on DOWNLINK → SAFE transition                   |
+| 2026-04-20 | Added mode gating, FrameDroppedModelNotLoaded, LoadModelRejectedWrongMode |
+| 2026-04-20 | Set health watchdog WARN=20/FATAL=30 for 50-60s Pi inference times        |

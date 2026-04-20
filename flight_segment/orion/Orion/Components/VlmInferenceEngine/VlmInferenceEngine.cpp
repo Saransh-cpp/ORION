@@ -39,11 +39,11 @@ static const char* modeStr(MissionMode mode) {
 // ---------------------------------------------------------------------------
 static const char* getGgufPath() {
     const char* p = ::getenv("ORION_GGUF_PATH");
-    return p ? p : "/home/pi/ORION/ground_segment/training/orion-q4_k_m.gguf";
+    return p ? p : "/home/saransh/ORION/orion-q4_k_m.gguf";
 }
 static const char* getMmprojPath() {
     const char* p = ::getenv("ORION_MMPROJ_PATH");
-    return p ? p : "/home/pi/ORION/ground_segment/training/orion-mmproj-f16.gguf";
+    return p ? p : "/home/saransh/ORION/orion-mmproj-f16.gguf";
 }
 
 // ---------------------------------------------------------------------------
@@ -97,12 +97,7 @@ void VlmInferenceEngine::UNLOAD_MODEL_cmdHandler(FwOpcodeType opCode, U32 cmdSeq
 // Inference port handler
 // ---------------------------------------------------------------------------
 
-void VlmInferenceEngine::pingIn_handler(FwIndexType portNum, U32 key) {
-    // Echo key back immediately. If a Ping arrives during a 45-second inference
-    // it will queue and be answered as soon as this thread becomes free — the
-    // watchdog timeout for this component must be configured above 60 seconds.
-    this->pingOut_out(0, key);
-}
+void VlmInferenceEngine::pingIn_handler(FwIndexType portNum, U32 key) { this->pingOut_out(0, key); }
 
 void VlmInferenceEngine::modeChangeIn_handler(FwIndexType portNum, const Orion::MissionMode& mode) {
     m_currentMode = mode;

@@ -10,10 +10,17 @@ export ORION_DOWNLINK_QUEUE_DIR="/Users/schopra/Code/Personal/LiquidAIDPhiHack/O
 Pi:
 
 docker compose build
-scp build-output/Orion saransh@baryon:/home/pi/ORION/
+docker compose run --rm pi-build
+scp build-output/Orion saransh@baryon:/home/saransh/ORION/
+scp ground_segment/training/orion-q4_k_m.gguf saransh@baryon:/home/saransh/ORION/
+scp ground_segment/training/orion-mmproj-f16.gguf saransh@baryon:/home/saransh/ORION/
 
 export ORION_SIMSAT_URL=http://192.168.1.183:9005
-./Orion -a 0.0.0.0 -p 50000
+./Orion -a 192.168.1.183 -p 50000
+
+Mac:
+
+fprime-gds -n --ip-address 0.0.0.0 --ip-port 50000
 
 ## TODO
 

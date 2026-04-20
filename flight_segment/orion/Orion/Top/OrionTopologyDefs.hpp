@@ -43,11 +43,10 @@ namespace Orion_cmdSeq {
 enum { WARN = 3, FATAL = 5 };
 }
 
-// VlmInferenceEngine: inference takes 15-45 s.  At 4 s/ping that is up to
-// 11 missed pings during a single forward pass.  WARN=10 (~40 s) gives a
-// heads-up, FATAL=15 (~60 s) is the hard deadline.
+// VlmInferenceEngine: inference takes 50-60 s on Pi 5.  At 4 s/ping,
+// WARN=20 (~80 s) avoids noise, FATAL=30 (~120 s) is the hard deadline.
 namespace Orion_vlmInferenceEngine {
-enum { WARN = 10, FATAL = 15 };
+enum { WARN = 20, FATAL = 30 };
 }
 }  // namespace PingEntries
 
