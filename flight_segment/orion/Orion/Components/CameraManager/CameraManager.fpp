@@ -111,6 +111,15 @@ module Orion {
       id 0x06 \
       format "CameraManager: Command rejected — not in MEASURE (current: {})"
 
+    @ Emitted when the requested capture interval is clamped to the minimum.
+    event CaptureIntervalClamped(
+      requested: U32
+      minimum: U32
+    ) \
+      severity warning low \
+      id 0x07 \
+      format "CameraManager: Requested interval {}s too low — clamped to {}s"
+
     # --------------------------------------------------------------------------
     # Required F-Prime framework ports
     # --------------------------------------------------------------------------

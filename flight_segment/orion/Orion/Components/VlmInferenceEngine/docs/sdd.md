@@ -49,13 +49,22 @@ For each frame, `runInference()` executes the following stages:
 
 2. **Image encoding** — `mtmd_bitmap_init()` wraps the raw RGB buffer, `mtmd_tokenize()` replaces the image marker with vision encoder tokens
 
-3. **KV cache evaluation** — `mtmd_helper_eval_chunks()` processes all prompt chunks (text + vision tokens) into the context
+3. **KV cache evaluation** — `mtmd_helper_eval_chunks()` processes all prompt chunks (text + vision tokens) into the context. Timeout checked after eval.
 
-4. **Autoregressive generation** — Greedy sampling up to `MAX_RESPONSE_TOKENS` (200 tokens), stopping on EOG token
+4. **Autoregressive generation** — Greedy sampling up to `MAX_RESPONSE_TOKENS` (200 tokens), stopping on EOG token. Timeout checked per token.
 
 5. **KV cache reset** — `llama_memory_clear()` and `llama_sampler_reset()` prepare for the next frame
 
 6. **JSON parsing** — `parseVerdictJson()` extracts `"category"` and `"reason"` from the response
+
+### 3.3 Inference Timeout
+
+A self-watchdog checks elapsed time at two points during inference:
+
+- **After prompt eval** — catches cases where vision encoding + context evaluation exceeds the limit
+- **Per token in generation loop** — catches slow or stuck token generation
+
+If elapsed time exceeds `INFERENCE_TIMEOUT_S` (120s), the inference is aborted: KV cache is cleared, sampler is reset, `InferenceTimeout` event is logged, and the frame is dropped. The model stays loaded and ready for the next frame — no restart required.
 
 ### 3.3 JSON Parser
 
@@ -90,10 +99,8 @@ The model auto-loads on MEASURE entry and auto-unloads on IDLE or SAFE entry. Du
 | -------------------- | ----------- | ---------------------- | -------------------------------------------------------------- |
 | `inferenceRequestIn` | async input | `InferenceRequestPort` | Receives image buffer + GPS from CameraManager (queue depth 5) |
 | `modeChangeIn`       | async input | `ModeChangePort`       | Receives mode broadcasts from EventAction                      |
-| `pingIn`             | async input | `Svc.Ping`             | Health watchdog ping (echoed back immediately when dequeued)   |
 | `triageDecisionOut`  | output      | `TriageDecisionPort`   | Emits verdict + reason + buffer to TriageRouter                |
 | `bufferReturnOut`    | output      | `Fw.BufferSend`        | Returns buffer to pool on inference failure                    |
-| `pingOut`            | output      | `Svc.Ping`             | Health watchdog response                                       |
 
 ### 3.6 Commands
 
@@ -132,6 +139,7 @@ The model auto-loads on MEASURE entry and auto-unloads on IDLE or SAFE entry. Du
 | `N_THREADS`           | 4     | CPU threads for inference (Pi 5 quad-core) |
 | `MAX_RESPONSE_TOKENS` | 200   | Maximum tokens to generate per frame       |
 | `IMAGE_MAX_TOKENS`    | 1024  | Cap on vision encoder output tokens        |
+| `INFERENCE_TIMEOUT_S` | 120   | Abort inference after this many seconds    |
 
 ### 3.10 Environment Variables
 
@@ -140,15 +148,7 @@ The model auto-loads on MEASURE entry and auto-unloads on IDLE or SAFE entry. Du
 | `ORION_GGUF_PATH`   | `/home/saransh/ORION/orion-q4_k_m.gguf` | Path to the Q4_K_M quantized text model    |
 | `ORION_MMPROJ_PATH` | `/home/saransh/orion-mmproj-f16.gguf`   | Path to the FP16 vision encoder projection |
 
-## 4. Known Issues
-
-1. **Health ping latency during inference:** The `pingIn` handler is async and queued behind the current inference. If inference takes 60s, the ping response is delayed 60s. The health watchdog is configured with WARN=20 (~80s) and FATAL=30 (~120s) in `OrionTopologyDefs.hpp` to accommodate this.
-
-2. **Response truncation at 510 chars:** The response buffer is 512 bytes. If the model generates a long reason before the `"category"` key, the JSON is truncated and the category defaults to LOW. The 200-token limit usually keeps responses within ~400 chars, but this is not guaranteed.
-
-3. **Category matching is case-sensitive:** The parser only checks for `"HIGH"` and `"MEDIUM"` (uppercase, quoted). If the model outputs `"High"` or an unquoted keyword, it defaults to LOW. The fine-tuned model consistently outputs uppercase, but this is fragile.
-
-## 5. Change Log
+## 4. Change Log
 
 | Date       | Description                                                               |
 | ---------- | ------------------------------------------------------------------------- |
@@ -156,4 +156,4 @@ The model auto-loads on MEASURE entry and auto-unloads on IDLE or SAFE entry. Du
 | 2026-04-18 | Fixed chat template (Phi-3 to ChatML), token limit, auto-lifecycle        |
 | 2026-04-18 | Fixed model not unloading on DOWNLINK → SAFE transition                   |
 | 2026-04-20 | Added mode gating, FrameDroppedModelNotLoaded, LoadModelRejectedWrongMode |
-| 2026-04-20 | Set health watchdog WARN=20/FATAL=30 for 50-60s Pi inference times        |
+| 2026-04-24 | Removed health ping; added 120s self-watchdog with InferenceTimeout event |

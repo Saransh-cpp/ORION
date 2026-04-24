@@ -1,0 +1,94 @@
+name: Flight Segment CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "flight_segment/**"
+      - "ground_segment/llama.cpp/**"
+      - "docker/**"
+      - ".github/workflows/fs_ci.yml"
+  pull_request:
+    paths:
+      - "flight_segment/**"
+      - "ground_segment/llama.cpp/**"
+      - "docker/**"
+      - ".github/workflows/fs_ci.yml"
+
+jobs:
+  build-dev:
+    name: Development build with clang-tidy
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install clang-tidy libcurl4-openssl-dev libomp-dev
+
+      - uses: astral-sh/setup-uv@v8.1.0
+        with:
+          python-version: "3.12"
+          enable-cache: true
+          activate-environment: true
+
+      - name: Install Python dependencies
+        run: uv pip install -r flight_segment/orion/lib/fprime/requirements.txt
+
+      - name: Build llama.cpp
+        run: |
+          cd ground_segment/llama.cpp
+          cmake -B build \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DLLAMA_BUILD_TESTS=OFF \
+            -DLLAMA_BUILD_EXAMPLES=OFF \
+            -DLLAMA_BUILD_SERVER=OFF
+          cmake --build build -j$(nproc)
+
+      - name: Generate and build with clang-tidy
+        run: |
+          cd flight_segment/orion
+          fprime-util generate -DCMAKE_CXX_CLANG_TIDY=clang-tidy
+          fprime-util build --all -j$(nproc)
+
+      - name: Verify binary exists
+        run: test -f flight_segment/orion/build-artifacts/Linux/Orion/bin/Orion
+
+  build-deploy:
+    name: Deployment build for ARM64 Pi
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build base image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.base
+          push: false
+          load: true
+          tags: orion-base:latest
+          cache-from: type=gha,scope=base
+          cache-to: type=gha,scope=base,mode=max
+
+      - name: Build flight segment
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.pi
+          push: false
+          load: true
+          tags: orion-pi:latest
+          cache-from: type=gha,scope=pi
+          cache-to: type=gha,scope=pi,mode=max
+
+      - name: Verify binary exists
+        run: docker run --rm orion-pi:latest test -f /output/Orion

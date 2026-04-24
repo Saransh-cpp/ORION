@@ -60,7 +60,12 @@ void CameraManager::ENABLE_AUTO_CAPTURE_cmdHandler(FwOpcodeType opCode, U32 cmdS
         return;
     }
     m_autoCaptureEnabled = true;
-    m_autoCaptureInterval = (interval >= MIN_CAPTURE_INTERVAL) ? interval : MIN_CAPTURE_INTERVAL;
+    if (interval < MIN_CAPTURE_INTERVAL) {
+        this->log_WARNING_LO_CaptureIntervalClamped(interval, MIN_CAPTURE_INTERVAL);
+        m_autoCaptureInterval = MIN_CAPTURE_INTERVAL;
+    } else {
+        m_autoCaptureInterval = interval;
+    }
     m_schedCounter = 0;
 
     this->log_ACTIVITY_HI_AutoCaptureEnabled(m_autoCaptureInterval);

@@ -26,6 +26,9 @@ class EventAction final : public EventActionComponentBase {
     void ENTER_SAFE_MODE_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) override;
     void EXIT_SAFE_MODE_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) override;
     void FLUSH_MEDIUM_STORAGE_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) override;
+    void GOTO_IDLE_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) override;
+    void GOTO_MEASURE_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) override;
+    void GOTO_DOWNLINK_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) override;
 
     // -----------------------------------------------------------------------
     // State machine action/guard implementations

@@ -14,14 +14,14 @@ static constexpr U32 POLL_INTERVAL_TICKS = 5;
 // Earth's mean radius in km (for Haversine calculation)
 static constexpr F64 EARTH_RADIUS_KM = 6371.0;
 
-// Env var helpers for ground station config
+// Env var helpers for ground station config (default: EPFL, Ecublens, Switzerland)
 static F64 getGsLat() {
     const char* p = ::getenv("ORION_GS_LAT");
-    return p ? ::atof(p) : 40.0;
+    return p ? ::atof(p) : 46.5191;
 }
 static F64 getGsLon() {
     const char* p = ::getenv("ORION_GS_LON");
-    return p ? ::atof(p) : -74.0;
+    return p ? ::atof(p) : 6.5668;
 }
 static F64 getGsRangeKm() {
     const char* p = ::getenv("ORION_GS_RANGE_KM");

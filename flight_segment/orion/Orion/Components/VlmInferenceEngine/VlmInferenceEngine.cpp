@@ -35,7 +35,7 @@ static const char* modeStr(MissionMode mode) {
 
 // ---------------------------------------------------------------------------
 // Model paths — text decoder and vision encoder are separate GGUF files.
-// Override via env vars: ORION_getGgufPath(), ORION_getMmprojPath()
+// Override via env vars: ORION_GGUF_PATH, ORION_MMPROJ_PATH
 // ---------------------------------------------------------------------------
 static const char* getGgufPath() {
     const char* p = ::getenv("ORION_GGUF_PATH");
@@ -55,7 +55,8 @@ static constexpr int N_CTX = 4096;
 static constexpr int N_BATCH = 512;
 static constexpr int N_THREADS = 4;  // Pi 5 Cortex-A76 quad-core
 static constexpr int MAX_RESPONSE_TOKENS = 200;
-static constexpr int IMAGE_MAX_TOKENS = 1024;  // cap to save KV space
+static constexpr int IMAGE_MAX_TOKENS = 1024;    // cap to save KV space
+static constexpr int INFERENCE_TIMEOUT_S = 120;  // abort inference after 2 minutes
 
 // ---------------------------------------------------------------------------
 // Constructor / destructor
@@ -97,8 +98,6 @@ void VlmInferenceEngine::UNLOAD_MODEL_cmdHandler(FwOpcodeType opCode, U32 cmdSeq
 // Inference port handler
 // ---------------------------------------------------------------------------
 
-void VlmInferenceEngine::pingIn_handler(FwIndexType portNum, U32 key) { this->pingOut_out(0, key); }
-
 void VlmInferenceEngine::modeChangeIn_handler(FwIndexType portNum, const Orion::MissionMode& mode) {
     m_currentMode = mode;
 
@@ -133,7 +132,7 @@ void VlmInferenceEngine::inferenceRequestIn_handler(FwIndexType portNum, Fw::Buf
     ::clock_gettime(CLOCK_MONOTONIC, &ts0);
 
     Orion::TriagePriority verdict = TriagePriority::LOW;
-    char reason[256] = "Low confidence classification";
+    char reason[512] = "Low confidence classification";
 
     bool ok = runInference(buffer, lat, lon, verdict, reason, sizeof(reason));
 
@@ -214,6 +213,10 @@ bool VlmInferenceEngine::runInference(const Fw::Buffer& buffer, F64 lat, F64 lon
         return false;
     }
 
+    // Record start time for timeout check.
+    struct timespec t0;
+    ::clock_gettime(CLOCK_MONOTONIC, &t0);
+
     // Evaluate all chunks (text + encoded image) into the KV cache.
     // new_n_past is updated to the position after the last prompt token.
     llama_pos new_n_past = 0;
@@ -226,13 +229,33 @@ bool VlmInferenceEngine::runInference(const Fw::Buffer& buffer, F64 lat, F64 lon
         return false;
     }
 
+    // Check timeout after prompt eval (can take 30-40s on Pi).
+    struct timespec tnow;
+    ::clock_gettime(CLOCK_MONOTONIC, &tnow);
+    U32 elapsed = static_cast<U32>(tnow.tv_sec - t0.tv_sec);
+    if (elapsed >= INFERENCE_TIMEOUT_S) {
+        llama_memory_clear(llama_get_memory(m_ctx), false);
+        this->log_WARNING_HI_InferenceTimeout(elapsed * 1000u);
+        return false;
+    }
+
     // Generate response tokens one at a time.
     // llama_batch_get_one with nullptr pos auto-advances from the KV tail.
     const llama_vocab* vocab = llama_model_get_vocab(m_model);
-    char response[512] = {};
+    char response[1024] = {};
     int rpos = 0;
 
-    for (int i = 0; i < MAX_RESPONSE_TOKENS && rpos < 510; i++) {
+    for (int i = 0; i < MAX_RESPONSE_TOKENS && rpos < 1022; i++) {
+        // Per-token timeout check.
+        ::clock_gettime(CLOCK_MONOTONIC, &tnow);
+        elapsed = static_cast<U32>(tnow.tv_sec - t0.tv_sec);
+        if (elapsed >= INFERENCE_TIMEOUT_S) {
+            llama_memory_clear(llama_get_memory(m_ctx), false);
+            llama_sampler_reset(m_sampler);
+            this->log_WARNING_HI_InferenceTimeout(elapsed * 1000u);
+            return false;
+        }
+
         llama_token tok = llama_sampler_sample(m_sampler, m_ctx, -1);
         llama_sampler_accept(m_sampler, tok);
 
@@ -242,7 +265,7 @@ bool VlmInferenceEngine::runInference(const Fw::Buffer& buffer, F64 lat, F64 lon
 
         char piece[32] = {};
         int n = llama_token_to_piece(vocab, tok, piece, static_cast<int32_t>(sizeof(piece)) - 1, 0, true);
-        if (n > 0 && rpos + n < 511) {
+        if (n > 0 && rpos + n < 1023) {
             ::memcpy(response + rpos, piece, static_cast<size_t>(n));
             rpos += n;
         }

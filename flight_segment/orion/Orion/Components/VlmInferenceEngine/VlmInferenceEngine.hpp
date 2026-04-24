@@ -34,9 +34,6 @@ class VlmInferenceEngine final : public VlmInferenceEngineComponentBase {
     //! Mode change handler — stores the current mission mode.
     void modeChangeIn_handler(FwIndexType portNum, const Orion::MissionMode& mode) override;
 
-    //! Health Watchdog: echo the key back immediately when dequeued.
-    void pingIn_handler(FwIndexType portNum, U32 key) override;
-
     // -----------------------------------------------------------------------
     // Helpers
     // -----------------------------------------------------------------------

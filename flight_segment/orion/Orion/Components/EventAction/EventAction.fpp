@@ -10,6 +10,7 @@ module Orion {
     signal commWindowClosed
     signal sunUp
     signal eclipse
+    signal returnToIdle
     signal fault
     signal clearFault
 
@@ -17,7 +18,7 @@ module Orion {
 
     initial enter IDLE
 
-    @ Startup state and eclipse state. No captures, no downlink.
+    @ Central state — sunlit (charging) or post-SAFE.
     state IDLE {
       entry do { broadcastMode, logModeChange }
       on sunUp enter MEASURE
@@ -25,11 +26,12 @@ module Orion {
       on fault enter SAFE
     }
 
-    @ Active imaging mode.
+    @ Active imaging mode (eclipse — on battery).
     state MEASURE {
       entry do { broadcastMode, logModeChange }
       on commWindowOpened enter DOWNLINK
       on eclipse enter IDLE
+      on returnToIdle enter IDLE
       on fault enter SAFE
     }
 
@@ -37,6 +39,7 @@ module Orion {
     state DOWNLINK {
       entry do { broadcastMode, logModeChange }
       on commWindowClosed enter POST_DOWNLINK
+      on returnToIdle enter IDLE
       on fault enter SAFE
     }
 
@@ -109,6 +112,15 @@ module Orion {
     @ Only allowed in DOWNLINK mode (comm window open).
     async command FLUSH_MEDIUM_STORAGE opcode 0x03
 
+    @ Request transition to IDLE. Only allowed from MEASURE or DOWNLINK.
+    async command GOTO_IDLE opcode 0x10
+
+    @ Request transition to MEASURE. Only allowed from IDLE.
+    async command GOTO_MEASURE opcode 0x11
+
+    @ Request transition to DOWNLINK. Only allowed from IDLE.
+    async command GOTO_DOWNLINK opcode 0x12
+
     # --------------------------------------------------------------------------
     # Telemetry
     # --------------------------------------------------------------------------
@@ -178,6 +190,15 @@ module Orion {
       severity warning high \
       id 0x07 \
       format "EventAction: MEDIUM storage path too long for FileDownlink (max 100 chars)"
+
+    @ Emitted when a GOTO command is rejected due to invalid transition.
+    event GotoRejected(
+      targetMode: string size 16
+      currentMode: string size 16
+    ) \
+      severity warning low \
+      id 0x08 \
+      format "EventAction: GOTO {} rejected — not allowed from {}"
 
     # --------------------------------------------------------------------------
     # Required F-Prime framework ports

@@ -105,22 +105,36 @@ void EventAction::schedIn_handler(FwIndexType portNum, U32 context) {
 void EventAction::SET_ECLIPSE_cmdHandler(FwOpcodeType opCode, U32 cmdSeq, bool inEclipse) {
     m_inEclipse = inEclipse;
 
+    // Power doctrine: MEASURE during eclipse (on battery, can't charge anyway),
+    // IDLE during sunlit (charge batteries, conserve for next eclipse).
+    // State machine signal names are abstract: "sunUp" = activate MEASURE,
+    // "eclipse" = deactivate to IDLE.
     if (inEclipse) {
-        this->missionMode_sendSignal_eclipse();
+        this->missionMode_sendSignal_sunUp();  // eclipse → MEASURE
     } else {
-        this->missionMode_sendSignal_sunUp();
+        this->missionMode_sendSignal_eclipse();  // sun visible → IDLE (charge)
     }
 
     this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::OK);
 }
 
 void EventAction::ENTER_SAFE_MODE_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) {
+    if (m_prevMode.e == MissionMode::SAFE) {
+        this->log_WARNING_LO_GotoRejected(Fw::String("SAFE"), Fw::String("SAFE"));
+        this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::EXECUTION_ERROR);
+        return;
+    }
     this->missionMode_sendSignal_fault();
     this->log_WARNING_HI_SafeModeEntered();
     this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::OK);
 }
 
 void EventAction::EXIT_SAFE_MODE_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) {
+    if (m_prevMode.e != MissionMode::SAFE) {
+        this->log_WARNING_LO_GotoRejected(Fw::String("IDLE"), Fw::String(modeToStr(m_prevMode)));
+        this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::EXECUTION_ERROR);
+        return;
+    }
     this->missionMode_sendSignal_clearFault();
     this->log_ACTIVITY_HI_SafeModeExited();
 
@@ -133,8 +147,8 @@ void EventAction::EXIT_SAFE_MODE_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) {
     if (inCommWindow) {
         this->log_ACTIVITY_HI_CommWindowOpened(nav.get_gsDistanceKm());
         this->missionMode_sendSignal_commWindowOpened();
-    } else if (!m_inEclipse) {
-        this->missionMode_sendSignal_sunUp();
+    } else if (m_inEclipse) {
+        this->missionMode_sendSignal_sunUp();  // eclipse → MEASURE
     }
 
     this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::OK);
@@ -160,6 +174,39 @@ void EventAction::FLUSH_MEDIUM_STORAGE_cmdHandler(FwOpcodeType opCode, U32 cmdSe
     // Start the paced flush — schedIn will queue one file per tick
     m_flushingMedium = true;
     m_mediumFlushed = 0;
+    this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::OK);
+}
+
+void EventAction::GOTO_IDLE_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) {
+    // Only from MEASURE or DOWNLINK
+    if (m_prevMode.e != MissionMode::MEASURE && m_prevMode.e != MissionMode::DOWNLINK) {
+        this->log_WARNING_LO_GotoRejected(Fw::String("IDLE"), Fw::String(modeToStr(m_prevMode)));
+        this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::EXECUTION_ERROR);
+        return;
+    }
+    this->missionMode_sendSignal_returnToIdle();
+    this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::OK);
+}
+
+void EventAction::GOTO_MEASURE_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) {
+    // Only from IDLE
+    if (m_prevMode.e != MissionMode::IDLE) {
+        this->log_WARNING_LO_GotoRejected(Fw::String("MEASURE"), Fw::String(modeToStr(m_prevMode)));
+        this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::EXECUTION_ERROR);
+        return;
+    }
+    this->missionMode_sendSignal_sunUp();
+    this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::OK);
+}
+
+void EventAction::GOTO_DOWNLINK_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) {
+    // Only from IDLE
+    if (m_prevMode.e != MissionMode::IDLE) {
+        this->log_WARNING_LO_GotoRejected(Fw::String("DOWNLINK"), Fw::String(modeToStr(m_prevMode)));
+        this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::EXECUTION_ERROR);
+        return;
+    }
+    this->missionMode_sendSignal_commWindowOpened();
     this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::OK);
 }
 
@@ -200,7 +247,9 @@ void EventAction::Orion_MissionModeSm_action_logModeChange(SmId smId, Orion_Miss
 // ---------------------------------------------------------------------------
 
 bool EventAction::Orion_MissionModeSm_guard_sunIsUp(SmId smId, Orion_MissionModeSm::Signal signal) const {
-    return !m_inEclipse;
+    // Guard name is abstract. Returns true → MEASURE, false → IDLE.
+    // MEASURE during eclipse (battery powered), IDLE during sun (charging).
+    return m_inEclipse;
 }
 
 // ---------------------------------------------------------------------------
@@ -231,10 +280,10 @@ MissionMode EventAction::signalToTargetMode(Orion_MissionModeSm::Signal signal) 
         case Orion_MissionModeSm::Signal::fault:
             return MissionMode::SAFE;
         case Orion_MissionModeSm::Signal::commWindowClosed:
-            // POST_DOWNLINK choice routes to MEASURE (sun up) or IDLE (eclipse).
-            // Can't distinguish from signal alone — check the eclipse flag.
-            return m_inEclipse ? MissionMode::IDLE : MissionMode::MEASURE;
+            // POST_DOWNLINK choice: MEASURE during eclipse, IDLE during sun.
+            return m_inEclipse ? MissionMode::MEASURE : MissionMode::IDLE;
         case Orion_MissionModeSm::Signal::eclipse:
+        case Orion_MissionModeSm::Signal::returnToIdle:
         case Orion_MissionModeSm::Signal::clearFault:
         case Orion_MissionModeSm::Signal::__FPRIME_INITIAL_TRANSITION:
         default:

@@ -105,25 +105,23 @@ module Orion {
       id 0x06 \
       format "VlmInferenceEngine: LOAD_MODEL rejected — not in MEASURE or DOWNLINK (current: {})"
 
+    @ Emitted when inference exceeds the timeout and is aborted.
+    event InferenceTimeout(
+      elapsed_ms: U32
+    ) \
+      severity warning high \
+      id 0x07 \
+      format "VlmInferenceEngine: Inference timed out after {}ms — frame dropped, KV cache reset"
+
     @ Emitted on every successful classification with the VLM's reasoning.
     event InferenceComplete(
       category: string size 16
-      reason: string size 200
+      reason: string size 512
       time_ms: U32
     ) \
       severity activity high \
       id 0x04 \
       format "VLM RESULT: {} — {} ({}ms)"
-
-    # --------------------------------------------------------------------------
-    # Ping ports (for Health Watchdog)
-    # --------------------------------------------------------------------------
-
-    @ Receives ping requests from the system health monitor.
-    async input port pingIn: Svc.Ping
-
-    @ Returns the ping response to the system health monitor.
-    output port pingOut: Svc.Ping
 
     # --------------------------------------------------------------------------
     # Required F-Prime framework ports
