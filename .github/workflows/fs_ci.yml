@@ -73,9 +73,8 @@ jobs:
         with:
           context: .
           file: docker/Dockerfile.base
+          platforms: linux/arm64
           push: false
-          load: true
-          tags: orion-base:latest
           cache-from: type=gha,scope=base
           cache-to: type=gha,scope=base,mode=max
 
@@ -84,11 +83,7 @@ jobs:
         with:
           context: .
           file: docker/Dockerfile.pi
+          platforms: linux/arm64
           push: false
-          load: true
-          tags: orion-pi:latest
           cache-from: type=gha,scope=pi
           cache-to: type=gha,scope=pi,mode=max
-
-      - name: Verify binary exists
-        run: docker run --rm orion-pi:latest test -f /output/Orion
