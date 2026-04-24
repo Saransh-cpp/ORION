@@ -2,6 +2,8 @@
 
 Orbital Real-time Inference and Observation Network.
 
+[![Flight Segment CI](https://github.com/Saransh-cpp/ORION/actions/workflows/fs_ci.yml/badge.svg)](https://github.com/Saransh-cpp/ORION/actions/workflows/fs_ci.yml)
+
 export ORION_GGUF_PATH="/Users/schopra/Code/Personal/LiquidAIDPhiHack/ORION/ground_segment/training/orion-q4_k_m.gguf"
 export ORION_MMPROJ_PATH="/Users/schopra/Code/Personal/LiquidAIDPhiHack/ORION/ground_segment/training/orion-mmproj-f16.gguf"
 export ORION_MEDIUM_STORAGE_DIR="/tmp/orion_medium/"
