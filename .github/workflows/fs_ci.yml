@@ -66,24 +66,9 @@ jobs:
           submodules: recursive
 
       - uses: docker/setup-qemu-action@v3
-      - uses: docker/setup-buildx-action@v3
 
       - name: Build base image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: docker/Dockerfile.base
-          platforms: linux/arm64
-          push: false
-          cache-from: type=gha,scope=base
-          cache-to: type=gha,scope=base,mode=max
+        run: docker build --platform linux/arm64 -t orion-base -f docker/Dockerfile.base .
 
       - name: Build flight segment
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: docker/Dockerfile.pi
-          platforms: linux/arm64
-          push: false
-          cache-from: type=gha,scope=pi
-          cache-to: type=gha,scope=pi,mode=max
+        run: docker build --platform linux/arm64 -f docker/Dockerfile.pi .
