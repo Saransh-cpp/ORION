@@ -10,7 +10,7 @@ namespace Orion {
 
 static const char* getMediumStoragePath() {
     const char* p = ::getenv("ORION_MEDIUM_STORAGE_DIR");
-    return p ? p : "/media/sd/orion/medium/";
+    return p ? p : "/home/saransh/ORION/media/sd/medium/";
 }
 
 EventAction::EventAction(const char* compName)
@@ -65,12 +65,20 @@ void EventAction::schedIn_handler(FwIndexType portNum, U32 context) {
                     char srcPath[256];
                     ::snprintf(srcPath, sizeof(srcPath), "%s%s", storageDir, entry->d_name);
 
+                    // Rename before queueing so we don't re-queue on next tick.
+                    // FileDownlink reads from the renamed path asynchronously.
+                    char sentPath[256];
+                    ::snprintf(sentPath, sizeof(sentPath), "%s.sent", srcPath);
+                    ::rename(srcPath, sentPath);
+
                     Svc::SendFileResponse resp =
-                        this->sendFileOut_out(0, Fw::String(srcPath), Fw::String(entry->d_name), 0, 0);
+                        this->sendFileOut_out(0, Fw::String(sentPath), Fw::String(entry->d_name), 0, 0);
 
                     if (resp.get_status() == Svc::SendFileStatus::STATUS_OK) {
-                        ::unlink(srcPath);
                         m_mediumFlushed++;
+                    } else {
+                        // Queue full — rename back for next attempt
+                        ::rename(sentPath, srcPath);
                     }
                     found = true;
                     break;  // One file per tick

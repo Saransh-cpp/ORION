@@ -26,15 +26,13 @@ fprime-gds -n --ip-address 0.0.0.0 --ip-port 50000
 
 ## TODO
 
-Pi deployment.
-
 Stress testing — rapid captures (lower interval to 10s), SimSat going down mid-capture, receiver not running, buffer pool exhaustion (fill the VLM queue). Verify graceful degradation everywhere.
 
-CI pipeline — fprime-util build in a GitHub Action. The main challenge is llama.cpp static libs + libcurl. A Docker-based CI using your existing Dockerfile.base would be the fastest path.
+Docs
 
 Ground receiver improvements — auto-convert .raw to .png on receive, + show VLM verdicts in real-time.
 
-Docs site?
+Math
 
 - [ ] Check which HIGH are actually being misclassified
 - [ ] Old images from disasters

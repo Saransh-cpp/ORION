@@ -26,7 +26,7 @@ static U16 getGdsPort() {
 // Disk queue directory for frames buffered outside comm window.
 static const char* getQueueDir() {
     const char* p = ::getenv("ORION_DOWNLINK_QUEUE_DIR");
-    return p ? p : "/media/sd/orion/downlink_queue/";
+    return p ? p : "/home/saransh/ORION/media/sd/downlink_queue/";
 }
 
 // 8-byte frame header prepended to every downlinked image:

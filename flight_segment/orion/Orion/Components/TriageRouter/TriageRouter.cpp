@@ -13,7 +13,7 @@ namespace Orion {
 // Override via env var for Mac dev; defaults to Pi 5 microSD path.
 static const char* getMediumStoragePath() {
     const char* p = ::getenv("ORION_MEDIUM_STORAGE_DIR");
-    return p ? p : "/media/sd/orion/medium/";
+    return p ? p : "/home/saransh/ORION/media/sd/medium/";
 }
 
 TriageRouter::TriageRouter(const char* compName)

@@ -103,7 +103,7 @@ The state machine signal names are abstract internal identifiers. The physical m
 | `SET_ECLIPSE`          | 0x00   | `inEclipse: bool` | Sets eclipse flag. `true` → MEASURE (eclipse). `false` → IDLE (charge).  |
 | `ENTER_SAFE_MODE`      | 0x01   | none              | Sends `fault` signal. Rejected if already in SAFE.                       |
 | `EXIT_SAFE_MODE`       | 0x02   | none              | Sends `clearFault` signal; re-syncs conditions. Rejected if not in SAFE. |
-| `FLUSH_MEDIUM_STORAGE` | 0x03   | none              | Paced downlink of MEDIUM files (1/sec). Rejected if not in DOWNLINK.     |
+| `FLUSH_MEDIUM_STORAGE` | 0x03   | none              | Paced downlink of MEDIUM files (1/sec). Renamed to `.sent` after queue.  |
 | `GOTO_IDLE`            | 0x10   | none              | Returns to IDLE. Only allowed from MEASURE or DOWNLINK.                  |
 | `GOTO_MEASURE`         | 0x11   | none              | Transitions to MEASURE. Only allowed from IDLE.                          |
 | `GOTO_DOWNLINK`        | 0x12   | none              | Transitions to DOWNLINK. Only allowed from IDLE.                         |
@@ -130,9 +130,9 @@ The state machine signal names are abstract internal identifiers. The physical m
 
 ### 3.7 Environment Variables
 
-| Variable                   | Default                   | Description                                                                                                         |
-| -------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `ORION_MEDIUM_STORAGE_DIR` | `/media/sd/orion/medium/` | Path to MEDIUM image storage. Must keep total path (dir + filename) under 100 chars for FileDownlink compatibility. |
+| Variable                   | Default                                | Description                                                                                                         |
+| -------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `ORION_MEDIUM_STORAGE_DIR` | `/home/saransh/ORION/media/sd/medium/` | Path to MEDIUM image storage. Must keep total path (dir + filename) under 100 chars for FileDownlink compatibility. |
 
 ## 4. Change Log
 
