@@ -30,8 +30,13 @@ jobs:
           enable-cache: true
           activate-environment: true
 
-      - name: Install dependencies
+      - name: Install Python dependencies
         run: uv pip install -r docs/requirements.txt
+
+      - name: Install Doxygen
+        run: |
+          sudo apt-get update
+          sudo apt-get install doxygen
 
       - name: Build docs
         run: mkdocs build
