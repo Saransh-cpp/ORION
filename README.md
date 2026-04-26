@@ -5,7 +5,12 @@ Orbital Real-time Inference and Observation Network
 [![Flight Segment CI](https://github.com/Saransh-cpp/ORION/actions/workflows/fs_ci.yml/badge.svg)](https://github.com/Saransh-cpp/ORION/actions/workflows/fs_ci.yml)
 [![Documentation](https://github.com/Saransh-cpp/ORION/actions/workflows/docs.yml/badge.svg)](https://saransh-cpp.github.io/ORION/)
 
-An autonomous LEO satellite triage system using a fine-tuned 1.6B vision-language model on a Raspberry Pi 5.
+An autonomous LEO satellite triage system built using:
+
+- a fine-tuned [Liquid AI LFM2.5-VL-1.6B](https://huggingface.co/collections/LiquidAI/lfm2-vl) vision-language model (for inference),
+- [NASA's F-Prime](https://github.com/nasa/fprime) (for flight software),
+- [SimSat](https://github.com/DPhi-Space/SimSat) (to simulate real payload sensors - GNSS and a camera),
+- a Raspberry Pi 5 (to act as satellite's OBC).
 
 ORION solves the orbital bandwidth bottleneck: roughly 71% of Earth's surface is featureless ocean, yet a traditional satellite downlinks every captured frame. By running a Q4-quantized VLM on-board, ORION classifies each image as HIGH, MEDIUM, or LOW priority and only transmits the most strategically valuable observations in real time.
 
