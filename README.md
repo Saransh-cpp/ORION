@@ -18,7 +18,7 @@ ORION solves the orbital bandwidth bottleneck: roughly 71% of Earth's surface is
 
 ## Motivation
 
-This project was born from a real problem flagged on a real mission. Being the Flight Software subsystems lead on EPFL Spacecraft Team's [CHESS](https://epflspacecraft.com/) mission (part of ESA's Fly Your Satellite! Design Booster programme), I received a Review Item Discrepancy (RID) during our Final Design Review (FDR) from an ESA expert:
+This project was born from a real problem flagged on a real mission. Being the Flight Software subsystems lead on [EPFL Spacecraft Team's](https://www.epflspacecraftteam.ch) [CHESS](https://www.epflspacecraftteam.ch/project#chess) mission (part of [ESA's Fly Your Satellite! Design Booster programme](https://www.esa.int/Education/Educational_Satellites/About_Design_Booster)), I received a Review Item Discrepancy (RID) during our Final Design Review (FDR) from an ESA expert:
 
 > _"From experience I recommend thinking about pre-loading software that allows you to check that a picture is worth downloading before you do it."_
 
