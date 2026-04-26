@@ -1,19 +1,17 @@
 name: Flight Segment CI
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "flight_segment/**"
-      - "ground_segment/llama.cpp/**"
-      - "docker/**"
-      - ".github/workflows/fs_ci.yml"
   pull_request:
-    paths:
-      - "flight_segment/**"
-      - "ground_segment/llama.cpp/**"
-      - "docker/**"
-      - ".github/workflows/fs_ci.yml"
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  # Skip intermediate builds: always.
+  # Cancel intermediate builds: only if it is a pull request build.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 
 jobs:
   build-dev:
