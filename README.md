@@ -1,11 +1,11 @@
-![ORION Logo](https://raw.githubusercontent.com/Saransh-cpp/ORION/main/docs/assets/orion_logo.png)
-
 # ORION
 
-Orbital Real-time Inference and Observation Network
+<img src="https://raw.githubusercontent.com/Saransh-cpp/ORION/main/docs/assets/orion_logo.png" alt="ORION" width="300">
 
 [![Flight Segment CI](https://github.com/Saransh-cpp/ORION/actions/workflows/fs_ci.yml/badge.svg)](https://github.com/Saransh-cpp/ORION/actions/workflows/fs_ci.yml)
 [![Documentation](https://github.com/Saransh-cpp/ORION/actions/workflows/docs.yml/badge.svg)](https://saransh-cpp.github.io/ORION/)
+
+Orbital Real-time Inference and Observation Network
 
 An autonomous LEO satellite triage system built using:
 
