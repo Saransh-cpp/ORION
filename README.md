@@ -1,3 +1,5 @@
+![ORION Logo](https://raw.githubusercontent.com/Saransh-cpp/ORION/main/docs/assets/orion_logo.png)
+
 # ORION
 
 Orbital Real-time Inference and Observation Network
@@ -13,6 +15,16 @@ An autonomous LEO satellite triage system built using:
 - a Raspberry Pi 5 (to act as satellite's OBC).
 
 ORION solves the orbital bandwidth bottleneck: roughly 71% of Earth's surface is featureless ocean, yet a traditional satellite downlinks every captured frame. By running a Q4-quantized VLM on-board, ORION classifies each image as HIGH, MEDIUM, or LOW priority and only transmits the most strategically valuable observations in real time.
+
+## Motivation
+
+This project was born from a real problem flagged on a real mission. Being the Flight Software subsystems lead on EPFL Spacecraft Team's [CHESS](https://epflspacecraft.com/) mission (part of ESA's Fly Your Satellite! Design Booster programme), I received a Review Item Discrepancy (RID) during our Final Design Review (FDR) from an ESA expert:
+
+> _"From experience I recommend thinking about pre-loading software that allows you to check that a picture is worth downloading before you do it."_
+
+Earth observation satellites generate far more data than their limited comm windows can downlink, and most of it is open ocean, empty desert, cloud cover, which is scientifically worthless. Our mission's approach was to downlink everything and sort on the ground, which would have wasted precious bandwidth and pass time.
+
+That is what ORION aims to solve: run a vision-language model directly on the satellite's on-board computer, classify each frame in real time, and only downlink what matters (the "what matters" can change mission-to-mission, which would require fine-tuning the VLM on specific data, but ORION serves as a prototype, showing that this approach is technically and scientifically viable).
 
 ## Build and deployment
 
@@ -165,3 +177,7 @@ Auto-generated API documentation for both the C++ flight segment (via Doxygen) a
 ORION uses `clang-format` for C++, `ruff` for Python, and `pre-commit` hooks for automated formatting. CI runs a native clang-tidy build and a Docker ARM64 cross-compile on every push.
 
 - [Contributing guide](https://saransh-cpp.github.io/ORION/contributing/): Dev setup, code style, CI pipeline, adding new components
+
+## Why "ORION"?
+
+A little easter egg: I grew up watching the Orion constellation every winter from my home in East Delhi. I would know winter is approaching when I could spot the belt before bedtime. There was not much light or air pollution back then, so I have very fond memories of looking up to find constellations in the night sky. I was always an Astronomy kid, but I never knew I would work on a real satellite mission (CHESS at EST) when I grow up. The name felt right for a project that looks down at Earth from the orbit.

@@ -78,7 +78,7 @@ In practice, the comm window is far wider than needed for HIGH frame downlink. T
 
 ## Power Budget (Timing)
 
-Actual current draw measurements are TBD. This section documents the compute duty cycle.
+This section documents the compute duty cycle.
 
 | Phase              | Duration per orbit        | Activity                                                             |
 | ------------------ | ------------------------- | -------------------------------------------------------------------- |

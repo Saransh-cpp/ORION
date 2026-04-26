@@ -4,6 +4,8 @@ repo_url: https://github.com/Saransh-cpp/ORION
 
 theme:
   name: material
+  logo: assets/orion_logo.png
+  favicon: assets/orion_logo.png
   palette:
     - scheme: slate
       primary: indigo
