@@ -1,0 +1,1 @@
+--8<-- "flight_segment/orion/Orion/Components/TriageRouter/docs/sdd.md"

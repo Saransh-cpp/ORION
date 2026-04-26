@@ -80,7 +80,7 @@ def print_confusion_matrix(truths, preds, condition_name):
 
 
 def main():
-    print("🚀 Loading Liquid VLM for Strict Ablation Study...")
+    print(" Loading Liquid VLM for Strict Ablation Study...")
     processor = AutoProcessor.from_pretrained(MODEL_ID, trust_remote_code=True)
 
     model = AutoModelForImageTextToText.from_pretrained(
@@ -93,7 +93,7 @@ def main():
         for line in f:
             test_data.append(json.loads(line.strip()))
 
-    print(f"[✅] Loaded {len(test_data)} hidden test samples.\n")
+    print(f" Loaded {len(test_data)} hidden test samples.\n")
 
     # Metrics tracking
     metrics = {
@@ -151,8 +151,8 @@ def main():
         res_d, _ = run_inference(model, processor, real_image, mismatched_prompt)
 
         # --- DEBUG OUTPUT ---
-        print(f"🖼️  Image Path: {image_path}")
-        print(f"📝 Raw Output (Cond A): {raw_text_a}")
+        print(f"  Image Path: {image_path}")
+        print(f" Raw Output (Cond A): {raw_text_a}")
 
         # Log standard conditions
         metrics["A"]["truths"].append(ground_truth)
@@ -175,12 +175,12 @@ def main():
         conflict_metrics["total"] += 1
 
         print(
-            f"📊 Truth: {ground_truth} | A: {res_a.get('category')} | B: {res_b.get('category')} | C: {res_c.get('category')} | D: {pred_d} (Fake Coords: {mismatched_gt})"
+            f" Truth: {ground_truth} | A: {res_a.get('category')} | B: {res_b.get('category')} | C: {res_c.get('category')} | D: {pred_d} (Fake Coords: {mismatched_gt})"
         )
 
     # --- PRINT FINAL MATRIX ---
     print("\n" + "=" * 55)
-    print("🏆 ABLATION STUDY RESULTS (PER-CLASS & AGGREGATE) 🏆")
+    print(" ABLATION STUDY RESULTS (PER-CLASS & AGGREGATE)")
     print("=" * 55)
 
     print_confusion_matrix(

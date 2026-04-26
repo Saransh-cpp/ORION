@@ -1,8 +1,8 @@
 #!/bin/bash
 
 if [ -z "$SERVER" ]; then
-    echo "❌ ERROR: The 'SERVER' environment variable is not set."
-    echo "Please set it by running: export SERVER='<your_server_ip>'"
+    echo " ERROR: The 'SERVER' environment variable is not set."
+    echo " Please set it by running: export SERVER='<your_server_ip>'"
     exit 1
 fi
 
@@ -13,28 +13,28 @@ ARCHIVE_NAME="orion_data.tar.gz"
 REPO_DIR="~/code/extras"
 
 # 0. Pre-Flight Check (Verify local data exists)
-echo "🔍 Verifying local dataset existence..."
+echo " Verifying local dataset existence..."
 if [ ! -d "$LOCAL_DATA_DIR" ]; then
-    echo "❌ ERROR: Local dataset directory '$LOCAL_DATA_DIR' not found!"
-    echo "⚠️ ABORTING UPLOAD. Please run your data generation script first."
+    echo " ERROR: Local dataset directory '$LOCAL_DATA_DIR' not found!"
+    echo " ABORTING UPLOAD. Please run your data generation script first."
     exit 1
 fi
-echo "✅ Local dataset located."
+echo " Local dataset located."
 
-echo "🚀 INITIATING UPLOAD PROTOCOL TO: $SERVER..."
+echo " INITIATING UPLOAD PROTOCOL TO: $SERVER..."
 
 # 1. Compress the data locally
-echo "📦 1/3 Compressing dataset..."
+echo " 1/3 Compressing dataset..."
 env COPYFILE_DISABLE=1 tar -czf $ARCHIVE_NAME $LOCAL_DATA_DIR
 
 # 2. Transfer to the server's HDD
-echo "📡 2/3 Transferring data to server HDD..."
+echo " 2/3 Transferring data to server HDD..."
 # Ensure the parent directory exists on the server first
 ssh -T $SERVER "mkdir -p $SERVER_HDD_PATH"
 rsync -avz --progress $ARCHIVE_NAME $SERVER:$SERVER_HDD_PATH/
 
 # 3. Remote Execution: Unpack data and handle GitHub repo
-echo "💻 3/3 Executing remote setup commands..."
+echo " 3/3 Executing remote setup commands..."
 ssh -T $SERVER << EOF
     cd $SERVER_HDD_PATH
 
@@ -68,7 +68,7 @@ ssh -T $SERVER << EOF
 EOF
 
 # 4. Local Cleanup
-echo "🧹 Cleaning up local archive..."
+echo " Cleaning up local archive..."
 rm $ARCHIVE_NAME
 
-echo "✅ UPLOAD COMPLETE. Server is ready for training."
+echo " UPLOAD COMPLETE. Server is ready for training."

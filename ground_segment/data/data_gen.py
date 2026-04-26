@@ -58,7 +58,7 @@ def filter_overlaps(targets, min_dist_km=2.0):
         else:
             skipped += 1
     print(
-        f"[🛡️] Proximity Filter: Kept {len(unique_targets)} targets, skipped {skipped} overlaps."
+        f" Proximity Filter: Kept {len(unique_targets)} targets, skipped {skipped} overlaps."
     )
     return unique_targets
 
@@ -101,7 +101,7 @@ def main():
     test_set = clean_targets[split_idx:]
 
     print(
-        f"🚀 Starting Capture: {len(train_set)} Base Train Images | {len(test_set)} Test Images"
+        f" Starting Capture: {len(train_set)} Base Train Images | {len(test_set)} Test Images"
     )
 
     for idx, sample in enumerate(clean_targets):
@@ -160,7 +160,7 @@ def main():
 
         time.sleep(0.5)  # Speed up slightly, SimSat should handle 2 req/sec
 
-    print("\n\n✅ Dataset generated successfully (Train set augmented!).")
+    print("\n\n Dataset generated successfully (Train set augmented).")
 
 
 if __name__ == "__main__":

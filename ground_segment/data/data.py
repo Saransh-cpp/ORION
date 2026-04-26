@@ -1,6 +1,3 @@
-# --- THE GOLD STANDARD DATASET ---
-# (You can easily expand these lists to 100+ items each later)
-
 LOW_TARGETS = [
     # --- MORPHOLOGY 1: STANDARD VOIDS - OCEANS & WATER (20 targets) ---
     {

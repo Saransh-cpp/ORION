@@ -1,0 +1,128 @@
+site_name: ORION
+site_description: Orbital Real-time Inference and Observation Network
+repo_url: https://github.com/Saransh-cpp/ORION
+
+theme:
+  name: material
+  palette:
+    - scheme: slate
+      primary: indigo
+      accent: cyan
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+    - scheme: default
+      primary: indigo
+      accent: cyan
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - content.code.copy
+    - content.tabs.link
+
+validation:
+  links:
+    not_found: info
+
+plugins:
+  - search
+  - mkdoxy:
+      projects:
+        flight-segment:
+          src-dirs: flight_segment/orion/Orion
+          full-doc: true
+          doxy-cfg:
+            FILE_PATTERNS: "*.hpp *.cpp"
+            RECURSIVE: YES
+            EXCLUDE_PATTERNS: "*/build-*/* */Top/*"
+            EXTRACT_ALL: YES
+            GENERATE_HTML: NO
+            GENERATE_XML: YES
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [ground_segment]
+          options:
+            show_source: true
+            show_root_heading: true
+
+markdown_extensions:
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.snippets:
+      base_path: ["."]
+  - admonition
+  - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Architecture:
+      - Overview: architecture/overview.md
+      - Flight Segment:
+          - Overview: components/index.md
+          - State Machine: architecture/state-machine.md
+          - Data Flow: architecture/data-flow.md
+          - Mission Budgets: architecture/budgets.md
+          - EventAction: components/event-action.md
+          - NavTelemetry: components/nav-telemetry.md
+          - CameraManager: components/camera-manager.md
+          - VlmInferenceEngine: components/vlm-inference-engine.md
+          - TriageRouter: components/triage-router.md
+          - GroundCommsDriver: components/ground-comms-driver.md
+      - Ground Segment:
+          - Overview: ground-segment/index.md
+          - Receiver: ground-segment/receiver.md
+          - Training Pipeline: ground-segment/training.md
+          - Dataset: ground-segment/data.md
+          - Utility Scripts: ground-segment/scripts.md
+          - Compute Budgets: ground-segment/budgets.md
+  - Guides:
+      - Flight Segment:
+          - Development: guides/installation.md
+          - Deployment: guides/deployment.md
+          - Environment Variables: guides/environment-variables.md
+      - Ground Segment:
+          - Data Generation: guides/data-gen.md
+          - Training: guides/training.md
+          - Quantization: guides/quantization.md
+          - Receiver: guides/receiver.md
+          - Studies: guides/studies.md
+          - Environment Variables: guides/environment-variables-gs.md
+  - API Reference:
+      - Overview: api/cpp.md
+      - C++ (Flight Segment):
+          - Classes:
+              - Class List: flight-segment/annotated.md
+              - Class Index: flight-segment/classes.md
+              - Class Members: flight-segment/class_members.md
+          - Namespaces:
+              - Namespace List: flight-segment/namespaces.md
+              - Namespace Members: flight-segment/namespace_members.md
+          - Files:
+              - File List: flight-segment/files.md
+      - Python (Ground Segment):
+          - Receiver: api/python/receiver.md
+          - Training:
+              - fine_tune: api/python/training/fine_tune.md
+              - validation: api/python/training/validation.md
+              - fuse: api/python/training/fuse.md
+          - Data:
+              - data: api/python/data/data.md
+              - data_gen: api/python/data/data_gen.md
+  - Contributing: contributing.md

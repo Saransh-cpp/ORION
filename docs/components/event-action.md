@@ -1,0 +1,1 @@
+--8<-- "flight_segment/orion/Orion/Components/EventAction/docs/sdd.md"

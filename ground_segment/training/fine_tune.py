@@ -62,7 +62,7 @@ class VLMDataCollator:
             images=images,
             text=texts,
             return_tensors="pt",
-            padding=True,  # Just dynamic padding. No truncation, let the image fit!
+            padding=True,  # Just dynamic padding. No truncation, let the image fit
         )
 
         # Define labels for the loss calculation
@@ -71,12 +71,12 @@ class VLMDataCollator:
 
 
 def main():
-    print("🚀 Initializing ORION QLoRA Training Pipeline...")
+    print(" Initializing ORION QLoRA Training Pipeline...")
 
     # 1. Load Processor
     processor = AutoProcessor.from_pretrained(MODEL_ID, trust_remote_code=True)
 
-    # 2. Configure 4-bit Quantization (The "Q" in QLoRA)
+    # 2. Configure 4-bit Quantization
     bnb_config = BitsAndBytesConfig(
         load_in_4bit=True,
         bnb_4bit_use_double_quant=True,
@@ -85,7 +85,7 @@ def main():
     )
 
     # 3. Load Base Model in 4-bit
-    print(f"📦 Loading base model {MODEL_ID} in 4-bit...")
+    print(f" Loading base model {MODEL_ID} in 4-bit...")
     model = AutoModelForImageTextToText.from_pretrained(
         MODEL_ID,
         quantization_config=bnb_config,
@@ -96,7 +96,6 @@ def main():
     # Prepares base model
     model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=False)
 
-    # --- THE ULTIMATE VLM GRADIENT BUG FIX ---
     import types
 
     # 1. Define our safe logic
@@ -114,12 +113,11 @@ def main():
 
     # 3. Disable cache
     model.config.use_cache = False
-    # ------------------------------------------
 
     # 4. Inject LoRA Adapters
-    # We target the Attention mechanism projections (q, k, v, o). This is the "brain" of the cross-attention.
+    # We target the Attention mechanism projections (q, k, v, o).
     lora_config = LoraConfig(
-        r=16,  # Rank: Size of the adapter. 16 is a great sweet spot.
+        r=16,  # Rank: Size of the adapter.
         lora_alpha=32,  # Alpha: Scaling factor. Usually 2x the Rank.
         target_modules=["q_proj", "k_proj", "v_proj", "o_proj"],
         lora_dropout=0.05,
@@ -128,7 +126,7 @@ def main():
     )
 
     model = get_peft_model(model, lora_config)
-    print("✅ LoRA Adapters injected.")
+    print(" LoRA Adapters injected.")
     model.print_trainable_parameters()
     # 5. Load Dataset
     train_dataset = OrionDataset(TRAIN_FILE)
@@ -142,15 +140,15 @@ def main():
         output_dir=OUTPUT_DIR,
         per_device_train_batch_size=1,  # Micro-batch size
         gradient_accumulation_steps=16,
-        gradient_checkpointing=True,  # <--- ADD THIS
+        gradient_checkpointing=True,
         gradient_checkpointing_kwargs={"use_reentrant": False},  # <--- ADD THIS
         learning_rate=2e-4,
         num_train_epochs=3,  # 3 passes over the 240 images
         logging_steps=5,  # Print loss every 5 steps
         save_strategy="epoch",  # Save weights at end of each epoch
         optim="paged_adamw_8bit",  # Memory-efficient optimizer
-        fp16=True,  # Use FP16 math (A-Series excels at this)
-        remove_unused_columns=False,  # CRITICAL FOR VLMs: Prevents HF from dropping image tensors!
+        fp16=True,  # Use FP16 math
+        remove_unused_columns=False,  # Prevents HF from dropping image tensors
         dataloader_pin_memory=False,  # Helps avoid certain CUDA memory spikes
     )
 
@@ -159,17 +157,15 @@ def main():
         model=model,
         args=training_args,
         train_dataset=train_dataset,
-        data_collator=collator,  # <--- Inject the custom collator here!
+        data_collator=collator,
     )
 
-    # 8. Let it rip!
-    print("🔥 Starting fine-tuning...")
+    print(" Starting fine-tuning...")
     trainer.train()
 
-    # 9. Save final adapters
     trainer.model.save_pretrained(OUTPUT_DIR)
     processor.save_pretrained(OUTPUT_DIR)
-    print(f"🎉 Training complete! LoRA adapters saved to: {OUTPUT_DIR}")
+    print(f" Training complete! LoRA adapters saved to: {OUTPUT_DIR}")
 
 
 if __name__ == "__main__":
