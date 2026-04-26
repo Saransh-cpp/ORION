@@ -57,16 +57,14 @@ jobs:
 
   build-deploy:
     name: Deployment build for ARM64 Pi
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v6
         with:
           submodules: recursive
 
-      - uses: docker/setup-qemu-action@v3
-
       - name: Build base image
-        run: docker build --platform linux/arm64 -t orion-base -f docker/Dockerfile.base .
+        run: docker build -t orion-base -f docker/Dockerfile.base .
 
       - name: Build flight segment
-        run: docker build --platform linux/arm64 -f docker/Dockerfile.pi .
+        run: docker build -f docker/Dockerfile.pi .
