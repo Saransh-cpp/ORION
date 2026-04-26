@@ -16,7 +16,7 @@ The model is a ~700 MB Q4_K_M GGUF file loaded into RAM on demand. Inference tak
 | ORION-VLM-004 | VlmInferenceEngine shall classify each frame as HIGH, MEDIUM, or LOW and emit the result to TriageRouter | System test         |
 | ORION-VLM-005 | VlmInferenceEngine shall return buffers to the pool on inference failure                                 | Inspection          |
 | ORION-VLM-006 | VlmInferenceEngine shall drop all frames in SAFE mode without inference                                  | System test         |
-| ORION-VLM-007 | VlmInferenceEngine shall respond to health pings even during long inference passes                       | Inspection          |
+| ORION-VLM-007 | VlmInferenceEngine shall abort and recover from any inference exceeding `INFERENCE_TIMEOUT_S` (120 s)    | System test         |
 
 ## 3. Design
 
@@ -28,8 +28,6 @@ flowchart LR
     VLM -->|verdict + reason + buffer| TR[TriageRouter]
     VLM -->|buffer return on failure| BM[BufferManager]
     EA[EventAction] -->|modeChangeIn| VLM
-    HW[Health Watchdog] -->|pingIn| VLM
-    VLM -->|pingOut| HW
 ```
 
 ### 3.2 Inference Pipeline

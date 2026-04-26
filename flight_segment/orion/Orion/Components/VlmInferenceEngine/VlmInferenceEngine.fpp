@@ -27,8 +27,9 @@ module Orion {
 
     @ Receives image buffer + fused GPS coordinates from CameraManager.
     @ Asynchronous: frames queue here while a prior inference is running.
-    @ The 15-45 s per-frame latency is expected — do not set health watchdog
-    @ timeout below 60 s for this component.
+    @ This component is not wired to the health watchdog — the per-frame
+    @ latency (50-60 s on Pi 5) would exceed any reasonable ping budget.
+    @ A self-watchdog (INFERENCE_TIMEOUT_S = 120 s) aborts stuck inferences.
     async input port inferenceRequestIn: InferenceRequestPort
 
     @ Receives mode changes from EventAction.

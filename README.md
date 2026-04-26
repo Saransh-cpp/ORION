@@ -24,7 +24,9 @@ This project was born from a real problem flagged on a real mission. Being the F
 
 Earth observation satellites generate far more data than their limited comm windows can downlink, and most of it is open ocean, empty desert, cloud cover, which is scientifically worthless. Our mission's approach was to downlink everything and sort on the ground, which would have wasted precious bandwidth and pass time.
 
-That is what ORION aims to solve: run a vision-language model directly on the satellite's on-board computer, classify each frame in real time, and only downlink what matters (the "what matters" can change mission-to-mission, which would require fine-tuning the VLM on specific data, but ORION serves as a prototype, showing that this approach is technically and scientifically viable).
+I was looking for a solution and then [Hack #05: AI in Space](https://luma.com/n9cw58h0?tk=diGLxQ), a hackathon co-organised by [Liquid AI](https://www.liquid.ai/) and [DPhi Space](https://www.dphi.space/), happened. [DPhi](https://www.dphi.space/) provided [SimSat](https://github.com/DPhi-Space/SimSat) (the orbital simulator that feeds ORION GNSS coordinates and Mapbox imagery), and [Liquid](https://www.liquid.ai/) provided the [LFM2.5-VL-1.6B](https://huggingface.co/collections/LiquidAI/lfm2-vl) vision-language model that runs the on-board triage. ORION is what came out of that weekend.
+
+ORION runs a vision-language model directly on the satellite's on-board computer, classify each frame in real time, and only downlink what matters (the "what matters" can change mission-to-mission, which would require fine-tuning the VLM on specific data, but ORION serves as a prototype, showing that this approach is technically and scientifically viable).
 
 ## Build and deployment
 
@@ -63,6 +65,24 @@ The following section goes through the basic usage of this prototype. Refer to t
 - [SimSat](https://github.com/DPhi-Space/SimSat) running and accessible (default `http://localhost:9005`)
 - [Environment variables](https://saransh-cpp.github.io/ORION/guides/environment-variables/) configured
 
+### What each part maps to on a real satellite
+
+| ORION Component            | Real Satellite Equivalent                 |
+| -------------------------- | ----------------------------------------- |
+| `EventAction` (C++)        | OBC mode manager / FDIR logic             |
+| `NavTelemetry` (C++)       | GNSS receiver payload                     |
+| `CameraManager` (C++)      | Earth observation camera payload          |
+| `VlmInferenceEngine` (C++) | On-board AI co-processor                  |
+| `TriageRouter` (C++)       | On-board data handling unit               |
+| `GroundCommsDriver` (C++)  | X-band radio transmitter                  |
+| `BufferManager` (F-Prime)  | On-board mass memory                      |
+| `comDriver` (F-Prime)      | UHF radio transceiver                     |
+| Raspberry Pi 5             | On-board computer                         |
+| SimSat                     | GNSS receiver hardware                    |
+| SimSat Mapbox API          | Earth observation camera payload hardware |
+| `receiver.py`              | Ground station X-band receiver            |
+| F-Prime GDS                | Mission control software                  |
+
 ### Start SimSat and connect GDS
 
 [SimSat](https://github.com/DPhi-Space/SimSat) provides position data and Mapbox imagery. Start it on your ground station machine (default port 9005).
@@ -83,7 +103,7 @@ Open `http://localhost:5000`: you should see `SimSatPositionUpdate` events arriv
 
 ### Enter MEASURE mode
 
-```
+```text
 SET_ECLIPSE true
 ```
 
@@ -123,7 +143,7 @@ python ground_segment/receiver.py
 
 To bulk-download MEDIUM images during the comm window:
 
-```
+```text
 FLUSH_MEDIUM_STORAGE
 ```
 
@@ -131,7 +151,7 @@ Files are queued to F-Prime FileDownlink at 1 file/sec. Rejected if not in DOWNL
 
 ### Return to IDLE
 
-```
+```text
 SET_ECLIPSE false
 ```
 
@@ -141,13 +161,13 @@ Sun is visible: satellite returns to IDLE (charging). Model unloads, captures st
 
 Suspend all operations from any state:
 
-```
+```text
 ENTER_SAFE_MODE
 ```
 
 All components halt. The satellite stays in SAFE until ground commands:
 
-```
+```text
 EXIT_SAFE_MODE
 ```
 
@@ -157,7 +177,7 @@ Returns to IDLE and re-evaluates conditions (comm window, eclipse) to auto-trans
 
 Force specific transitions for testing:
 
-```
+```text
 GOTO_IDLE          # From MEASURE or DOWNLINK
 GOTO_MEASURE       # From IDLE only
 GOTO_DOWNLINK      # From IDLE only
