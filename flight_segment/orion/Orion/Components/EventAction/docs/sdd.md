@@ -130,9 +130,9 @@ The state machine signal names are abstract internal identifiers. The physical m
 
 ### 3.7 Environment Variables
 
-| Variable                   | Default                                | Description                                                                                                         |
-| -------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `ORION_MEDIUM_STORAGE_DIR` | `/home/saransh/ORION/media/sd/medium/` | Path to MEDIUM image storage. Must keep total path (dir + filename) under 100 chars for FileDownlink compatibility. |
+| Variable                   | Default              | Description                                                                                                         |
+| -------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `ORION_MEDIUM_STORAGE_DIR` | `./media/sd/medium/` | Path to MEDIUM image storage. Must keep total path (dir + filename) under 100 chars for FileDownlink compatibility. |
 
 ## 4. Change Log
 

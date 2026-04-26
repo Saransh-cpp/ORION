@@ -10,7 +10,7 @@ namespace Orion {
 
 static const char* getMediumStoragePath() {
     const char* p = ::getenv("ORION_MEDIUM_STORAGE_DIR");
-    return p ? p : "/home/saransh/ORION/media/sd/medium/";
+    return p ? p : "./media/sd/medium/";
 }
 
 EventAction::EventAction(const char* compName)

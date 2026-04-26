@@ -53,12 +53,12 @@ Set the required environment variables on the Pi before launching the binary. Ad
 export ORION_SIMSAT_URL=http://<mac-ip>:9005
 
 # Model paths (adjust to your layout)
-export ORION_GGUF_PATH=/home/user/ORION/orion-q4_k_m.gguf
-export ORION_MMPROJ_PATH=/home/user/ORION/orion-mmproj-f16.gguf
+export ORION_GGUF_PATH=./orion-q4_k_m.gguf
+export ORION_MMPROJ_PATH=orion-mmproj-f16.gguf
 
 # Storage directories
-export ORION_MEDIUM_STORAGE_DIR=/tmp/orion_medium/
-export ORION_DOWNLINK_QUEUE_DIR=/tmp/orion_downlink_queue/
+export ORION_MEDIUM_STORAGE_DIR=./media/sd/medium/
+export ORION_DOWNLINK_QUEUE_DIR=./media/sd/downlink_queue/
 ```
 
 Create the storage directories:

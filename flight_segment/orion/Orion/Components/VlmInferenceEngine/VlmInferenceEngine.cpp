@@ -39,11 +39,11 @@ static const char* modeStr(MissionMode mode) {
 // ---------------------------------------------------------------------------
 static const char* getGgufPath() {
     const char* p = ::getenv("ORION_GGUF_PATH");
-    return p ? p : "/home/saransh/ORION/orion-q4_k_m.gguf";
+    return p ? p : "./orion-q4_k_m.gguf";
 }
 static const char* getMmprojPath() {
     const char* p = ::getenv("ORION_MMPROJ_PATH");
-    return p ? p : "/home/saransh/ORION/orion-mmproj-f16.gguf";
+    return p ? p : "orion-mmproj-f16.gguf";
 }
 
 // ---------------------------------------------------------------------------

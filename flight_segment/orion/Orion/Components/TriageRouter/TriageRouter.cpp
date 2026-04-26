@@ -4,6 +4,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 
 #include "Os/File.hpp"
 
@@ -13,7 +14,26 @@ namespace Orion {
 // Override via env var for Mac dev; defaults to Pi 5 microSD path.
 static const char* getMediumStoragePath() {
     const char* p = ::getenv("ORION_MEDIUM_STORAGE_DIR");
-    return p ? p : "/home/saransh/ORION/media/sd/medium/";
+    return p ? p : "./media/sd/medium/";
+}
+
+// Recursive mkdir — creates path and any missing parents (POSIX, like `mkdir -p`).
+// Existing directories are silently ignored.
+static void ensureDirExists(const char* path) {
+    if (!path || !*path) return;
+    char buf[256];
+    ::snprintf(buf, sizeof(buf), "%s", path);
+    const size_t len = ::strlen(buf);
+    for (size_t i = 1; i < len; i++) {
+        if (buf[i] == '/') {
+            buf[i] = '\0';
+            ::mkdir(buf, 0755);
+            buf[i] = '/';
+        }
+    }
+    if (buf[len - 1] != '/') {
+        ::mkdir(buf, 0755);
+    }
 }
 
 TriageRouter::TriageRouter(const char* compName)
@@ -72,7 +92,7 @@ void TriageRouter::routeHigh(const Fw::StringBase& reason, Fw::Buffer& buffer) {
 void TriageRouter::routeMedium(Fw::Buffer& buffer) {
     // Ensure storage directory exists and build a unique filename.
     const char* storageDir = getMediumStoragePath();
-    ::mkdir(storageDir, 0755);
+    ensureDirExists(storageDir);
 
     char path[256];
     snprintf(path, sizeof(path), "%sorion_medium_%05u.raw", storageDir, m_mediumFileIndex++);

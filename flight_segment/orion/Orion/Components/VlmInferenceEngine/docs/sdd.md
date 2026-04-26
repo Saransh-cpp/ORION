@@ -141,10 +141,10 @@ The model auto-loads on MEASURE entry and auto-unloads on IDLE or SAFE entry. Du
 
 ### 3.10 Environment Variables
 
-| Variable            | Default                                 | Description                                |
-| ------------------- | --------------------------------------- | ------------------------------------------ |
-| `ORION_GGUF_PATH`   | `/home/saransh/ORION/orion-q4_k_m.gguf` | Path to the Q4_K_M quantized text model    |
-| `ORION_MMPROJ_PATH` | `/home/saransh/orion-mmproj-f16.gguf`   | Path to the FP16 vision encoder projection |
+| Variable            | Default                 | Description                                |
+| ------------------- | ----------------------- | ------------------------------------------ |
+| `ORION_GGUF_PATH`   | `./orion-q4_k_m.gguf`   | Path to the Q4_K_M quantized text model    |
+| `ORION_MMPROJ_PATH` | `orion-mmproj-f16.gguf` | Path to the FP16 vision encoder projection |
 
 ## 4. Change Log
 

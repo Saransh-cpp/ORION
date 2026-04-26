@@ -101,11 +101,11 @@ Each `transmitRaw` call opens a new TCP connection, sends the header + payload, 
 
 ### 3.9 Environment Variables
 
-| Variable                   | Default                                        | Description                      |
-| -------------------------- | ---------------------------------------------- | -------------------------------- |
-| `ORION_GDS_HOST`           | `127.0.0.1`                                    | Ground receiver IP address       |
-| `ORION_GDS_PORT`           | `50050`                                        | Ground receiver TCP port         |
-| `ORION_DOWNLINK_QUEUE_DIR` | `/home/saransh/ORION/media/sd/downlink_queue/` | Directory for disk-queued frames |
+| Variable                   | Default                      | Description                      |
+| -------------------------- | ---------------------------- | -------------------------------- |
+| `ORION_GDS_HOST`           | `127.0.0.1`                  | Ground receiver IP address       |
+| `ORION_GDS_PORT`           | `50050`                      | Ground receiver TCP port         |
+| `ORION_DOWNLINK_QUEUE_DIR` | `./media/sd/downlink_queue/` | Directory for disk-queued frames |
 
 ## 4. Known Issues
 

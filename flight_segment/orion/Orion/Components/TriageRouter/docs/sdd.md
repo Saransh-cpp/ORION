@@ -83,9 +83,9 @@ flowchart TD
 
 ### 3.6 Environment Variables
 
-| Variable                   | Default                                | Description                             |
-| -------------------------- | -------------------------------------- | --------------------------------------- |
-| `ORION_MEDIUM_STORAGE_DIR` | `/home/saransh/ORION/media/sd/medium/` | Directory for bulk MEDIUM image storage |
+| Variable                   | Default              | Description                             |
+| -------------------------- | -------------------- | --------------------------------------- |
+| `ORION_MEDIUM_STORAGE_DIR` | `./media/sd/medium/` | Directory for bulk MEDIUM image storage |
 
 ## 4. Change Log
 

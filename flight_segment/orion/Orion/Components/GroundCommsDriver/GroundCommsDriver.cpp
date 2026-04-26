@@ -26,7 +26,26 @@ static U16 getGdsPort() {
 // Disk queue directory for frames buffered outside comm window.
 static const char* getQueueDir() {
     const char* p = ::getenv("ORION_DOWNLINK_QUEUE_DIR");
-    return p ? p : "/home/saransh/ORION/media/sd/downlink_queue/";
+    return p ? p : "./media/sd/downlink_queue/";
+}
+
+// Recursive mkdir — creates path and any missing parents (POSIX, like `mkdir -p`).
+// Existing directories are silently ignored.
+static void ensureDirExists(const char* path) {
+    if (!path || !*path) return;
+    char buf[256];
+    ::snprintf(buf, sizeof(buf), "%s", path);
+    const size_t len = ::strlen(buf);
+    for (size_t i = 1; i < len; i++) {
+        if (buf[i] == '/') {
+            buf[i] = '\0';
+            ::mkdir(buf, 0755);
+            buf[i] = '/';
+        }
+    }
+    if (buf[len - 1] != '/') {
+        ::mkdir(buf, 0755);
+    }
 }
 
 // 8-byte frame header prepended to every downlinked image:
@@ -169,7 +188,7 @@ bool GroundCommsDriver::transmitRaw(const U8* data, FwSizeType size) {
 
 void GroundCommsDriver::saveToQueue(const Fw::Buffer& buffer) {
     // Ensure queue directory exists
-    ::mkdir(getQueueDir(), 0755);
+    ensureDirExists(getQueueDir());
 
     char path[256];
     snprintf(path, sizeof(path), "%sorion_queued_%05u.raw", getQueueDir(), m_queueFileIndex++);
