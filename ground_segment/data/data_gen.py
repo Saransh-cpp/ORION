@@ -10,7 +10,14 @@ SIMSAT_STATIC_API = "http://localhost:9005/data/image/mapbox"
 DATASET_DIR = "orion_dataset"
 IMAGES_DIR = os.path.join(DATASET_DIR, "images")
 TRAIN_FILE = os.path.join(DATASET_DIR, "train_dataset.jsonl")
+VAL_FILE = os.path.join(DATASET_DIR, "val_dataset.jsonl")
 TEST_FILE = os.path.join(DATASET_DIR, "test_dataset.jsonl")
+
+# Deterministic IID split: shuffle ALL_TARGETS once with a fixed seed, then carve out
+# fixed-size held-out test and val sets. Reproducible across regenerations.
+SPLIT_SEED = 42
+TEST_SIZE = 60
+VAL_SIZE = 60
 
 
 def get_prompt(lon, lat, include_coords=True):
@@ -63,9 +70,28 @@ def filter_overlaps(targets, min_dist_km=2.0):
     return unique_targets
 
 
+def make_record(sample, img_path, include_coords=True):
+    """Builds a single train/val/test record matching the existing JSONL schema."""
+    return {
+        "image": img_path,
+        "conversations": [
+            {
+                "role": "user",
+                "content": f"<image>\n{get_prompt(sample['lon'], sample['lat'], include_coords)}",
+            },
+            {
+                "role": "assistant",
+                "content": json.dumps(
+                    {"reason": sample["reason"], "category": sample["cat"]}
+                ),
+            },
+        ],
+    }
+
+
 def setup_dirs():
     os.makedirs(IMAGES_DIR, exist_ok=True)
-    for f in [TRAIN_FILE, TEST_FILE]:
+    for f in [TRAIN_FILE, VAL_FILE, TEST_FILE]:
         if os.path.exists(f):
             os.remove(f)
 
@@ -90,77 +116,65 @@ def fetch_image(lon, lat, filename):
 
 def main():
     setup_dirs()
+    random.seed(SPLIT_SEED)
 
-    # 1. Deduplicate based on distance
+    # 1. Combine OLD + NEW (via ALL_TARGETS) and filter proximity overlaps once.
     clean_targets = filter_overlaps(ALL_TARGETS)
 
-    # 2. Shuffle and Split
+    # 2. Deterministic shuffle, then carve fixed-size test and val sets off the front.
+    #    Remaining samples become train. IID — no distributional gap between splits.
     random.shuffle(clean_targets)
-    split_idx = int(len(clean_targets) * 0.8)
-    train_set = clean_targets[:split_idx]
-    test_set = clean_targets[split_idx:]
+    test_set = clean_targets[:TEST_SIZE]
+    val_set = clean_targets[TEST_SIZE : TEST_SIZE + VAL_SIZE]
+    train_set = clean_targets[TEST_SIZE + VAL_SIZE :]
 
     print(
-        f" Starting Capture: {len(train_set)} Base Train Images | {len(test_set)} Test Images"
+        f" Splits: {len(train_set)} train | {len(val_set)} val | {len(test_set)} test"
     )
 
-    for idx, sample in enumerate(clean_targets):
+    # Process every sample: fetch image once, write to the appropriate JSONL.
+    all_samples = train_set + val_set + test_set
+    train_names = {s["name"] for s in train_set}
+    val_names = {s["name"] for s in val_set}
+
+    for idx, sample in enumerate(all_samples):
         img_filename = f"{sample['name']}.png"
         img_path = os.path.join(IMAGES_DIR, img_filename)
 
+        # \033[K = ANSI "erase from cursor to end of line", prevents leftover
+        # characters when a shorter sample name follows a longer one.
         print(
-            f"[{idx + 1}/{len(clean_targets)}] Fetching {sample['name']}...", end="\r"
+            f"\r\033[K[{idx + 1}/{len(all_samples)}] Fetching {sample['name']}...",
+            end="",
+            flush=True,
         )
 
         if fetch_image(sample["lon"], sample["lat"], img_path):
-            is_train = sample in train_set
-
-            if is_train:
-                # AUGMENTATION: Duplicate the sample (one WITH coords, one WITHOUT)
+            if sample["name"] in train_names:
+                # TRAIN: augment with both coords-present and coords-absent variants.
                 for include_coords in [True, False]:
-                    record = {
-                        "image": img_path,
-                        "conversations": [
-                            {
-                                "role": "user",
-                                "content": f"<image>\n{get_prompt(sample['lon'], sample['lat'], include_coords)}",
-                            },
-                            {
-                                "role": "assistant",
-                                "content": json.dumps(
-                                    {
-                                        "reason": sample["reason"],
-                                        "category": sample["cat"],
-                                    }
-                                ),
-                            },
-                        ],
-                    }
                     with open(TRAIN_FILE, "a") as f:
-                        f.write(json.dumps(record) + "\n")
+                        f.write(
+                            json.dumps(make_record(sample, img_path, include_coords))
+                            + "\n"
+                        )
+            elif sample["name"] in val_names:
+                # VAL: single record with coords. Used for eval_loss tracking
+                # during training (early-stopping / best-checkpoint selection).
+                with open(VAL_FILE, "a") as f:
+                    f.write(json.dumps(make_record(sample, img_path, True)) + "\n")
             else:
-                # TEST SET: ALWAYS include coords (Ablation script handles stripping)
-                record = {
-                    "image": img_path,
-                    "conversations": [
-                        {
-                            "role": "user",
-                            "content": f"<image>\n{get_prompt(sample['lon'], sample['lat'], True)}",
-                        },
-                        {
-                            "role": "assistant",
-                            "content": json.dumps(
-                                {"reason": sample["reason"], "category": sample["cat"]}
-                            ),
-                        },
-                    ],
-                }
+                # TEST: held-out NEW_TARGETS, always with coords. evaluate.py
+                # ablation script handles coord stripping for Conditions B/C/D.
                 with open(TEST_FILE, "a") as f:
-                    f.write(json.dumps(record) + "\n")
+                    f.write(json.dumps(make_record(sample, img_path, True)) + "\n")
 
-        time.sleep(0.5)  # Speed up slightly, SimSat should handle 2 req/sec
+        time.sleep(0.5)  # SimSat should handle 2 req/sec
 
-    print("\n\n Dataset generated successfully (Train set augmented).")
+    print("\n\n Dataset generated successfully.")
+    print(f"   Train (augmented): {len(train_set) * 2} records → {TRAIN_FILE}")
+    print(f"   Val:               {len(val_set)} records → {VAL_FILE}")
+    print(f"   Test (held-out):   {len(test_set)} records → {TEST_FILE}")
 
 
 if __name__ == "__main__":

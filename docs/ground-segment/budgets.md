@@ -4,13 +4,25 @@ Resource requirements for training, quantization, and dataset generation.
 
 ## Training Hardware
 
-| Resource                | Requirement              | Notes                                              |
-| ----------------------- | ------------------------ | -------------------------------------------------- |
-| GPU                     | CUDA-capable, 8+ GB VRAM | QLoRA loads base model in 4-bit (NF4)              |
-| GPU VRAM usage          | TBD                      | Micro-batch size 1, gradient checkpointing enabled |
-| System RAM              | 16+ GB recommended       | For data loading and preprocessing                 |
-| Training time per epoch | TBD                      | 3 epochs total, ~480 training samples              |
-| Total training time     | TBD                      | Depends on GPU                                     |
+`fine_tune.py` is **CUDA only**. The training stack uses bitsandbytes (4-bit NF4 quantization + paged_adamw_8bit optimizer), which does not support Apple Silicon, AMD GPUs, or CPU-only execution.
+
+| Resource                | Requirement                     | Notes                                              |
+| ----------------------- | ------------------------------- | -------------------------------------------------- |
+| GPU                     | NVIDIA CUDA-capable, 8+ GB VRAM | QLoRA loads base model in 4-bit (NF4)              |
+| CUDA toolkit            | 12.x                            | Matched to the GPU driver                          |
+| GPU VRAM usage          | TBD                             | Micro-batch size 1, gradient checkpointing enabled |
+| System RAM              | 16+ GB recommended              | For data loading and preprocessing                 |
+| Training time per epoch | TBD                             | 3 epochs total, ~480 training samples              |
+| Total training time     | TBD                             | Depends on GPU                                     |
+
+**Reference hardware (verified working):**
+
+| Component | Spec                                   |
+| --------- | -------------------------------------- |
+| GPU       | NVIDIA GeForce RTX 4070 Ti, 12 GB VRAM |
+| Driver    | 535.261.03                             |
+| CUDA      | 12.2                                   |
+| OS        | Linux                                  |
 
 ## Model Artifact Sizes
 
@@ -42,22 +54,26 @@ Resource requirements for training, quantization, and dataset generation.
 
 ## Validation / Ablation Studies
 
-| Resource              | Requirement               | Notes                                    |
-| --------------------- | ------------------------- | ---------------------------------------- |
-| GPU VRAM              | Same as training (~8+ GB) | Model loaded in 4-bit for inference      |
-| Test samples          | ~60 (20% of 300 targets)  | 4 conditions x 60 = 240 inferences total |
-| Time per inference    | TBD                       | Single image + prompt per sample         |
-| Total validation time | TBD                       | 240 inferences per script                |
+`ablation.py` (base model) and `evaluate.py` (fine-tuned) are **device-agnostic** — they run on CUDA, MPS (Apple Silicon), or CPU via `device_map="auto"` at FP16. CPU-only inference is functional but will be 50-100x slower than GPU.
+
+| Resource              | Requirement                                | Notes                                    |
+| --------------------- | ------------------------------------------ | ---------------------------------------- |
+| GPU VRAM              | ~4 GB (FP16, no quantization in eval)      | Or run on CPU/MPS without VRAM budget    |
+| Test samples          | 60 (deterministic IID carve from 360 pool) | 4 conditions x 60 = 240 inferences total |
+| Val samples           | 60 (deterministic IID carve from 360 pool) | Same shape as test, used during training |
+| Time per inference    | TBD                                        | ~1s on 4070 Ti, ~20-30s on Mac CPU       |
+| Total validation time | TBD                                        | 240 inferences per script                |
 
 ## Dataset
 
-| Item                | Size     | Notes                                                  |
-| ------------------- | -------- | ------------------------------------------------------ |
-| Target images       | ~30 MB   | 300 PNG images at ~100 KB each                         |
-| train_dataset.jsonl | ~1 MB    | ~480 records (240 targets x 2 with coordinate dropout) |
-| test_dataset.jsonl  | ~200 KB  | ~60 records                                            |
-| Total dataset       | ~31 MB   | Images + JSONL                                         |
-| Generation time     | ~2.5 min | 300 images from SimSat at ~2 req/s                     |
+| Item                | Size    | Notes                                                  |
+| ------------------- | ------- | ------------------------------------------------------ |
+| Target images       | ~36 MB  | 360 PNG images at ~100 KB each                         |
+| train_dataset.jsonl | ~1 MB   | ~480 records (240 targets x 2 with coordinate dropout) |
+| val_dataset.jsonl   | ~200 KB | 60 records                                             |
+| test_dataset.jsonl  | ~200 KB | 60 records                                             |
+| Total dataset       | ~37 MB  | Images + JSONL                                         |
+| Generation time     | ~3 min  | 360 images from SimSat at ~2 req/s                     |
 
 ## Data Transfer (Remote Server)
 
@@ -71,4 +87,4 @@ Resource requirements for training, quantization, and dataset generation.
 - **GPU VRAM**: run `nvidia-smi` during training
 - **Training time**: logged by HuggingFace Trainer at end of each epoch
 - **Quantization time**: wall-clock the `llama-quantize` command
-- **Validation time**: wall-clock `python validation.py`
+- **Evaluation time**: wall-clock `python evaluate.py`

@@ -1,3 +1,20 @@
+"""
+ORION QLoRA fine-tuning pipeline.
+
+REQUIRES an NVIDIA CUDA GPU with >=8 GB VRAM. The training stack uses bitsandbytes
+(4-bit NF4 quantization + paged_adamw_8bit optimizer), which is CUDA-only, this
+script will NOT run on Apple Silicon (MPS), AMD GPUs, or CPU-only machines.
+
+Verified on: NVIDIA RTX 4070 Ti, 12 GB, CUDA 12.2, driver 535.x.
+
+Set ORION_DATASET_ROOT before invoking. See:
+  docs/guides/environment-variables-gs.md
+  docs/ground-segment/budgets.md  (full compute requirements)
+"""
+
+import os
+import sys
+import time
 import torch
 from datasets import load_dataset
 from PIL import Image
@@ -13,8 +30,20 @@ from torch.utils.data import Dataset
 
 # --- CONFIGURATION ---
 MODEL_ID = "LiquidAI/LFM2.5-VL-1.6B"
-TRAIN_FILE = "/home/schopra/hdd/gaze/datasets/extras/orion_dataset/train_dataset.jsonl"
 OUTPUT_DIR = "orion_lora_weights"
+
+# Dataset root resolves both the JSONL files and the image paths embedded in them.
+# Set this to the directory that *contains* `orion_dataset/` (i.e., the parent of
+# what `data_gen.py` produced or what `upload_to_server.sh` extracted on the server).
+DATASET_ROOT = os.environ.get("ORION_DATASET_ROOT")
+if not DATASET_ROOT:
+    sys.exit(
+        "ERROR: Set ORION_DATASET_ROOT to the directory containing orion_dataset/. "
+        "See docs/guides/environment-variables-gs.md."
+    )
+
+TRAIN_FILE = f"{DATASET_ROOT}/orion_dataset/train_dataset.jsonl"
+VAL_FILE = f"{DATASET_ROOT}/orion_dataset/val_dataset.jsonl"
 
 
 class OrionDataset(Dataset):
@@ -33,8 +62,9 @@ class OrionDataset(Dataset):
 class VLMDataCollator:
     """Processes an entire batch of images and texts perfectly for the VLM."""
 
-    def __init__(self, processor):
+    def __init__(self, processor, dataset_root):
         self.processor = processor
+        self.dataset_root = dataset_root
 
     def __call__(self, batch):
         images = []
@@ -42,11 +72,7 @@ class VLMDataCollator:
 
         for item in batch:
             images.append(
-                [
-                    Image.open(
-                        f"/home/schopra/hdd/gaze/datasets/extras/{item['image']}"
-                    ).convert("RGB")
-                ]
+                [Image.open(f"{self.dataset_root}/{item['image']}").convert("RGB")]
             )
 
             prompt = item["conversations"][0]["content"]
@@ -71,6 +97,7 @@ class VLMDataCollator:
 
 
 def main():
+    t_start = time.perf_counter()
     print(" Initializing ORION QLoRA Training Pipeline...")
 
     # 1. Load Processor
@@ -128,24 +155,29 @@ def main():
     model = get_peft_model(model, lora_config)
     print(" LoRA Adapters injected.")
     model.print_trainable_parameters()
-    # 5. Load Dataset
+    # 5. Load Datasets (train + val)
     train_dataset = OrionDataset(TRAIN_FILE)
-    collator = VLMDataCollator(processor)
-    print(
-        f"📊 Dataset loaded. Training on {len(train_dataset)} highly curated samples."
-    )
+    val_dataset = OrionDataset(VAL_FILE)
+    collator = VLMDataCollator(processor, DATASET_ROOT)
+    print(f"📊 Datasets loaded. Train: {len(train_dataset)} | Val: {len(val_dataset)}")
 
     # 6. Training Arguments optimized for A-Series GPUs
     training_args = TrainingArguments(
         output_dir=OUTPUT_DIR,
         per_device_train_batch_size=1,  # Micro-batch size
+        per_device_eval_batch_size=1,
         gradient_accumulation_steps=16,
         gradient_checkpointing=True,
         gradient_checkpointing_kwargs={"use_reentrant": False},  # <--- ADD THIS
         learning_rate=2e-4,
         num_train_epochs=3,  # 3 passes over the 240 images
         logging_steps=5,  # Print loss every 5 steps
+        eval_strategy="epoch",  # Evaluate on val_dataset at end of each epoch
         save_strategy="epoch",  # Save weights at end of each epoch
+        load_best_model_at_end=True,  # Restore best-eval checkpoint after training
+        metric_for_best_model="eval_loss",
+        greater_is_better=False,
+        save_total_limit=2,  # Keep only the best + latest checkpoint
         optim="paged_adamw_8bit",  # Memory-efficient optimizer
         fp16=True,  # Use FP16 math
         remove_unused_columns=False,  # Prevents HF from dropping image tensors
@@ -157,15 +189,24 @@ def main():
         model=model,
         args=training_args,
         train_dataset=train_dataset,
+        eval_dataset=val_dataset,
         data_collator=collator,
     )
 
+    t_setup = time.perf_counter()
+    print(f" Setup complete in {t_setup - t_start:.2f}s")
     print(" Starting fine-tuning...")
     trainer.train()
+    t_train_done = time.perf_counter()
 
     trainer.model.save_pretrained(OUTPUT_DIR)
     processor.save_pretrained(OUTPUT_DIR)
+    t_done = time.perf_counter()
     print(f" Training complete! LoRA adapters saved to: {OUTPUT_DIR}")
+    print(
+        f"Total runtime: {t_done - t_start:.2f}s "
+        f"(setup: {t_setup - t_start:.2f}s, train: {t_train_done - t_setup:.2f}s, save: {t_done - t_train_done:.2f}s)"
+    )
 
 
 if __name__ == "__main__":

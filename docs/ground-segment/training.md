@@ -77,7 +77,7 @@ The training pipeline requires the following Python packages (installed via `gro
 
 ## Validation and Ablation Studies
 
-Both `validation.py` (fine-tuned model) and `ablation.py` (base model) evaluate the model under four conditions:
+Both `evaluate.py` (fine-tuned model) and `ablation.py` (base model) evaluate the model under four conditions:
 
 | Condition          | Image Input              | Prompt                 | Purpose                                          |
 | ------------------ | ------------------------ | ---------------------- | ------------------------------------------------ |

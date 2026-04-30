@@ -1,4 +1,6 @@
+import argparse
 import json
+import time
 import torch
 import re
 import random
@@ -10,7 +12,9 @@ from peft import PeftModel
 # --- CONFIGURATION ---
 BASE_MODEL_ID = "LiquidAI/LFM2.5-VL-1.6B"
 LORA_WEIGHTS_PATH = "./orion_lora_weights"
-TEST_FILE = "../data/orion_dataset/test_dataset.jsonl"
+DATASET_DIR = "../data/orion_dataset"
+TEST_FILE = f"{DATASET_DIR}/test_dataset.jsonl"  # 60 IID held-out targets, never seen during training
+VAL_FILE = f"{DATASET_DIR}/val_dataset.jsonl"  # 60 IID validation targets, used during training
 random.seed(42)
 
 
@@ -82,7 +86,23 @@ def print_confusion_matrix(truths, preds, condition_name):
 
 
 def main():
-    print("🚀 Initializing Fine-Tuned ORION Ablation Protocol...")
+    t_start = time.perf_counter()
+
+    parser = argparse.ArgumentParser(
+        description="Evaluate the FINE-TUNED ORION model on a held-out set using the 4-condition protocol (A/B/C/D)."
+    )
+    parser.add_argument(
+        "--file",
+        choices=["test", "val"],
+        default="test",
+        help="Which split to evaluate: 'test' (60 IID held-out, judge-facing) "
+        "or 'val' (60 IID validation set used during training).",
+    )
+    args = parser.parse_args()
+
+    eval_file = TEST_FILE if args.file == "test" else VAL_FILE
+    print(f"🚀 Initializing Fine-Tuned ORION Ablation Protocol on '{args.file}' split")
+    print(f"   File: {eval_file}\n")
 
     # 1. Load Processor
     processor = AutoProcessor.from_pretrained(BASE_MODEL_ID, trust_remote_code=True)
@@ -101,13 +121,16 @@ def main():
     model = PeftModel.from_pretrained(base_model, LORA_WEIGHTS_PATH)
     model.eval()
 
+    t_model_loaded = time.perf_counter()
+    print(f" Model + LoRA loaded in {t_model_loaded - t_start:.2f}s.")
+
     # Load Data
     test_data = []
-    with open(TEST_FILE, "r") as f:
+    with open(eval_file, "r") as f:
         for line in f:
             test_data.append(json.loads(line.strip()))
 
-    print(f"[✅] Loaded {len(test_data)} hidden test samples.\n")
+    print(f"[✅] Loaded {len(test_data)} samples from '{args.file}' split.\n")
 
     # Metrics tracking
     metrics = {
@@ -220,6 +243,12 @@ def main():
         f"Model got Confused   (Neither) : {conflict_metrics['trusted_neither']:2d}/{conflict_metrics['total']:2d} ({(conflict_metrics['trusted_neither'] / conflict_metrics['total']) * 100:.1f}%)"
     )
     print("=" * 55)
+
+    t_done = time.perf_counter()
+    print(
+        f"\nTotal runtime: {t_done - t_start:.2f}s "
+        f"(model load: {t_model_loaded - t_start:.2f}s, eval: {t_done - t_model_loaded:.2f}s)"
+    )
 
 
 if __name__ == "__main__":

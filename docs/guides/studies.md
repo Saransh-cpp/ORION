@@ -1,12 +1,12 @@
-# Validation and Ablation Studies
+# Evaluation and Ablation Studies
 
 > For design details - evaluation conditions, mismatch logic, Gaussian noise methodology, and configuration parameters - see the [Training Pipeline architecture](../ground-segment/training.md) page.
 
-## Running Validation (Fine-Tuned Model)
+## Evaluating the Fine-Tuned Model
 
 ```bash
 cd ground_segment/training
-python validation.py
+python evaluate.py
 ```
 
 This loads the base model with the LoRA adapters grafted on, sets the model to eval mode, and runs inference under all four evaluation conditions (A, B, C, D) for each test sample.
@@ -53,7 +53,7 @@ Model got Confused   (Neither) : 13/60 (21.7%)
 
 ### Key Comparisons
 
-When comparing ablation (base model) vs. validation (fine-tuned model), look for:
+When comparing ablation (base model) vs. evaluation (fine-tuned model), look for:
 
 1. **Condition A improvement**: Does fine-tuning improve overall accuracy?
 2. **Condition B vs. A gap**: A small gap means the model relies primarily on visual features. A large gap means it depends on coordinates.
@@ -65,4 +65,4 @@ When comparing ablation (base model) vs. validation (fine-tuned model), look for
 For historical study results, refer to:
 
 - **`ground_segment/ablation_logs.md`** - Full sample-by-sample ablation study output with aggregate results from the base model.
-- **`ground_segment/validation_logs.md`** - Full sample-by-sample validation output with aggregate results from the fine-tuned model.
+- **`ground_segment/evaluate_logs.md`** - Full sample-by-sample evaluation output with aggregate results from the fine-tuned model.
