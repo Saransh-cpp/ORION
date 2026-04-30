@@ -24,8 +24,6 @@ This project was born from a real problem flagged on a real mission. Being the F
 
 Earth observation satellites generate far more data than their limited comm windows can downlink, and most of it is open ocean, empty desert, cloud cover, which is scientifically worthless. Our mission's approach was to downlink everything and sort on the ground, which would have wasted precious bandwidth and pass time.
 
-I was looking for a solution and then [Hack #05: AI in Space](https://luma.com/n9cw58h0?tk=diGLxQ), a hackathon co-organised by [Liquid AI](https://www.liquid.ai/) and [DPhi Space](https://www.dphi.space/), happened. [DPhi](https://www.dphi.space/) provided [SimSat](https://github.com/DPhi-Space/SimSat) (the orbital simulator that feeds ORION GNSS coordinates and Mapbox imagery), and [Liquid](https://www.liquid.ai/) provided the [LFM2.5-VL-1.6B](https://huggingface.co/collections/LiquidAI/lfm2-vl) vision-language model (the base model for the fine-tuned VLM performing on-board triage). ORION is what came out of that month.
-
 ORION runs a vision-language model directly on the satellite's on-board computer, classifies each frame in real time, and only downlinks what matters. The "what matters" can change mission-to-mission, which would require fine-tuning the VLM on specific data, but ORION serves as a prototype, showing that this approach is technically viable. Furthermore, the local experiments (and the math) proves that this approach does cut-down downlink data and runs in an orbital environment without much issues.
 
 ## Build and deployment
