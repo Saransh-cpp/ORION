@@ -1,3 +1,0 @@
-# validation
-
-::: training.validation

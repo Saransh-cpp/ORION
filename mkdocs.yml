@@ -122,7 +122,7 @@ nav:
           - Receiver: api/python/receiver.md
           - Training:
               - fine_tune: api/python/training/fine_tune.md
-              - validation: api/python/training/validation.md
+              - evaluate: api/python/training/evaluate.md
               - fuse: api/python/training/fuse.md
           - Data:
               - data: api/python/data/data.md
