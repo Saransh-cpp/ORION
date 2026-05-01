@@ -292,11 +292,26 @@ void VlmInferenceEngine::parseVerdictJson(const char* json, Orion::TriagePriorit
                                           FwSizeType reasonLen) {
     verdict = TriagePriority::LOW;
 
-    // Search the whole response for category keywords (case-insensitive position)
-    if (::strstr(json, "\"HIGH\"") || ::strstr(json, "\"high\""))
-        verdict = TriagePriority::HIGH;
-    else if (::strstr(json, "\"MEDIUM\"") || ::strstr(json, "\"medium\""))
-        verdict = TriagePriority::MEDIUM;
+    // Find the "category" key, then extract its quoted string value.
+    // Same pattern used below for "reason": key → colon → opening quote → value → closing quote.
+    const char* cp = ::strstr(json, "\"category\"");
+    if (cp) {
+        const char* colon = ::strchr(cp + 10, ':');  // skip past "category"
+        if (colon) {
+            const char* start = ::strchr(colon, '"');
+            if (start) {
+                ++start;  // skip opening quote
+                const char* p = start;
+                while (*p && !(*p == '"' && *(p - 1) != '\\'))
+                    p++;
+                FwSizeType vlen = static_cast<FwSizeType>(p - start);
+                if (vlen == 4 && (::strncmp(start, "HIGH", 4) == 0 || ::strncmp(start, "high", 4) == 0))
+                    verdict = TriagePriority::HIGH;
+                else if (vlen == 6 && (::strncmp(start, "MEDIUM", 6) == 0 || ::strncmp(start, "medium", 6) == 0))
+                    verdict = TriagePriority::MEDIUM;
+            }
+        }
+    }
 
     // Extract the reason value. The model outputs JSON like:
     // {"reason": "some text here", "category": "LOW"}

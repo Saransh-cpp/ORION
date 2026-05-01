@@ -18,13 +18,14 @@ ORION uses Docker with QEMU emulation to cross-compile an ARM64 binary from any 
 ### Step 1: Build the Docker Images
 
 ```bash
-docker compose build
+docker compose build base
+docker compose build pi-build
 ```
 
-This builds two images:
+These must be run sequentially. `docker compose build` builds all services in parallel and will fail because `pi-build` depends on the `orion-base` image produced by `base`.
 
-1. `orion-base`: ARM64 Ubuntu 22.04 with build tools, CMake, and F-Prime Python dependencies
-2. The build image: compiles llama.cpp and the flight segment on top of the base
+- `base`: ARM64 Ubuntu 22.04 with build tools, CMake, F-Prime Python dependencies, and a static llama.cpp build
+- `pi-build`: compiles the F-Prime flight segment on top of the base image and copies the binary out via a bind mount
 
 ### Step 2: Run the Build
 

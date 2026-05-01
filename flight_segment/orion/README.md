@@ -1,108 +1,168 @@
-# Orion Software Design Document
+# ORION Flight Segment — Software Design Document
 
-## 1. Architectural Philosophy
+## Architecture
 
-The system is designed around **Asynchronous Event-Driven Inference** and strict static memory allocation. The core flight executive and hardware interfaces must never wait on the Vision-Language Model (VLM). The architecture isolates the heavy machine learning workload into a dedicated Active Component.
+The pipeline is built around **asynchronous, event-driven inference**: the camera and telemetry components never block on the VLM. The VLM runs on its own low-priority thread and processes requests from a queue.
 
-To satisfy flight software constraints, all dynamic memory allocation is avoided during runtime. The system utilizes a statically allocated buffer pool. Assuming a target resolution of 512x512 RGB (3 bytes/pixel), each image requires exactly 786,432 bytes (~786 KB). A pool of 20 buffers consumes approximately 15.7 MB of RAM, leaving the Pi 5's remaining memory dedicated entirely to the VLM's `.gguf` weights and KV cache.
+All image memory is statically allocated at startup. A 512×512 RGB frame is exactly 786,432 bytes; a pool of 20 such buffers consumes ~15.7 MB. The rest of the Pi 5's RAM holds the ~700 MB Q4 GGUF weights and KV cache. No custom component performs runtime dynamic allocation.
 
-## 2. Component Dictionary
+## Real Spacecraft Mapping
 
-### A. `CameraManager` (Active Component)
+| ORION Component | Real Satellite Equivalent |
+|---|---|
+| `EventAction` | OBC mode manager / FDIR logic |
+| `NavTelemetry` | GNSS receiver payload |
+| `CameraManager` | Earth observation camera payload |
+| `VlmInferenceEngine` | On-board AI co-processor |
+| `TriageRouter` | On-board data handling unit |
+| `GroundCommsDriver` | X-band radio transmitter |
+| `BufferManager` (F-Prime) | On-board mass memory |
+| `comDriver` (F-Prime) | UHF radio transceiver |
 
-- **Responsibility:** Interfaces directly with the Pi Camera Module payload.
-- **Behavior:** Receives commands to capture an image. It requests an empty 786 KB memory block from the `BufferManager`, streams the raw sensor data into it, fetches the current location, dispatches the payload downstream, and immediately frees its thread.
+## Components
 
-### B. `NavTelemetry` (Passive Component)
+### CameraManager (Active)
 
-- **Responsibility:** Acts as the satellite's definitive source of truth for location.
-- **Behavior:** Continuously ingests state vectors. Because it is a Passive Component, other components can call it synchronously to get the exact Latitude/Longitude with near-zero latency.
+Acquires 512×512 RGB imagery from the SimSat Mapbox API, fuses a GPS fix from NavTelemetry, and dispatches the frame downstream to the VLM.
 
-### C. `VlmInferenceEngine` (Active Component)
+Commands: `TRIGGER_CAPTURE`, `ENABLE_AUTO_CAPTURE(interval)`, `DISABLE_AUTO_CAPTURE`
 
-- **Responsibility:** Manages image preprocessing and executes the neural network using the Pi 5's ARM CPU. The LFM2.5-VL-1.6B model was successfully converted to Q4 GGUF format using llama.cpp's convert tooling, confirming architecture compatibility with the inference backend.
-- **Behavior:** Runs on an isolated, low-priority thread holding the 700MB `.gguf` file in RAM. It executes a strict two-step process:
-  1. **Preprocessing:** Normalizes and flattens the native 512x512 RGB buffer into the specific tensor layout expected by `llama.cpp`'s vision encoder.
-  2. **Inference:** Constructs the text prompt, executes the forward pass, and parses the JSON to emit the final category and reasoning string.
-- **Critical Feature:** Must respond to F-Prime `Ping` requests between inference steps so the system Health Watchdog knows the thread is computing, not deadlocked.
+Mode-gated: captures are rejected outside MEASURE mode. Auto-capture respects a minimum interval of 65 seconds to avoid draining the buffer pool faster than the VLM can clear it.
 
-### D. `TriageRouter` (Active Component)
+### NavTelemetry (Active)
 
-- **Responsibility:** The decision-making hub that executes the ORION priority doctrine.
-- **Behavior:** Analyzes the VLM's output. It controls what utilizes the limited radio bandwidth, what goes to bulk storage, and what gets permanently deleted to recycle buffers.
+Polls SimSat every 5 seconds for orbital position (lat/lon/alt) and computes whether the satellite is within the ground station comm window via Haversine distance. Exposes a synchronous `navStateGet` port so CameraManager and EventAction can read position with no queuing overhead.
 
-### E. `GroundCommsDriver` (Active Component)
+The comm window uses hysteresis (enter at `ORION_GS_RANGE_KM`, exit at `range × 1.1`) to prevent oscillation at the boundary.
 
-- **Responsibility:** Manages the X-Band / S-Band radio hardware (simulated via Wi-Fi/Ethernet on the Pi).
-- **Behavior:** Drains the downlink queues and transmits telemetry, events, and high-priority image buffers to the ground station.
+Configurable via env vars: `ORION_GS_LAT`, `ORION_GS_LON`, `ORION_GS_RANGE_KM` (default: EPFL Ecublens, 2000 km range).
 
-### F. `BufferManager` (Standard F-Prime Component)
+### VlmInferenceEngine (Active)
 
-- **Responsibility:** Prevents memory leaks and RAM fragmentation.
-- **Behavior:** Initializes and maintains a static pool of 20 fixed-size (786 KB) buffers. Components pass _pointers_ to these buffers. Once the `TriageRouter` resolves an image, it signals the `BufferManager` to recycle the memory slot.
+Runs LFM2.5-VL-1.6B (Q4_K_M GGUF) via llama.cpp on the Pi 5's CPU. Inference pipeline:
 
----
+1. Wrap raw RGB buffer via `mtmd_bitmap_init`
+2. Tokenize prompt + image via `mtmd_tokenize`
+3. Eval chunks into KV cache via `mtmd_helper_eval_chunks`
+4. Greedy decode up to 200 tokens
+5. Extract `"category"` value from JSON response → HIGH / MEDIUM / LOW verdict
 
-## 3. Port Interfaces (The "Wires")
+Self-watchdog: if inference exceeds 120 seconds, the frame is dropped and the model stays loaded. **Not wired to the F-Prime health watchdog** — the 120s wall-clock timeout is self-contained.
 
-Components communicate strictly through typed Ports to ensure deterministic data handoffs.
+Auto-loads the model on MEASURE entry, auto-unloads on IDLE or SAFE entry, stays loaded through DOWNLINK.
 
-| Port Name                  | Type         | Data Payload (Arguments)                                    | Purpose                                                                                  |
-| :------------------------- | :----------- | :---------------------------------------------------------- | :--------------------------------------------------------------------------------------- |
-| **`NavStatePort`**         | Synchronous  | _Returns:_ `Latitude`, `Longitude`                          | Used by the Camera to pull location instantly at the moment of capture.                  |
-| **`InferenceRequestPort`** | Asynchronous | `ImageBuffer` (ptr), `Latitude`, `Longitude`                | Carries payload to the VLM. Async ensures the camera doesn't wait on the neural network. |
-| **`TriageDecisionPort`**   | Asynchronous | `PriorityEnum` (0,1,2), `ReasonString`, `ImageBuffer` (ptr) | Carries the VLM's final verdict to the Router.                                           |
-| **`FileDownlinkPort`**     | Asynchronous | `ImageBuffer` (ptr), `ReasonString`                         | Carries High-Priority data from the Router to the Radio/Ground Comms.                    |
+Commands: `LOAD_MODEL`, `UNLOAD_MODEL`
 
----
+Env vars: `ORION_GGUF_PATH`, `ORION_MMPROJ_PATH`
 
-## 4. Sequence of Operations (The Data Flow)
+### TriageRouter (Active)
 
-1. **Capture:** An automated sequencer triggers the `CameraManager`.
-2. **Memory Checkout:** The `CameraManager` pulls an empty 786 KB buffer from the `BufferManager` and writes the raw pixel data.
-3. **Sensor Fusion:** The `CameraManager` makes a synchronous call to `NavTelemetry` for the exact GPS coordinates.
-4. **Dispatch:** The `CameraManager` packages the Buffer pointer, Lat, and Lon, fires it across the `InferenceRequestPort`, and goes back to sleep.
-5. **Preprocessing:** The `VlmInferenceEngine` pops the request and normalizes the raw pixel data for the vision encoder.
-6. **Inference:** The `VlmInferenceEngine` executes `llama.cpp`.
-7. **Routing:** The VLM sends the parsed result to the `TriageRouter`, executing the doctrine:
-   - **`HIGH`:** Router sends the image buffer and reasoning string to the `GroundCommsDriver` for immediate X-Band downlink. Emits a `CRITICAL` anomaly event.
-   - **`MEDIUM`:** Routes the image buffer to the Pi's microSD card for standard bulk downlink later. Emits an `INFO` event.
-   - **`LOW`:** Drops the reference entirely. The `BufferManager` instantly recycles the memory.
+Executes the priority doctrine on each VLM verdict:
 
----
+- **HIGH** → forward to GroundCommsDriver for TCP downlink
+- **MEDIUM** → write raw frame to microSD (`ORION_MEDIUM_STORAGE_DIR`, default `./media/sd/medium/`)
+- **LOW** → return buffer to pool immediately
 
-## 5. Ground Communication Strategy
+All paths return the buffer. MEDIUM writes use a monotonic file index (`orion_medium_XXXXX.raw`).
 
-The Ground Data System (GDS) manages the VLM payload via standard F-Prime communication channels, explicitly supporting fault recovery and safe-mode operations.
+### GroundCommsDriver (Active)
 
-### Commands (Uplink)
+Queues HIGH-priority frames to disk when outside a comm window and flushes them over TCP when DOWNLINK mode is active. Each frame is prefixed with an 8-byte header: magic `ORIO` (0x4F52494F) + payload length, both in network byte order. The ground `receiver.py` parses this protocol.
 
-- `CMD_LOAD_GGUF_MODEL`: Commands the VLM component to load the 700MB file from mass storage into RAM.
-- `CMD_UNLOAD_MODEL`: Flushes the model from RAM. Critical fault-recovery command if the satellite must enter "Safe Mode" to shed power or memory overhead.
-- `CMD_TRIGGER_CAPTURE`: Manually forces a localized image capture outside of the automated sequence.
+Queue is stored at `ORION_DOWNLINK_QUEUE_DIR` (default `./media/sd/downlink_queue/`). TCP target: `ORION_GDS_HOST:ORION_GDS_PORT` (default `127.0.0.1:50050`).
 
-### Telemetry (Downlink - Continuous Health)
+**Known limitation:** `connect()` has no explicit timeout. If the receiver is unreachable, each attempt blocks for the OS default (~75s Linux / ~30s macOS).
 
-- `VlmInferenceTime_Ms`: Tracks exact CPU execution time per image to monitor thermal throttling.
-- `HighTargetsFound_Count`: Running total of strategic anomalies detected.
-- `BufferPool_Usage`: Tracks current occupancy of the 20-slot image buffer pool.
+### EventAction (Active)
 
-### Events (Downlink - System Logs)
+Central state machine and mission mode orchestrator. Drives IDLE / MEASURE / DOWNLINK / SAFE transitions and broadcasts mode changes to all pipeline components via `ModeChangePort`.
 
-- _(EVR-CRITICAL)_: `"ORION PRIORITY: HIGH Target Detected. Reason: [VLM Text]"`
-- _(EVR-WARNING)_: `"ORION INFERENCE FAILED: JSON Decode Error."`
-- _(EVR-INFO)_: `"ORION PRIORITY: LOW. Buffer discarded."`
+```
+IDLE ──(eclipse)──> MEASURE ──(comm window)──> DOWNLINK ──(window closes)──> MEASURE or IDLE
+ ^                     |                                                      (based on eclipse)
+ └──────(fault)──────> SAFE ──(clearFault)──> IDLE
+```
 
----
+**Power doctrine:** MEASURE runs during eclipse (battery compute, solar panels idle); IDLE during sunlit passes (charging). This is counter-intuitive but correct — `SET_ECLIPSE true` signals the battery is the sole power source, so the satellite uses it for inference.
 
-## 6. Operational Throughput & Hardware Constraints
+Polls NavTelemetry at 1 Hz for comm window edge detection. On DOWNLINK entry, GroundCommsDriver automatically flushes its disk queue. MEDIUM storage can be bulk-flushed via `FLUSH_MEDIUM_STORAGE` (paced at 1 file/sec to avoid saturating the F-Prime FileDownlink queue).
 
-To operate on COTS (Commercial Off-The-Shelf) edge hardware, this architecture defines strict operational boundaries based on physical hardware capabilities:
+Commands: `SET_ECLIPSE`, `ENTER_SAFE_MODE`, `EXIT_SAFE_MODE`, `FLUSH_MEDIUM_STORAGE`, `GOTO_IDLE`, `GOTO_MEASURE`, `GOTO_DOWNLINK`
 
-- **Inference Latency:** The Raspberry Pi 5 utilizes a Cortex-A76 ARM processor without a dedicated Neural Processing Unit (NPU) or discrete GPU. Processing a 1.6B parameter model in Q4 quantization relies entirely on CPU execution. The expected latency from image ingestion to JSON output is **15 to 45 seconds per image**.
-- **Orbital Pass Parameters:** A typical Low Earth Orbit (LEO) flyover of a target zone lasts between 8 to 10 minutes (480–600 seconds). Given the 45-second inference ceiling, the ORION pipeline has a maximum operational throughput of **~12 to 13 classifications per LEO pass**.
-- **Sequencer Pacing:** To prevent exhausting the 20-slot buffer pool, ground sequencers must pace `CMD_CAPTURE` commands accordingly. If capture frequency exceeds the 12-13 image baseline per pass, the buffer pool will saturate, and new captures will be dropped until the VLM clears the backlog.
+### BufferManager (Standard F-Prime)
+
+Static pool: 20 × 786,432 bytes (~15.7 MB total). No custom code — standard `Svc.BufferManager` instance configured in `instances.fpp`.
 
 ---
 
-This is officially locked and loaded. When you're ready to cross the bridge into implementation, we can start scaffolding the actual F-Prime C++ workspace on that Pi!
+## Port Interfaces
+
+Defined in `Orion/Ports/OrionPorts.fpp`.
+
+| Port | Direction | Payload | Purpose |
+|---|---|---|---|
+| `NavStatePort` | Sync (guarded) | `NavState` (lat, lon, alt, inCommWindow, gsDistanceKm) | CameraManager / EventAction → NavTelemetry position query |
+| `InferenceRequestPort` | Async | `Fw::Buffer`, lat, lon | CameraManager → VlmInferenceEngine |
+| `TriageDecisionPort` | Async | `TriagePriority`, reason (256 chars), `Fw::Buffer` | VlmInferenceEngine → TriageRouter |
+| `FileDownlinkPort` | Async | `Fw::Buffer`, reason (256 chars) | TriageRouter → GroundCommsDriver |
+| `ModeChangePort` | Async (broadcast) | `MissionMode` (U8 enum) | EventAction → all pipeline components |
+
+---
+
+## Data Flow
+
+1. EventAction polls NavTelemetry at 1 Hz; transitions to MEASURE when eclipse flag is set and comm window is closed
+2. Mode broadcast wakes CameraManager's auto-capture loop
+3. CameraManager checks out a buffer, fetches a SimSat Mapbox image, pulls GPS via synchronous NavTelemetry call
+4. Fires `InferenceRequestPort` → VlmInferenceEngine queue; camera thread returns immediately
+5. VLM preprocesses the RGB buffer, runs llama.cpp forward pass with 120s watchdog
+6. Fires `TriageDecisionPort` → TriageRouter
+7. Router executes doctrine: HIGH queued for downlink, MEDIUM written to microSD, LOW discarded
+8. On comm window open, EventAction transitions to DOWNLINK; GroundCommsDriver flushes HIGH queue over TCP
+
+---
+
+## Rate Groups
+
+| Rate | Components scheduled |
+|---|---|
+| 1 Hz | NavTelemetry, CameraManager, GroundCommsDriver, EventAction, telemetry, file downlink |
+| 0.5 Hz | Command sequencer |
+| 0.25 Hz | Health, buffer managers, data products |
+
+---
+
+## Commands Reference
+
+| Component | Command | Notes |
+|---|---|---|
+| EventAction | `SET_ECLIPSE(bool)` | Drives IDLE↔MEASURE transitions |
+| EventAction | `ENTER_SAFE_MODE` / `EXIT_SAFE_MODE` | Manual fault handling |
+| EventAction | `FLUSH_MEDIUM_STORAGE` | Valid in DOWNLINK only; paced 1 file/sec |
+| EventAction | `GOTO_IDLE` / `GOTO_MEASURE` / `GOTO_DOWNLINK` | Manual overrides |
+| CameraManager | `TRIGGER_CAPTURE` | Single capture; requires MEASURE mode |
+| CameraManager | `ENABLE_AUTO_CAPTURE(interval)` / `DISABLE_AUTO_CAPTURE` | Min interval: 65s |
+| VlmInferenceEngine | `LOAD_MODEL` / `UNLOAD_MODEL` | `LOAD_MODEL` rejected outside MEASURE/DOWNLINK |
+
+---
+
+## Telemetry Reference
+
+| Component | Channel | Type |
+|---|---|---|
+| CameraManager | `ImagesCaptured`, `CapturesFailed` | U32 |
+| NavTelemetry | `CurrentLat`, `CurrentLon`, `CurrentAlt`, `InCommWindow` | F64/bool |
+| VlmInferenceEngine | `InferenceTime_Ms`, `TotalInferences`, `InferenceFailures` | U32 |
+| TriageRouter | `HighTargetsRouted`, `MediumTargetsSaved`, `LowTargetsDiscarded` | U32 |
+| GroundCommsDriver | `FramesDownlinked`, `BytesDownlinked`, `FramesQueued`, `TransmitFailures` | U32 |
+| EventAction | `CurrentMode` | U8 |
+
+---
+
+## Hardware Constraints (Pi 5, Cortex-A76, no NPU/GPU)
+
+- **Inference latency:** 50–70 seconds per image (Q4 CPU-only, measured on Pi 5: ~10-15s vision encoding + ~40-55s token generation)
+- **Self-watchdog ceiling:** 120 seconds
+- **Eclipse window:** ~35 minutes per orbit (MEASURE phase duration)
+- **Practical throughput:** ~7–9 classifications per eclipse pass
+- **Buffer pool:** 20 slots × 786 KB; auto-capture interval set to 65s minimum to prevent pool exhaustion against ~65s median inference time

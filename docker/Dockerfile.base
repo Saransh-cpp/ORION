@@ -20,7 +20,17 @@ ENV VIRTUAL_ENV=/opt/venv
 RUN python3 -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-# Install F-Prime Python dependencies (cached unless requirements.txt changes)
-COPY flight_segment/orion/requirements.txt /tmp/requirements.txt
-COPY flight_segment/orion/lib/fprime/requirements.txt /tmp/fprime-requirements.txt
-RUN pip install --no-cache-dir -r /tmp/fprime-requirements.txt
+WORKDIR /orion
+
+COPY . .
+
+RUN pip install --no-cache-dir -r flight_segment/orion/lib/fprime/requirements.txt
+
+# Build llama.cpp (static, CPU-only, no tests/examples)
+RUN cd ground_segment/llama.cpp && \
+    cmake -B build \
+        -DBUILD_SHARED_LIBS=OFF \
+        -DLLAMA_BUILD_TESTS=OFF \
+        -DLLAMA_BUILD_EXAMPLES=OFF \
+        -DLLAMA_BUILD_SERVER=OFF && \
+    cmake --build build -j$(nproc)

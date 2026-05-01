@@ -25,7 +25,7 @@ sequenceDiagram
     NT-->>CM: NavState {lat, lon, alt, inCommWindow}
     CM->>VLM: inferenceRequestOut (buffer, lat, lon)
 
-    Note over VLM: ChatML prompt + image<br/>llama.cpp forward pass<br/>15-45 seconds
+    Note over VLM: ChatML prompt + image<br/>llama.cpp forward pass<br/>50-70 seconds
 
     VLM->>TR: triageDecisionOut (verdict, reason, buffer)
 
