@@ -143,16 +143,29 @@ The following section goes through the basic usage of this prototype. Refer to t
 
 [SimSat](https://github.com/DPhi-Space/SimSat) provides position data and Mapbox imagery. Start it on your ground station machine (default port 9005).
 
-Launch the ORION binary on the Pi (or locally for development):
+Launch the ORION binary on the Pi:
+
+> [!NOTE]
+> You don't need to launch the binary manually for development build (running it on your local Linux/OSX machine).
 
 ```bash
-./Orion -a <gds-host-ip> -p 50000
+./Orion -a <gds-host-ip> -p 50000 # on Pi
 ```
 
-Connect GDS from the ground station:
+If running the binary on Pi, connect GDS from the ground station (your local machine):
 
 ```bash
+# from flight_segment/orion
+# make sure the environment created during installation is active
 fprime-gds -n --ip-address 0.0.0.0 --ip-port 50000
+```
+
+If running the whole setup on your local machine, launching the GDS will automatically run the FS binary in background (and wire all the addresses automatically):
+
+```bash
+# from flight_segment/orion
+# make sure the environment created during installation is active
+fprime-gds
 ```
 
 Open `http://localhost:5000`: you should see `SimSatPositionUpdate` events arriving every 5 seconds. The satellite starts in **IDLE** mode (charging).
