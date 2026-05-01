@@ -7,6 +7,7 @@ repos:
     rev: v21.1.8
     hooks:
       - id: clang-format
+        exclude: ^ground_segment/training/orion_lora_weights/
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
@@ -20,7 +21,7 @@ repos:
         args: ["--unsafe"]
       - id: debug-statements
       - id: end-of-file-fixer
-        exclude: ^docs
+        exclude: ^ground_segment/training/orion_lora_weights/
       - id: mixed-line-ending
       - id: requirements-txt-fixer
       - id: trailing-whitespace
@@ -37,12 +38,14 @@ repos:
     hooks:
       - id: codespell
         args: ["-Lacount,numer,coefficents"]
+        exclude: ^ground_segment/training/orion_lora_weights/
 
   - repo: https://github.com/rbubley/mirrors-prettier
     rev: "v3.8.1"
     hooks:
       - id: prettier
         types_or: [yaml, markdown, html, css, scss, javascript]
+        exclude: ^ground_segment/training/orion_lora_weights/
 
   - repo: https://github.com/adamchainz/blacken-docs
     rev: 1.20.0

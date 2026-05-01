@@ -65,9 +65,10 @@ cd ../..
 Create a virtual environment and install the F-Prime Python dependencies:
 
 ```bash
+cd flight_segment/orion
 uv venv
 source .venv/bin/activate
-uv pip install -r flight_segment/orion/lib/fprime/requirements.txt
+uv pip install -r lib/fprime/requirements.txt
 ```
 
 ## Generate and Build the Flight Segment
@@ -75,7 +76,6 @@ uv pip install -r flight_segment/orion/lib/fprime/requirements.txt
 Use F-Prime's build tooling to generate the autocoded sources and compile the binary:
 
 ```bash
-cd flight_segment/orion
 fprime-util generate
 fprime-util build --all -j$(nproc)
 ```
@@ -83,8 +83,8 @@ fprime-util build --all -j$(nproc)
 The compiled binary is located at:
 
 ```
-flight_segment/orion/build-artifacts/Linux/Orion/bin/Orion     # Linux
-flight_segment/orion/build-fprime-automatic-native/bin/Orion   # varies by platform
+./build-artifacts/Darwin/Orion/bin/Orion   # macOS
+./build-artifacts/Linux/Orion/bin/Orion    # Linux
 ```
 
 ## Install Ground Segment Dependencies (Optional)
@@ -92,9 +92,14 @@ flight_segment/orion/build-fprime-automatic-native/bin/Orion   # varies by platf
 If you plan to run the training pipeline or data generation scripts, install the ground segment Python dependencies:
 
 ```bash
-cd ground_segment
+deactivate  # deactivate the FS environment if active
+cd ../../ground_segment  # if in flight_segment/orion
+```
+
+```bash
+uv venv
+source .venv/bin/activate
 uv sync
-cd ..
 ```
 
 This installs PyTorch, Transformers, PEFT, and other ML dependencies defined in `ground_segment/pyproject.toml`.
@@ -104,7 +109,15 @@ This installs PyTorch, Transformers, PEFT, and other ML dependencies defined in 
 Run the binary with `--help` or test that it starts:
 
 ```bash
-./flight_segment/orion/build-artifacts/Linux/Orion/bin/Orion --help
+deactivate  # if GS environment is active
+cd ../flight_segment/orion  # if in ground_segment
+```
+
+```bash
+# macOS
+./build-fprime-automatic-native/bin/Darwin/Orion --help
+# Linux
+./build-fprime-automatic-native/bin/Linux/Orion --help
 ```
 
 ## Next Steps

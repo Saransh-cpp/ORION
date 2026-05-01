@@ -92,6 +92,7 @@ nav:
           - Receiver: ground-segment/receiver.md
           - Training Pipeline: ground-segment/training.md
           - Dataset: ground-segment/data.md
+          - Model Card: ground-segment/model-card.md
           - Utility Scripts: ground-segment/scripts.md
           - Compute Budgets: ground-segment/budgets.md
   - Guides:
