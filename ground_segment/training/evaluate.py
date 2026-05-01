@@ -101,7 +101,7 @@ def main():
     args = parser.parse_args()
 
     eval_file = TEST_FILE if args.file == "test" else VAL_FILE
-    print(f"🚀 Initializing Fine-Tuned ORION Ablation Protocol on '{args.file}' split")
+    print(f" Initializing Fine-Tuned ORION Ablation Protocol on '{args.file}' split")
     print(f"   File: {eval_file}\n")
 
     # 1. Load Processor
@@ -116,7 +116,7 @@ def main():
         device = "mps"
     else:
         device = "cpu"
-    print(f"📦 Loading Base Model on {device}...")
+    print(f" Loading Base Model on {device}...")
     base_model = AutoModelForImageTextToText.from_pretrained(
         BASE_MODEL_ID,
         device_map=device,
@@ -125,7 +125,7 @@ def main():
     )
 
     # 3. Inject LoRA Weights
-    print("🧠 Grafting Custom LoRA Adapters...")
+    print(" Grafting Custom LoRA Adapters...")
     model = PeftModel.from_pretrained(base_model, LORA_WEIGHTS_PATH)
     model.eval()
 
@@ -138,7 +138,7 @@ def main():
         for line in f:
             test_data.append(json.loads(line.strip()))
 
-    print(f"[✅] Loaded {len(test_data)} samples from '{args.file}' split.\n")
+    print(f" Loaded {len(test_data)} samples from '{args.file}' split.\n")
 
     # Metrics tracking
     metrics = {
@@ -194,8 +194,8 @@ def main():
         res_d, _ = run_inference(model, processor, real_image, mismatched_prompt)
 
         # --- DEBUG OUTPUT ---
-        print(f"🖼️  Image Path: {image_path}")
-        print(f"📝 Raw Output (Cond A): {raw_text_a}")
+        print(f"  Image Path: {image_path}")
+        print(f" Raw Output (Cond A): {raw_text_a}")
 
         metrics["A"]["truths"].append(ground_truth)
         metrics["A"]["preds"].append(res_a.get("category"))
@@ -216,7 +216,7 @@ def main():
         conflict_metrics["total"] += 1
 
         print(
-            f"📊 Truth: {ground_truth} | A: {res_a.get('category')} | B: {res_b.get('category')} | C: {res_c.get('category')} | D: {pred_d} (Fake Coords: {mismatched_gt})"
+            f" Truth: {ground_truth} | A: {res_a.get('category')} | B: {res_b.get('category')} | C: {res_c.get('category')} | D: {pred_d} (Fake Coords: {mismatched_gt})"
         )
 
     # Final Output Matrix

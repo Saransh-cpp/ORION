@@ -85,7 +85,7 @@ No runtime dynamic allocation. All frame memory is pre-allocated at startup; mod
 
 > **TODO:** replace with 360-target dataset results after retraining
 
-> Each row in the logs below includes the satellite image, the VLM's full reasoning string, and the ground-truth label — not just summary numbers. Full per-sample logs: [ablation_logs.md](ground_segment/ablation_logs.md) (base model, 60 samples × 4 conditions) · [evaluate_logs.md](ground_segment/evaluate_logs.md) (fine-tuned, 60 samples × 4 conditions). Both are embedded in full in the [model card](https://saransh-cpp.github.io/ORION/ground-segment/model-card/).
+> Full per-condition logs (recall, precision, overall accuracy) are embedded in the [model card](https://saransh-cpp.github.io/ORION/ground-segment/model-card/).
 
 | Condition                               | Base model | Fine-tuned | Δ        |
 | --------------------------------------- | ---------- | ---------- | -------- |
