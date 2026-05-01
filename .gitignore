@@ -210,6 +210,7 @@ ground_segment/data/orion_medium/*
 
 # weights and models
 ground_segment/training/orion_merged/
+ground_segment/training/orion_lora_weights/checkpoint*/
 *.gguf
 
 # fprime items
