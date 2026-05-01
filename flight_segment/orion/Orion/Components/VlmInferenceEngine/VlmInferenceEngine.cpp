@@ -302,8 +302,7 @@ void VlmInferenceEngine::parseVerdictJson(const char* json, Orion::TriagePriorit
             if (start) {
                 ++start;  // skip opening quote
                 const char* p = start;
-                while (*p && !(*p == '"' && *(p - 1) != '\\'))
-                    p++;
+                while (*p && !(*p == '"' && *(p - 1) != '\\')) p++;
                 FwSizeType vlen = static_cast<FwSizeType>(p - start);
                 if (vlen == 4 && (::strncmp(start, "HIGH", 4) == 0 || ::strncmp(start, "high", 4) == 0))
                     verdict = TriagePriority::HIGH;

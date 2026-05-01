@@ -8,16 +8,16 @@ All image memory is statically allocated at startup. A 512×512 RGB frame is exa
 
 ## Real Spacecraft Mapping
 
-| ORION Component | Real Satellite Equivalent |
-|---|---|
-| `EventAction` | OBC mode manager / FDIR logic |
-| `NavTelemetry` | GNSS receiver payload |
-| `CameraManager` | Earth observation camera payload |
-| `VlmInferenceEngine` | On-board AI co-processor |
-| `TriageRouter` | On-board data handling unit |
-| `GroundCommsDriver` | X-band radio transmitter |
-| `BufferManager` (F-Prime) | On-board mass memory |
-| `comDriver` (F-Prime) | UHF radio transceiver |
+| ORION Component           | Real Satellite Equivalent        |
+| ------------------------- | -------------------------------- |
+| `EventAction`             | OBC mode manager / FDIR logic    |
+| `NavTelemetry`            | GNSS receiver payload            |
+| `CameraManager`           | Earth observation camera payload |
+| `VlmInferenceEngine`      | On-board AI co-processor         |
+| `TriageRouter`            | On-board data handling unit      |
+| `GroundCommsDriver`       | X-band radio transmitter         |
+| `BufferManager` (F-Prime) | On-board mass memory             |
+| `comDriver` (F-Prime)     | UHF radio transceiver            |
 
 ## Components
 
@@ -99,13 +99,13 @@ Static pool: 20 × 786,432 bytes (~15.7 MB total). No custom code — standard `
 
 Defined in `Orion/Ports/OrionPorts.fpp`.
 
-| Port | Direction | Payload | Purpose |
-|---|---|---|---|
-| `NavStatePort` | Sync (guarded) | `NavState` (lat, lon, alt, inCommWindow, gsDistanceKm) | CameraManager / EventAction → NavTelemetry position query |
-| `InferenceRequestPort` | Async | `Fw::Buffer`, lat, lon | CameraManager → VlmInferenceEngine |
-| `TriageDecisionPort` | Async | `TriagePriority`, reason (256 chars), `Fw::Buffer` | VlmInferenceEngine → TriageRouter |
-| `FileDownlinkPort` | Async | `Fw::Buffer`, reason (256 chars) | TriageRouter → GroundCommsDriver |
-| `ModeChangePort` | Async (broadcast) | `MissionMode` (U8 enum) | EventAction → all pipeline components |
+| Port                   | Direction         | Payload                                                | Purpose                                                   |
+| ---------------------- | ----------------- | ------------------------------------------------------ | --------------------------------------------------------- |
+| `NavStatePort`         | Sync (guarded)    | `NavState` (lat, lon, alt, inCommWindow, gsDistanceKm) | CameraManager / EventAction → NavTelemetry position query |
+| `InferenceRequestPort` | Async             | `Fw::Buffer`, lat, lon                                 | CameraManager → VlmInferenceEngine                        |
+| `TriageDecisionPort`   | Async             | `TriagePriority`, reason (256 chars), `Fw::Buffer`     | VlmInferenceEngine → TriageRouter                         |
+| `FileDownlinkPort`     | Async             | `Fw::Buffer`, reason (256 chars)                       | TriageRouter → GroundCommsDriver                          |
+| `ModeChangePort`       | Async (broadcast) | `MissionMode` (U8 enum)                                | EventAction → all pipeline components                     |
 
 ---
 
@@ -124,38 +124,38 @@ Defined in `Orion/Ports/OrionPorts.fpp`.
 
 ## Rate Groups
 
-| Rate | Components scheduled |
-|---|---|
-| 1 Hz | NavTelemetry, CameraManager, GroundCommsDriver, EventAction, telemetry, file downlink |
-| 0.5 Hz | Command sequencer |
-| 0.25 Hz | Health, buffer managers, data products |
+| Rate    | Components scheduled                                                                  |
+| ------- | ------------------------------------------------------------------------------------- |
+| 1 Hz    | NavTelemetry, CameraManager, GroundCommsDriver, EventAction, telemetry, file downlink |
+| 0.5 Hz  | Command sequencer                                                                     |
+| 0.25 Hz | Health, buffer managers, data products                                                |
 
 ---
 
 ## Commands Reference
 
-| Component | Command | Notes |
-|---|---|---|
-| EventAction | `SET_ECLIPSE(bool)` | Drives IDLE↔MEASURE transitions |
-| EventAction | `ENTER_SAFE_MODE` / `EXIT_SAFE_MODE` | Manual fault handling |
-| EventAction | `FLUSH_MEDIUM_STORAGE` | Valid in DOWNLINK only; paced 1 file/sec |
-| EventAction | `GOTO_IDLE` / `GOTO_MEASURE` / `GOTO_DOWNLINK` | Manual overrides |
-| CameraManager | `TRIGGER_CAPTURE` | Single capture; requires MEASURE mode |
-| CameraManager | `ENABLE_AUTO_CAPTURE(interval)` / `DISABLE_AUTO_CAPTURE` | Min interval: 65s |
-| VlmInferenceEngine | `LOAD_MODEL` / `UNLOAD_MODEL` | `LOAD_MODEL` rejected outside MEASURE/DOWNLINK |
+| Component          | Command                                                  | Notes                                          |
+| ------------------ | -------------------------------------------------------- | ---------------------------------------------- |
+| EventAction        | `SET_ECLIPSE(bool)`                                      | Drives IDLE↔MEASURE transitions                |
+| EventAction        | `ENTER_SAFE_MODE` / `EXIT_SAFE_MODE`                     | Manual fault handling                          |
+| EventAction        | `FLUSH_MEDIUM_STORAGE`                                   | Valid in DOWNLINK only; paced 1 file/sec       |
+| EventAction        | `GOTO_IDLE` / `GOTO_MEASURE` / `GOTO_DOWNLINK`           | Manual overrides                               |
+| CameraManager      | `TRIGGER_CAPTURE`                                        | Single capture; requires MEASURE mode          |
+| CameraManager      | `ENABLE_AUTO_CAPTURE(interval)` / `DISABLE_AUTO_CAPTURE` | Min interval: 65s                              |
+| VlmInferenceEngine | `LOAD_MODEL` / `UNLOAD_MODEL`                            | `LOAD_MODEL` rejected outside MEASURE/DOWNLINK |
 
 ---
 
 ## Telemetry Reference
 
-| Component | Channel | Type |
-|---|---|---|
-| CameraManager | `ImagesCaptured`, `CapturesFailed` | U32 |
-| NavTelemetry | `CurrentLat`, `CurrentLon`, `CurrentAlt`, `InCommWindow` | F64/bool |
-| VlmInferenceEngine | `InferenceTime_Ms`, `TotalInferences`, `InferenceFailures` | U32 |
-| TriageRouter | `HighTargetsRouted`, `MediumTargetsSaved`, `LowTargetsDiscarded` | U32 |
-| GroundCommsDriver | `FramesDownlinked`, `BytesDownlinked`, `FramesQueued`, `TransmitFailures` | U32 |
-| EventAction | `CurrentMode` | U8 |
+| Component          | Channel                                                                   | Type     |
+| ------------------ | ------------------------------------------------------------------------- | -------- |
+| CameraManager      | `ImagesCaptured`, `CapturesFailed`                                        | U32      |
+| NavTelemetry       | `CurrentLat`, `CurrentLon`, `CurrentAlt`, `InCommWindow`                  | F64/bool |
+| VlmInferenceEngine | `InferenceTime_Ms`, `TotalInferences`, `InferenceFailures`                | U32      |
+| TriageRouter       | `HighTargetsRouted`, `MediumTargetsSaved`, `LowTargetsDiscarded`          | U32      |
+| GroundCommsDriver  | `FramesDownlinked`, `BytesDownlinked`, `FramesQueued`, `TransmitFailures` | U32      |
+| EventAction        | `CurrentMode`                                                             | U8       |
 
 ---
 
