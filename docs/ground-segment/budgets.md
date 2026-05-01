@@ -36,12 +36,12 @@ Resource requirements for training, quantization, and dataset generation.
 
 ## Quantization Compute
 
-| Step                    | RAM required | Time | Notes                                       |
-| ----------------------- | ------------ | ---- | ------------------------------------------- |
-| HF to GGUF conversion   | ~8 GB        | TBD  | Full FP16 model loaded into RAM             |
-| mmproj extraction       | ~4 GB        | TBD  | Vision encoder only                         |
-| Q4_K_M quantization     | ~4 GB        | TBD  | Reads FP16 GGUF, writes Q4                  |
-| Total disk (all stages) | ~11 GB       |      | Base + merged + F16 GGUF + Q4 GGUF + mmproj |
+| Step                    | RAM required | Time  | Notes                                       |
+| ----------------------- | ------------ | ----- | ------------------------------------------- |
+| HF to GGUF conversion   | ~8 GB        | 17.5s | Full FP16 model loaded into RAM             |
+| mmproj extraction       | ~4 GB        | 14s   | Vision encoder only                         |
+| Q4_K_M quantization     | ~4 GB        | 18.6  | Reads FP16 GGUF, writes Q4                  |
+| Total disk (all stages) | ~11 GB       |       | Base + merged + F16 GGUF + Q4 GGUF + mmproj |
 
 ## Weight Fusion Compute
 
@@ -80,10 +80,3 @@ Resource requirements for training, quantization, and dataset generation.
 | --------------------- | ------------------- | ------------------------------- |
 | Dataset upload        | ~31 MB (compressed) | `upload_to_server.sh` via rsync |
 | LoRA weights download | ~50 MB              | `download_weights.sh` via rsync |
-
-## How to Measure
-
-- **GPU VRAM**: run `nvidia-smi` during training
-- **Training time**: logged by HuggingFace Trainer at end of each epoch
-- **Quantization time**: wall-clock the `llama-quantize` command
-- **Evaluation time**: wall-clock `python evaluate.py`

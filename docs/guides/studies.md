@@ -65,10 +65,3 @@ When comparing ablation (base model) vs. evaluation (fine-tuned model), look for
 2. **Condition B vs. A gap**: A small gap means the model relies primarily on visual features. A large gap means it depends on coordinates.
 3. **Condition C accuracy**: Should be near chance (~33%). If higher, the model may be memorizing coordinate-to-category mappings.
 4. **Condition D vision trust rate**: Higher is better. The model should trust its visual analysis over misleading telemetry.
-
-## Historical Results
-
-For historical study results, refer to:
-
-- **`ground_segment/ablation_logs.md`** - Full sample-by-sample ablation study output with aggregate results from the base model.
-- **`ground_segment/evaluate_logs.md`** - Full sample-by-sample evaluation output with aggregate results from the fine-tuned model.
