@@ -8,21 +8,23 @@
 - Minimum ~8 GB VRAM (the micro-batch size is 1 with gradient accumulation).
 - For detailed GPU, RAM, and disk requirements, see [Compute Budgets](../ground-segment/budgets.md).
 
+## Prerequisites
+
+- Data generated (see [data-gen](./data-gen.md))
+
 ## Step 1: Fine-Tuning
 
 Move the data and the code to the training server using `upload_to_server.sh` (see [scripts.md](../ground-segment/scripts.md)). On the server, create a new environment and run fine tuning:
 
 ```bash
-cd ground_segment
-uv venv
-. .venv/bin/activate
-uv sync
+# make sure you are in the uv environment
+# created during data generation
 ORION_DATASET_ROOT=<the-dir-used-in-script> uv run fine_tune.py
 ```
 
 Training logs are printed every 5 steps. Checkpoints are saved at the end of each epoch. The final LoRA adapter weights and processor are saved to `orion_lora_weights/`.
 
-Finally, `download_weights.sh` can be used to transfer the weights from the training server to your local machine (see [scripts.md](../ground-segment/scripts.md)).
+Finally, use `download_weights.sh` to transfer the weights from the training server to your local machine in `ground_segment/training` (see [scripts.md](../ground-segment/scripts.md)).
 
 ### Fine-Tuning Output
 

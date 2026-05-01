@@ -107,11 +107,19 @@ def main():
     # 1. Load Processor
     processor = AutoProcessor.from_pretrained(BASE_MODEL_ID, trust_remote_code=True)
 
-    # 2. Load Base Model (Hardware agnostic auto-routing)
-    print("📦 Loading Base Model...")
+    # 2. Load Base Model — pick MPS (Apple Silicon) or CPU explicitly.
+    # device_map="auto" triggers accelerate's get_balanced_memory which crashes
+    # when the model config stores no_split_module_classes as a set (unhashable).
+    if torch.cuda.is_available():
+        device = "cuda"
+    elif torch.backends.mps.is_available():
+        device = "mps"
+    else:
+        device = "cpu"
+    print(f"📦 Loading Base Model on {device}...")
     base_model = AutoModelForImageTextToText.from_pretrained(
         BASE_MODEL_ID,
-        device_map="auto",
+        device_map=device,
         torch_dtype=torch.float16,
         trust_remote_code=True,
     )

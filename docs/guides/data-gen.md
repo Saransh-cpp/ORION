@@ -5,7 +5,7 @@
 ## Prerequisites
 
 - SimSat must be running and serving images at `http://localhost:9005/data/image/mapbox`.
-- Python 3.10+ with the `requests` package installed.
+- [uv](https://docs.astral.sh/uv/getting-started/installation/) installed.
 
 ## Running the Data Generator
 

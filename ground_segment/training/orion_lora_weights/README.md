@@ -124,8 +124,6 @@ Both studies use the same four conditions run against the same 60-sample held-ou
 
 ### Ablation study — base model (`ablation.py`)
 
-> **TODO:** replace with 360-target dataset results after rerunning `ablation.py`
-
 | Condition                               | Overall accuracy | Notes |
 | --------------------------------------- | ---------------- | ----- |
 | A — Vision + GPS coords                 | 58.3%            | |

@@ -5,9 +5,9 @@
 ## Evaluating the Fine-Tuned Model
 
 ```bash
-# make sure the data is generated and the
-# environment created during data generation in
-# ground_segment is active
+# make sure the data is generated, the LoRA adapters
+# are present, and the environment created during
+# data generation in ground_segment is active
 cd ground_segment/training
 uv run evaluate.py
 ```
@@ -30,7 +30,7 @@ This loads the raw base model without any LoRA adapters and runs the identical f
 
 ### Per-Class Metrics
 
-Both scripts print per-class recall and precision for conditions A, B, and C:
+Both scripts print per-class recall and precision for conditions A, B, and C. For instance, the evaluate.py
 
 ```text
 --- Condition A: Full System (Vision + Coords) ---
