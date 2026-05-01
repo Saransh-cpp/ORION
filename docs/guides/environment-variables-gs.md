@@ -2,13 +2,16 @@
 
 ## Remote Training Server
 
-| Variable                | Default    | Used By                                      | Description                                                    |
-| ----------------------- | ---------- | -------------------------------------------- | -------------------------------------------------------------- |
-| `SERVER`                | (required) | `upload_to_server.sh`, `download_weights.sh` | SSH address of the remote GPU server (e.g., `user@gpu-server`) |
-| `ORION_SERVER_HDD_PATH` | (required) | `upload_to_server.sh`                        | Server-side directory where the dataset tarball is extracted   |
-| `ORION_LOCAL_DATA_DIR`  | (required) | `upload_to_server.sh`                        | Local directory to compress and upload (e.g., `orion_dataset`) |
-| `ORION_ARCHIVE_NAME`    | (required) | `upload_to_server.sh`                        | Temporary tarball filename (e.g., `orion_data.tar.gz`)         |
-| `ORION_REPO_DIR`        | (required) | `upload_to_server.sh`                        | Server-side directory to clone/pull the ORION repo into        |
+| Variable                    | Default    | Used By                                      | Description                                                                   |
+| --------------------------- | ---------- | -------------------------------------------- | ----------------------------------------------------------------------------- |
+| `SERVER`                    | (required) | `upload_to_server.sh`, `download_weights.sh` | SSH address of the remote GPU server (e.g., `user@gpu-server`)                |
+| `ORION_SERVER_HDD_PATH`     | (required) | `upload_to_server.sh`                        | Server-side directory where the dataset tarball is extracted                  |
+| `ORION_LOCAL_DATA_DIR`      | (required) | `upload_to_server.sh`                        | Local directory to compress and upload (e.g., `orion_dataset`)                |
+| `ORION_ARCHIVE_NAME`        | (required) | `upload_to_server.sh`                        | Temporary tarball filename (e.g., `orion_data.tar.gz`)                        |
+| `ORION_REPO_DIR`            | (required) | `upload_to_server.sh`                        | Server-side directory to clone/pull the ORION repo into                       |
+| `ORION_SERVER_WEIGHTS_PATH` | (required) | `download_weights.sh`                        | Server-side path to the `orion_lora_weights` directory                        |
+| `ORION_SERVER_REPO_PATH`    | (required) | `download_weights.sh`                        | Server-side path to the full ORION repo (deleted after successful downlink)   |
+| `ORION_SERVER_DATA_PATH`    | (required) | `download_weights.sh`                        | Server-side path to the dataset directory (deleted after successful downlink) |
 
 ## Fine-Tuning
 
@@ -41,5 +44,9 @@ cd ground_segment/training
 python fine_tune.py
 
 # Local machine: download weights after training
+export ORION_SERVER_WEIGHTS_PATH=~/code/extras/ORION/ground_segment/training/orion_lora_weights
+export ORION_SERVER_REPO_PATH=~/code/extras/ORION
+export ORION_SERVER_DATA_PATH=~/hdd/gaze/datasets/extras/orion_dataset
+cd ground_segment/training
 bash download_weights.sh
 ```

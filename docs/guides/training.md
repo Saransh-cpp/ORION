@@ -8,29 +8,21 @@
 - Minimum ~8 GB VRAM (the micro-batch size is 1 with gradient accumulation).
 - For detailed GPU, RAM, and disk requirements, see [Compute Budgets](../ground-segment/budgets.md).
 
-## Prerequisites
+## Step 1: Fine-Tuning
 
-Install the project dependencies from the ground segment:
+Move the data and the code to the training server using `upload_to_server.sh` (see [scripts.md](../ground-segment/scripts.md)). On the server, create a new environment and run fine tuning:
 
 ```bash
 cd ground_segment
-pip install -e .
-```
-
-This installs: `torch`, `torchvision`, `transformers`, `accelerate`, `peft`, `datasets`, `bitsandbytes`, and other required packages.
-
-Ensure you have already generated the dataset (see the [Data Generation](data-gen.md) guide).
-
-## Step 1: Fine-Tuning
-
-Before running, update the `TRAIN_FILE` path in `fine_tune.py` to point to your generated dataset, and update the image path prefix in the `VLMDataCollator.__call__` method.
-
-```bash
-cd ground_segment/training
-python fine_tune.py
+uv venv
+. .venv/bin/activate
+uv sync
+ORION_DATASET_ROOT=<the-dir-used-in-script> uv run fine_tune.py
 ```
 
 Training logs are printed every 5 steps. Checkpoints are saved at the end of each epoch. The final LoRA adapter weights and processor are saved to `orion_lora_weights/`.
+
+Finally, `download_weights.sh` can be used to transfer the weights from the training server to your local machine (see [scripts.md](../ground-segment/scripts.md)).
 
 ### Fine-Tuning Output
 
@@ -50,8 +42,7 @@ orion_lora_weights/
 After training, merge the LoRA adapters into the base model to produce a standalone FP16 model. This is required before quantization to GGUF format.
 
 ```bash
-cd ground_segment/training
-python fuse.py
+uv run fuse.py
 ```
 
 ### Fuse Output

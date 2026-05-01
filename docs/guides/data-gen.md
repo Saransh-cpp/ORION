@@ -10,8 +10,12 @@
 ## Running the Data Generator
 
 ```bash
-cd ground_segment/data
-python data_gen.py
+cd ground_segment
+uv venv
+. .venv/bin/activate
+uv sync
+cd data
+uv run data_gen.py
 ```
 
 ### What Happens

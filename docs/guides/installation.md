@@ -89,12 +89,14 @@ The compiled binary is located at:
 
 ## Install Ground Segment Dependencies (Optional)
 
-If you plan to run the training pipeline or data generation scripts, install the ground segment Python dependencies:
+If you plan to run the training pipeline, data generation scripts, or evaluation studies, install the ground segment Python dependencies:
 
 ```bash
 deactivate  # deactivate the FS environment if active
 cd ../../ground_segment  # if in flight_segment/orion
 ```
+
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/) and use uv to install other dependencies:
 
 ```bash
 uv venv
@@ -115,9 +117,7 @@ cd ../flight_segment/orion  # if in ground_segment
 
 ```bash
 # macOS
-./build-fprime-automatic-native/bin/Darwin/Orion --help
-# Linux
-./build-fprime-automatic-native/bin/Linux/Orion --help
+./build-artifacts/Darwin/Orion/bin/Orion --help
 ```
 
 ## Next Steps

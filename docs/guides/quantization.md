@@ -9,13 +9,16 @@
 - llama.cpp built from source (for the `llama-quantize` binary).
 - ~11 GB free disk space for all intermediate artifacts. See [Compute Budgets](../ground-segment/budgets.md) for details.
 
-## Step 1: Build llama.cpp
+## Step 1: Build llama.cpp (if not built already)
 
 ```bash
 cd ground_segment/llama.cpp
-mkdir build && cd build
-cmake ..
-cmake --build . --config Release
+cmake -B build \
+  -DBUILD_SHARED_LIBS=OFF \
+  -DLLAMA_BUILD_TESTS=OFF \
+  -DLLAMA_BUILD_EXAMPLES=OFF \
+  -DLLAMA_BUILD_SERVER=OFF
+cmake --build build -j$(nproc)
 ```
 
 This produces the `llama-quantize` binary in the build directory.

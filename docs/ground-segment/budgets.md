@@ -6,14 +6,13 @@ Resource requirements for training, quantization, and dataset generation.
 
 `fine_tune.py` is **CUDA only**. The training stack uses bitsandbytes (4-bit NF4 quantization + paged_adamw_8bit optimizer), which does not support Apple Silicon, AMD GPUs, or CPU-only execution.
 
-| Resource                | Requirement                     | Notes                                              |
-| ----------------------- | ------------------------------- | -------------------------------------------------- |
-| GPU                     | NVIDIA CUDA-capable, 8+ GB VRAM | QLoRA loads base model in 4-bit (NF4)              |
-| CUDA toolkit            | 12.x                            | Matched to the GPU driver                          |
-| GPU VRAM usage          | TBD                             | Micro-batch size 1, gradient checkpointing enabled |
-| System RAM              | 16+ GB recommended              | For data loading and preprocessing                 |
-| Training time per epoch | TBD                             | 3 epochs total, ~480 training samples              |
-| Total training time     | TBD                             | Depends on GPU                                     |
+| Resource                | Requirement                     | Notes                                 |
+| ----------------------- | ------------------------------- | ------------------------------------- |
+| GPU                     | NVIDIA CUDA-capable, 8+ GB VRAM | QLoRA loads base model in 4-bit (NF4) |
+| CUDA toolkit            | 12.x                            | Matched to the GPU driver             |
+| System RAM              | 8+ GB recommended               | For data loading and preprocessing    |
+| Training time per epoch | 834s                            | 3 epochs total, ~480 training samples |
+| Total training time     | 2503s                           | Depends on GPU                        |
 
 **Reference hardware (verified working):**
 
@@ -49,7 +48,7 @@ Resource requirements for training, quantization, and dataset generation.
 | Resource | Requirement    | Notes                                           |
 | -------- | -------------- | ----------------------------------------------- |
 | RAM      | ~8 GB          | Full FP16 model loaded on CPU (no GPU required) |
-| Time     | TBD            | `merge_and_unload()` + SafeTensors save         |
+| Time     | 98.21s         | `merge_and_unload()` + SafeTensors save         |
 | Disk     | ~3.2 GB output | Merged model saved to `orion_merged/`           |
 
 ## Validation / Ablation Studies

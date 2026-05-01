@@ -25,7 +25,7 @@ docker compose build pi-build
 These must be run sequentially. `docker compose build` builds all services in parallel and will fail because `pi-build` depends on the `orion-base` image produced by `base`.
 
 - `base`: ARM64 Ubuntu 22.04 with build tools, CMake, F-Prime Python dependencies, and a static llama.cpp build
-- `pi-build`: compiles the F-Prime flight segment on top of the base image and copies the binary out via a bind mount
+- `pi-build`: compiles the F-Prime flight segment on top of the base image and copies the binary out via a bind mount (this can be re-run frequently for debugging on the Pi as it compiles only the flight software and not the dependencies)
 
 ### Step 2: Run the Build
 
@@ -40,9 +40,15 @@ This compiles the full flight segment and copies the resulting binary to `build-
 Download the [pre-trained GGUF model files](https://drive.google.com/drive/folders/1h6WGNeNzYHdfisELlJodDCKlkREkIzCN?usp=share_link) (`orion-q4_k_m.gguf` and `orion-mmproj-f16.gguf`), then copy the binary and models to the Pi:
 
 ```bash
-scp build-output/Orion user@<pi-ip>:/home/user/ORION/
-scp ground_segment/training/orion-q4_k_m.gguf user@<pi-ip>:/home/user/ORION/
-scp ground_segment/training/orion-mmproj-f16.gguf user@<pi-ip>:/home/user/ORION/
+scp build-output/Orion user@<pi-ip>:/home/<user>/ORION/
+# if trained (or use the model files linked above)
+# set ORION_GGUF_PATH if using a different path for the file
+# see [environment variables](./environment-variables.md)
+scp ground_segment/training/orion-q4_k_m.gguf user@<pi-ip>:/home/<user>/ORION/
+# if trained (or use the model files linked above)
+# set ORION_MMPROJ_PATH if using a different path for the file
+# see [environment variables](environment-variables.md)
+scp ground_segment/training/orion-mmproj-f16.gguf user@<pi-ip>:/home/<user>/ORION/
 ```
 
 ## Configure the Pi
@@ -51,11 +57,7 @@ Set the required environment variables on the Pi before launching the binary. Ad
 
 ```bash
 # Point to the development machine running SimSat
-export ORION_SIMSAT_URL=http://<mac-ip>:9005
-
-# Model paths (adjust to your layout)
-export ORION_GGUF_PATH=./orion-q4_k_m.gguf
-export ORION_MMPROJ_PATH=orion-mmproj-f16.gguf
+export ORION_SIMSAT_URL=http://<machine-ip>:9005
 
 # Storage directories
 export ORION_MEDIUM_STORAGE_DIR=./media/sd/medium/
@@ -65,7 +67,12 @@ export ORION_DOWNLINK_QUEUE_DIR=./media/sd/downlink_queue/
 Create the storage directories:
 
 ```bash
-mkdir -p $ORION_MEDIUM_STORAGE_DIR $ORION_DOWNLINK_QUEUE_DIR
+# set ORION_MEDIUM_STORAGE_DIR if using a different path for the files
+# see [environment variables](environment-variables.md)
+mkdir -p /home/<user>/ORION/media/sd/medium/
+# set ORION_DOWNLINK_QUEUE_DIR if using a different path for the files
+# see [environment variables](environment-variables.md)
+mkdir -p /home/<user>/ORION/media/sd/downlink_queue/
 ```
 
 See [Environment Variables](environment-variables.md) for the full list of configurable variables.
@@ -73,11 +80,11 @@ See [Environment Variables](environment-variables.md) for the full list of confi
 ## Launch the Flight Binary on the Pi
 
 ```bash
-cd /home/user/ORION
-./Orion -a <mac-ip> -p 50000
+cd /home/<user>/ORION
+./Orion -a <machine-ip> -p 50000
 ```
 
-- `-a <mac-ip>`: the IP address of the machine running the GDS
+- `-a <machine-ip>`: the IP address of the machine running the GDS
 - `-p 50000`: the TCP port the GDS listens on
 
 The binary will connect to SimSat for position and image data, load the VLM model on MEASURE entry, and begin autonomous operation.
@@ -98,11 +105,14 @@ Open `http://localhost:5000` in a browser to access the GDS web interface for se
 
 ## Run the Ground Receiver
 
-On the development machine, start the ground receiver to accept downlinked image frames:
+On the development machine (in a new terminal), start the ground receiver to accept downlinked image frames:
 
 ```bash
 cd ground_segment
-python receiver.py
+uv venv
+. .venv/bin/activate
+uv sync
+uv run receiver.py
 ```
 
 The receiver listens on TCP port 50050 and saves incoming frames as `.raw` files in `./orion_downlink/`. See [Receiver](../ground-segment/receiver.md) for protocol details.

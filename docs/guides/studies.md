@@ -1,12 +1,15 @@
 # Evaluation and Ablation Studies
 
-> For design details - evaluation conditions, mismatch logic, Gaussian noise methodology, and configuration parameters - see the [Training Pipeline architecture](../ground-segment/training.md) page.
+> For design details, evaluation conditions, mismatch logic, Gaussian noise methodology, and configuration parameters, see the [Training Pipeline architecture](../ground-segment/training.md) page.
 
 ## Evaluating the Fine-Tuned Model
 
 ```bash
+# make sure the data is generated and the
+# environment created during data generation in
+# ground_segment is active
 cd ground_segment/training
-python evaluate.py
+uv run evaluate.py
 ```
 
 This loads the base model with the LoRA adapters grafted on, sets the model to eval mode, and runs inference under all four evaluation conditions (A, B, C, D) for each test sample.
@@ -14,8 +17,11 @@ This loads the base model with the LoRA adapters grafted on, sets the model to e
 ## Running the Ablation Study (Base Model)
 
 ```bash
+# make sure the data is generated and the
+# environment created during data generation in
+# ground_segment is active
 cd ground_segment/experiments
-python ablation.py
+uv run ablation.py
 ```
 
 This loads the raw base model without any LoRA adapters and runs the identical four-condition evaluation.
