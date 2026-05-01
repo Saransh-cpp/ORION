@@ -106,7 +106,7 @@ The adapter was trained on the **ORION dataset**, 360 curated target locations o
 | LoRA adapter (this repo) | `orion_lora_weights/`   | ~50 MB      | r=16, 4 attention projection modules |
 | Merged FP16 checkpoint   | `orion_merged/`         | ~3.2 GB     | `merge_and_unload()` output          |
 | FP16 GGUF                | `orion-f16.gguf`        | ~3.2 GB     | Intermediate conversion step         |
-| **Q4_K_M GGUF**          | **`orion-q4_k_m.gguf`** | **~700 MB** | **Deployed to Pi 5**                 |
+| **Q4_K_M GGUF**          | **`orion-q4_k_m.gguf`** | **~730 MB** | **Deployed to Pi 5**                 |
 | Vision projector         | `orion-mmproj-f16.gguf` | ~854 MB     | FP16, deployed alongside Q4 model    |
 
 The Q4_K_M GGUF + mmproj pair is the deployed artifact. Pre-built files are available at the [Google Drive release](https://drive.google.com/drive/folders/1h6WGNeNzYHdfisELlJodDCKlkREkIzCN?usp=share_link).

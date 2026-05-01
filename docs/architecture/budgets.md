@@ -29,15 +29,15 @@ Inference timeout is set at 120 seconds.
 
 ## Data Budget (Per Orbit)
 
-| Metric                       | Value                  | Derivation                                                             |
-| ---------------------------- | ---------------------- | ---------------------------------------------------------------------- |
-| MEASURE window               | ~35 min (eclipse)      | Orbital parameters                                                     |
-| Capture interval             | 65 s (minimum)         | `MIN_CAPTURE_INTERVAL` in CameraManager                                |
-| Frames captured per orbit    | ~32 frames             | 35 min / 65 s                                                          |
-| Frames inferred per orbit    | ~7-9 frames            | Limited by inference time (~65 s/frame)                                |
-| Frames queued (not inferred) | Dropped                | VLM queue depth is 5; excess frames are processed on subsequent passes |
-| Raw data per frame           | 786,432 bytes (768 KB) | 512 x 512 x 3 RGB                                                      |
-| Raw data generated per orbit | ~5.4-6.9 MB            | 7-9 frames x 768 KB                                                    |
+| Metric                       | Value                  | Derivation                                                                                       |
+| ---------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------ |
+| MEASURE window               | ~35 min (eclipse)      | Orbital parameters                                                                               |
+| Capture interval             | 65 s (minimum)         | `MIN_CAPTURE_INTERVAL` in CameraManager                                                          |
+| Frames captured per orbit    | ~32 frames             | 35 min / 65 s                                                                                    |
+| Frames inferred per orbit    | ~32 frames             | All captured frames; inference (~60 s) ≈ capture interval (65 s), 5-frame queue absorbs overflow |
+| Frames dropped per orbit     | ~0                     | 5-frame queue depth means no frames are lost under normal inference timing                       |
+| Raw data per frame           | 786,432 bytes (768 KB) | 512 x 512 x 3 RGB                                                                                |
+| Raw data generated per orbit | ~24 MB                 | 32 frames × 768 KB                                                                               |
 
 ### Triage Distribution (Expected)
 
@@ -80,29 +80,29 @@ In practice, the comm window is far wider than needed for HIGH frame downlink. T
 
 This section documents the compute duty cycle.
 
-| Phase              | Duration per orbit        | Activity                                                             |
-| ------------------ | ------------------------- | -------------------------------------------------------------------- |
-| IDLE (sunlit)      | ~66 min                   | NavTelemetry polling only. Model unloaded. Charging.                 |
-| MEASURE (eclipse)  | ~35 min                   | VLM loaded (~700 MB RAM). Captures + inference.                      |
-| VLM active time    | ~7-9 min of MEASURE       | 7-9 frames x 60 s inference                                          |
-| VLM idle time      | ~26-28 min of MEASURE     | Waiting between captures (65 s interval - 60 s inference = 5 s idle) |
-| DOWNLINK           | ~3-6 min (if pass occurs) | Queue flush. Model stays loaded.                                     |
-| **VLM duty cycle** | **~7-9%** of orbit        | Fraction of orbit with active inference                              |
+| Phase              | Duration per orbit        | Activity                                                      |
+| ------------------ | ------------------------- | ------------------------------------------------------------- |
+| IDLE (sunlit)      | ~66 min                   | NavTelemetry polling only. Model unloaded. Charging.          |
+| MEASURE (eclipse)  | ~35 min                   | VLM loaded (~730 MB RAM). Captures + inference.               |
+| VLM active time    | ~32 min of MEASURE        | 32 frames × ~60 s inference; nearly continuous during eclipse |
+| VLM idle time      | ~3 min of MEASURE         | ~5 s gap per capture cycle × 32 cycles                        |
+| DOWNLINK           | ~3-6 min (if pass occurs) | Queue flush. Model stays loaded.                              |
+| **VLM duty cycle** | **~35%** of orbit         | 32 min inference / 90 min orbit                               |
 
 ## Memory Budget
 
 ```
 Total Pi 5 RAM:      4,096 MB
-GGUF text model:      ~700 MB (Q4_K_M, loaded in MEASURE)
-mmproj vision enc:     ~50 MB (F16, loaded with model)
+GGUF text model:      ~730 MB (Q4_K_M, loaded in MEASURE)
+mmproj vision enc:    ~854 MB (F16, loaded with model)
 KV cache (4096 ctx):   ~64 MB (allocated per inference, cleared after)
 Image buffer pool:     ~16 MB (20 x 786 KB, pre-allocated at startup)
 F-Prime framework:     ~20 MB (all components, rate groups, queues)
 Linux + overhead:     ~200 MB
 ---------------------------------
-Total in MEASURE:   ~1,050 MB
+Total in MEASURE:   ~1,884 MB
 Total in IDLE:       ~236 MB (model unloaded)
-Available headroom: ~3,046 MB (MEASURE) / ~3,860 MB (IDLE)
+Available headroom: ~2,212 MB (MEASURE) / ~3,860 MB (IDLE)
 ```
 
 No runtime dynamic allocation is used in the ORION pipeline. The buffer pool is pre-allocated at startup, and the model weights are loaded once into RAM when entering MEASURE mode.

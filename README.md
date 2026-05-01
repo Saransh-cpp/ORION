@@ -58,26 +58,26 @@ The system is split into a [flight segment](https://saransh-cpp.github.io/ORION/
 
 ### On-board inference (Raspberry Pi 5, Cortex-A76, no NPU/GPU)
 
-| Metric                                    | Value                                          |
-| ----------------------------------------- | ---------------------------------------------- |
-| Vision encoding (mtmd)                    | ~10–15 s                                       |
-| Token generation (200 tokens max, greedy) | ~40–55 s                                       |
-| **Total per frame**                       | **50–72 s**                                    |
-| Self-watchdog ceiling                     | 120 s (frame dropped, model stays loaded)      |
-| Frames captured per 35-min eclipse        | ~32 (65 s capture interval)                    |
-| Frames inferred per eclipse               | ~7–9 (bottleneck: inference time, not capture) |
-| VLM duty cycle per orbit                  | ~7–9%                                          |
+| Metric                                    | Value                                                        |
+| ----------------------------------------- | ------------------------------------------------------------ |
+| Vision encoding (mtmd)                    | ~10–15 s                                                     |
+| Token generation (200 tokens max, greedy) | ~40–55 s                                                     |
+| **Total per frame**                       | **50–72 s**                                                  |
+| Self-watchdog ceiling                     | 120 s (frame dropped, model stays loaded)                    |
+| Frames captured per 35-min eclipse        | ~32 (65 s capture interval)                                  |
+| Frames inferred per eclipse               | ~32 (all captured; 5-frame queue absorbs inference overflow) |
+| VLM duty cycle per orbit                  | ~35%                                                         |
 
 **Memory in MEASURE mode (Pi 5, 4 GB RAM):**
 
 | Component                              | Size          |
 | -------------------------------------- | ------------- |
-| Q4_K_M GGUF weights                    | ~700 MB       |
-| F16 vision projector (mmproj)          | ~50 MB        |
+| Q4_K_M GGUF weights                    | ~730 MB       |
+| F16 vision projector (mmproj)          | ~854 MB       |
 | KV cache (4096 ctx, per inference)     | ~64 MB        |
 | Static frame buffer pool (20 × 786 KB) | ~16 MB        |
 | F-Prime framework + Linux              | ~220 MB       |
-| **Total**                              | **~1,050 MB** |
+| **Total**                              | **~1,884 MB** |
 
 No runtime dynamic allocation. All frame memory is pre-allocated at startup; model loads once on MEASURE entry.
 
