@@ -21,7 +21,7 @@ uv run data_gen.py
 ### What Happens
 
 1. **Deduplication**: Targets within 2 km of each other are removed.
-2. **Shuffle and Split**: The deduplicated targets are shuffled and split 80/20 into train and test sets.
+2. **Shuffle and Split**: The deduplicated targets are shuffled with a fixed seed (`random.seed(42)`) and split into train (240), val (60), and test (60) sets.
 3. **Image Capture**: For each target, a 512x512 RGB satellite image is fetched from SimSat.
 4. **Prompt Generation**: A triage prompt is generated with longitude and latitude telemetry.
 5. **Coordinate Dropout (Training Only)**: Each training sample is duplicated - once with coordinates in the prompt, once without. Test samples always include coordinates.
@@ -41,6 +41,7 @@ orion_dataset/
         med_city_chicago.png
         ...
     train_dataset.jsonl
+    val_dataset.jsonl
     test_dataset.jsonl
 ```
 

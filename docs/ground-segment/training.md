@@ -77,6 +77,8 @@ The training pipeline requires the following Python packages (installed via `gro
 
 ## Validation and Ablation Studies
 
+> Full per-condition accuracy numbers, per-class precision/recall/F1, fine-tuning delta table, and raw inference logs are in the [Model Card](model-card.md#evaluation).
+
 Both `evaluate.py` (fine-tuned model) and `ablation.py` (base model) evaluate the model under four conditions:
 
 | Condition          | Image Input              | Prompt                 | Purpose                                          |
@@ -105,3 +107,12 @@ The noise image is a deterministic 512x512 random RGB array seeded with `np.rand
 For conditions A, B, and C: per-class recall and precision for HIGH, MEDIUM, and LOW, plus overall accuracy. For condition D: ratio of visual-trust (correct) versus coordinate-trust (failure).
 
 For step-by-step instructions, see the guides for [training](../guides/training.md), [quantization](../guides/quantization.md), and [validation/ablation studies](../guides/studies.md).
+
+## Data and Weight Transfer Scripts
+
+Two shell scripts handle moving data and weights between the local machine and the remote training server:
+
+- `ground_segment/data/upload_to_server.sh` — compresses the local dataset, uploads it via `rsync`, and clones/pulls the ORION repo on the server. Run this before training.
+- `ground_segment/training/download_weights.sh` — pulls `orion_lora_weights/` from the server after training completes and deletes the server's repo and dataset (scorched earth).
+
+See [Utility Scripts](scripts.md) for invocation details and [Ground Segment Environment Variables](../guides/environment-variables-gs.md) for the required env vars.
