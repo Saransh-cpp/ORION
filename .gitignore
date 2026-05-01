@@ -209,7 +209,6 @@ ground_segment/data/orion_downlink/*
 ground_segment/data/orion_medium/*
 
 # weights and models
-ground_segment/training/orion_lora_weights/
 ground_segment/training/orion_merged/
 *.gguf
 

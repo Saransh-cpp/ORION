@@ -12,22 +12,24 @@ ground_segment/data/orion_dataset/
     high_port_rotterdam.png
     ...
   train_dataset.jsonl
+  val_dataset.jsonl
   test_dataset.jsonl
 ```
 
 - **images/**: 512x512 RGB satellite images fetched from SimSat
-- **train_dataset.jsonl**: Training samples (80% of targets, with coordinate dropout augmentation)
-- **test_dataset.jsonl**: Test samples (20% of targets, always with coordinates)
+- **train_dataset.jsonl**: Training samples (240 targets × 2 coordinate dropout = 480 records)
+- **val_dataset.jsonl**: Validation samples (60 targets, always with coordinates; used for eval_loss + best checkpoint selection)
+- **test_dataset.jsonl**: Test samples (60 targets, always with coordinates; held out for ablation and evaluation)
 
 ## Target Definitions
 
-`ground_segment/data/data.py` defines 300 target locations organized by triage priority and visual morphology:
+`ground_segment/data/data.py` defines 360 target locations organized by triage priority and visual morphology:
 
 | Class  | Count | Visual Morphology                                                                                  |
 | ------ | ----- | -------------------------------------------------------------------------------------------------- |
-| LOW    | 100   | Featureless natural terrain: oceans, deserts, ice sheets, dense canopy, geological formations      |
-| MEDIUM | 100   | Standard human civilization: urban grids, suburban sprawl, agriculture, towns, infrastructure      |
-| HIGH   | 100   | Strategic anomalies: mega-ports, mega-airports, energy/dams, mega-mines, military/space facilities |
+| LOW    | 120   | Featureless natural terrain: oceans, deserts, ice sheets, dense canopy, geological formations      |
+| MEDIUM | 120   | Standard human civilization: urban grids, suburban sprawl, agriculture, towns, infrastructure      |
+| HIGH   | 120   | Strategic anomalies: mega-ports, mega-airports, energy/dams, mega-mines, military/space facilities |
 
 ### LOW Morphologies
 
@@ -58,7 +60,7 @@ ground_segment/data/orion_dataset/
 `ground_segment/data/data_gen.py` generates the dataset by:
 
 1. **Proximity filter**: removes targets closer than 2 km to each other (Haversine distance) to avoid duplicate imagery
-2. **Shuffle and split**: 80% train, 20% test (randomized)
+2. **Shuffle and split**: deterministic 3-way IID split (`random.seed(42)`): 240 train / 60 val / 60 test
 3. **Image fetch**: for each target, fetches a 512x512 satellite image from SimSat's Mapbox static image API at `GET http://localhost:9005/data/image/mapbox`
 4. **JSONL generation**: creates conversation-format records for fine-tuning
 
