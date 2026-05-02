@@ -74,7 +74,19 @@ The system is split into a [flight segment](https://saransh-cpp.github.io/ORION/
 
 ## Results
 
-> Full quantitative breakdown: [Mission Budgets](https://saransh-cpp.github.io/ORION/architecture/budgets/) · [Ground Segment Budgets](https://saransh-cpp.github.io/ORION/ground-segment/budgets/)
+> Full quantitative breakdown: [Mission Budgets](https://saransh-cpp.github.io/ORION/architecture/budgets/) · [Ground Segment Budgets](https://saransh-cpp.github.io/ORION/ground-segment/budgets/) · [Dataset & target definitions](https://saransh-cpp.github.io/ORION/ground-segment/data/)
+
+### Target definitions
+
+The [custom dataset](https://saransh-cpp.github.io/ORION/ground-segment/data/) contains 360 satellite images (120 per class) fetched from SimSat's Mapbox API, split into 240 train / 60 val / 60 test. Each class is defined by visual morphology:
+
+| Class  | What it captures                                                               | Examples                                               |
+| ------ | ------------------------------------------------------------------------------ | ------------------------------------------------------ |
+| HIGH   | Extreme-scale strategic anomalies: dense geometric infrastructure, chokepoints | Mega-ports, mega-airports, nuclear plants, launch pads |
+| MEDIUM | Standard human civilization: urban grids, suburban sprawl, agriculture         | City centers, farms, regional airports, rail yards     |
+| LOW    | Featureless natural terrain: oceans, deserts, ice sheets, dense canopy         | Open ocean, Sahara, Antarctic ice, Amazon canopy       |
+
+Each class includes deliberately hard sub-types (e.g., coastlines that mimic artificial structures for LOW, or isolated towns for MEDIUM) to stress-test the classifier. See the full [morphology breakdown](https://saransh-cpp.github.io/ORION/ground-segment/data/#target-definitions) for details.
 
 ### On-board inference (Raspberry Pi 5, Cortex-A76, no NPU/GPU)
 
@@ -103,7 +115,9 @@ No runtime dynamic allocation. All frame memory is pre-allocated at startup; mod
 
 ### Model accuracy (60-sample test set, 3-class: HIGH / MEDIUM / LOW)
 
-> Full per-condition logs (recall, precision, overall accuracy) are embedded in the [model card](https://saransh-cpp.github.io/ORION/ground-segment/model-card/).
+> Full per-condition logs (recall, precision, overall accuracy) and a detailed discussion on the results are embedded in the [model card](https://saransh-cpp.github.io/ORION/ground-segment/model-card/). For a detailed explanation of each condition and how to interpret the numbers, see the [validation and ablation studies guide](https://saransh-cpp.github.io/ORION/guides/studies/).
+
+The table below compares the base LFM2.5-VL-1.6B model against the ORION fine-tuned model under four controlled conditions. Each condition isolates a different input channel (vision, GPS, or both) to measure what the model actually relies on for classification. Δ is the percentage-point gain from fine-tuning.
 
 | Condition                              | Base model | Fine-tuned | Δ       |
 | -------------------------------------- | ---------- | ---------- | ------- |
@@ -115,7 +129,7 @@ No runtime dynamic allocation. All frame memory is pre-allocated at startup; mod
 
 Condition A (nominal, vision + GPS) shows no gain on this dataset. The HIGH category spans five visually heterogeneous sub-types, mega-ports, airports, energy infrastructure, mines, and military facilities, across only 240 training images. That is not enough for the visual encoder to learn a reliable shared boundary. Fine-tuning on a narrower HIGH sub-type with a larger image corpus (1k–5k images per class) would close this gap significantly.
 
-ORION demonstrates that on-board VLM inference on a Pi 5 is technically viable and that fine-tuning measurably improves robustness. The model card has a full discussion of what would push accuracy further: [model card - Discussion](https://saransh-cpp.github.io/ORION/ground-segment/model-card/).
+ORION demonstrates that on-board VLM inference on a Pi 5 is technically viable and that fine-tuning measurably improves robustness.
 
 ### Bandwidth savings
 
