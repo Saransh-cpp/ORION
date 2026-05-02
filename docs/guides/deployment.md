@@ -17,6 +17,8 @@ ORION uses Docker with QEMU emulation to cross-compile an ARM64 binary from any 
 
 ### Step 1: Build the Docker Images
 
+From the root folder, run:
+
 ```bash
 docker compose build base
 docker compose build pi-build
@@ -33,7 +35,7 @@ These must be run sequentially. `docker compose build` builds all services in pa
 docker compose run --rm pi-build
 ```
 
-This compiles the full flight segment and copies the resulting binary to `build-output/Orion` on the host via a bind mount.
+This copies the resulting binary to `build-output/Orion` on the host via a bind mount.
 
 ### Step 3: Transfer to the Pi
 
@@ -58,21 +60,6 @@ Set the required environment variables on the Pi before launching the binary. Ad
 ```bash
 # Point to the development machine running SimSat
 export ORION_SIMSAT_URL=http://<machine-ip>:9005
-
-# Storage directories
-export ORION_MEDIUM_STORAGE_DIR=./media/sd/medium/
-export ORION_DOWNLINK_QUEUE_DIR=./media/sd/downlink_queue/
-```
-
-Create the storage directories:
-
-```bash
-# set ORION_MEDIUM_STORAGE_DIR if using a different path for the files
-# see [environment variables](environment-variables.md)
-mkdir -p /home/<user>/ORION/media/sd/medium/
-# set ORION_DOWNLINK_QUEUE_DIR if using a different path for the files
-# see [environment variables](environment-variables.md)
-mkdir -p /home/<user>/ORION/media/sd/downlink_queue/
 ```
 
 See [Environment Variables](environment-variables.md) for the full list of configurable variables.
@@ -94,6 +81,8 @@ The binary will connect to SimSat for position and image data, load the VLM mode
 On your development machine, start the F-Prime Ground Data System in headless mode:
 
 ```bash
+cd flight_segment/orion
+. .venv/bin/activate  # created during installation
 fprime-gds -n --ip-address 0.0.0.0 --ip-port 50000
 ```
 
@@ -109,9 +98,7 @@ On the development machine (in a new terminal), start the ground receiver to acc
 
 ```bash
 cd ground_segment
-uv venv
-. .venv/bin/activate
-uv sync
+. .venv/bin/activate  # created during installation
 uv run receiver.py
 ```
 

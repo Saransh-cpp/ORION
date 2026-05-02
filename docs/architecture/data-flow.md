@@ -246,7 +246,7 @@ The variables that configure this data pipeline are documented in full (defaults
 | Variable                   | Default                      | Description                                          |
 | -------------------------- | ---------------------------- | ---------------------------------------------------- |
 | `ORION_GGUF_PATH`          | `./orion-q4_k_m.gguf`        | Path to the Q4_K_M quantized text model              |
-| `ORION_MMPROJ_PATH`        | `orion-mmproj-f16.gguf`      | Path to the F16 multimodal projection model          |
+| `ORION_MMPROJ_PATH`        | `./orion-mmproj-f16.gguf`    | Path to the F16 multimodal projection model          |
 | `ORION_MEDIUM_STORAGE_DIR` | `./media/sd/medium/`         | Directory for MEDIUM image bulk storage              |
 | `ORION_DOWNLINK_QUEUE_DIR` | `./media/sd/downlink_queue/` | Directory for HIGH frames queued outside comm window |
 | `ORION_GDS_HOST`           | `127.0.0.1`                  | Ground station receiver IP address                   |

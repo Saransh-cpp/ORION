@@ -66,7 +66,7 @@ Create a virtual environment and install the F-Prime Python dependencies:
 
 ```bash
 cd flight_segment/orion
-uv venv
+uv venv --python 314
 source .venv/bin/activate
 uv pip install -r lib/fprime/requirements.txt
 ```
@@ -77,7 +77,7 @@ Use F-Prime's build tooling to generate the autocoded sources and compile the bi
 
 ```bash
 fprime-util generate
-fprime-util build --all -j$(nproc)
+fprime-util build --all
 ```
 
 The compiled binary is located at:
@@ -96,10 +96,8 @@ deactivate  # deactivate the FS environment if active
 cd ../../ground_segment  # if in flight_segment/orion
 ```
 
-Install [uv](https://docs.astral.sh/uv/getting-started/installation/) and use uv to install other dependencies:
-
 ```bash
-uv venv
+uv venv --python 314
 source .venv/bin/activate
 uv sync
 ```
@@ -108,7 +106,7 @@ This installs PyTorch, Transformers, PEFT, and other ML dependencies defined in 
 
 ## Verify the Build
 
-Run the binary with `--help` or test that it starts:
+Check if the executable was indeed produced in the right location:
 
 ```bash
 deactivate  # if GS environment is active
@@ -117,7 +115,7 @@ cd ../flight_segment/orion  # if in ground_segment
 
 ```bash
 # macOS
-./build-artifacts/Darwin/Orion/bin/Orion --help
+file ./build-artifacts/Darwin/Orion/bin/Orion
 ```
 
 ## Next Steps
