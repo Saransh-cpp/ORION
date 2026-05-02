@@ -4,9 +4,9 @@
 
 The `Orion::TriageRouter` component executes the ORION triage doctrine. It receives classified image frames from [VlmInferenceEngine](../../VlmInferenceEngine/docs/sdd.md) and routes them based on the VLM's verdict:
 
-- **HIGH** — forwarded to [GroundCommsDriver](../../GroundCommsDriver/docs/sdd.md) for immediate X-band downlink
-- **MEDIUM** — written to bulk storage on the microSD card for later retrieval
-- **LOW** — discarded, buffer returned to pool
+- **HIGH**: forwarded to [GroundCommsDriver](../../GroundCommsDriver/docs/sdd.md) for immediate X-band downlink
+- **MEDIUM**: written to bulk storage on the microSD card for later retrieval
+- **LOW**: discarded, buffer returned to pool
 
 TriageRouter decouples the VLM inference pipeline from the downlink and storage subsystems. The camera and VLM components have no knowledge of how results are routed.
 

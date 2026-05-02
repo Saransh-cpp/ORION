@@ -92,16 +92,16 @@ The `NavState` struct returned by `navStateGet` contains:
 
 ### 3.8 Environment Variables
 
-| Variable            | Default                 | Description                                  |
-| ------------------- | ----------------------- | -------------------------------------------- |
-| `ORION_SIMSAT_URL`  | `http://localhost:9005` | SimSat REST API base URL                     |
-| `ORION_GS_LAT`      | `40.0`                  | Ground station latitude (default: ~New York) |
-| `ORION_GS_LON`      | `-74.0`                 | Ground station longitude                     |
-| `ORION_GS_RANGE_KM` | `2000.0`                | Comm window activation radius in km          |
+| Variable            | Default                 | Description                                      |
+| ------------------- | ----------------------- | ------------------------------------------------ |
+| `ORION_SIMSAT_URL`  | `http://localhost:9005` | SimSat REST API base URL                         |
+| `ORION_GS_LAT`      | `46.5191`               | Ground station latitude (default: EPFL Ecublens) |
+| `ORION_GS_LON`      | `6.5668`                | Ground station longitude                         |
+| `ORION_GS_RANGE_KM` | `2000.0`                | Comm window activation radius in km              |
 
 ## 4. Known Issues
 
-1. **Comm window latency:** The comm window state only updates every 5 seconds (poll interval). EventAction checks at 1 Hz but sees stale data between polls. For LEO at ~7.5 km/s, this is a ~37 km position uncertainty — negligible relative to the 2000 km range.
+1. **Comm window latency:** The comm window state only updates every 5 seconds (poll interval). EventAction checks at 1 Hz but sees stale data between polls. For LEO at ~7.5 km/s, this is a ~37 km position uncertainty, which is negligible relative to the 2000 km range.
 
 2. **Blocking HTTP in rate group:** `SimSatClient::fetchPosition()` uses libcurl synchronously. If SimSat is slow or unreachable, this blocks the NavTelemetry thread. Since `schedIn` is async, the rate group isn't blocked, but subsequent NavTelemetry port calls queue up.
 

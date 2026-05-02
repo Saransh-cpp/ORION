@@ -1,3 +1,29 @@
+"""ORION dataset generator - fetches satellite tiles from SimSat and writes JSONL splits.
+
+For each target in :data:`data.ALL_TARGETS`, this script:
+
+1. Fetches a 512x512 Mapbox satellite tile from SimSat's static image API.
+2. Assigns the target to a deterministic train/val/test split (seeded shuffle).
+3. Writes a conversation-format JSONL record suitable for LLaVA-style fine-tuning.
+
+Train records are augmented with **coordinate dropout**: each target produces two
+records — one with GPS coordinates in the prompt and one without — so the model
+learns to classify from imagery alone when telemetry is unavailable.
+
+Usage::
+
+    cd ground_segment/data
+    uv run data_gen.py        # requires SimSat running on localhost:9005
+
+Output structure::
+
+    orion_dataset/
+        images/              # 512x512 PNG tiles
+        train_dataset.jsonl  # 2x train targets (coord augmentation)
+        val_dataset.jsonl    # eval-loss tracking during training
+        test_dataset.jsonl   # held-out evaluation set
+"""
+
 import requests
 import json
 import os
@@ -13,15 +39,23 @@ TRAIN_FILE = os.path.join(DATASET_DIR, "train_dataset.jsonl")
 VAL_FILE = os.path.join(DATASET_DIR, "val_dataset.jsonl")
 TEST_FILE = os.path.join(DATASET_DIR, "test_dataset.jsonl")
 
-# Deterministic IID split: shuffle ALL_TARGETS once with a fixed seed, then carve out
-# fixed-size held-out test and val sets. Reproducible across regenerations.
 SPLIT_SEED = 42
 TEST_SIZE = 60
 VAL_SIZE = 60
 
 
 def get_prompt(lon, lat, include_coords=True):
-    # Coordinate Dropout Logic: 50% of the time, the model gets no telemetry
+    """Build the ChatML user prompt for a single satellite image.
+
+    Args:
+        lon: Longitude of the capture location.
+        lat: Latitude of the capture location.
+        include_coords: If ``False``, omit GPS coordinates from the prompt
+            (coordinate dropout for training augmentation).
+
+    Returns:
+        The triage instruction prompt as a string.
+    """
     if include_coords:
         telemetry_str = f" captured at Longitude: {lon}, Latitude: {lat}"
     else:
@@ -36,8 +70,18 @@ You MUST output your response as a valid JSON object. To ensure accurate visual 
 
 
 def haversine(lon1, lat1, lon2, lat2):
-    """Calculates the distance in kilometers between two points."""
-    R = 6371  # Earth radius in km
+    """Compute the great-circle distance in km between two points using the Haversine formula.
+
+    Args:
+        lon1: Longitude of the first point in degrees.
+        lat1: Latitude of the first point in degrees.
+        lon2: Longitude of the second point in degrees.
+        lat2: Latitude of the second point in degrees.
+
+    Returns:
+        Distance in kilometres.
+    """
+    R = 6371
     dlat = math.radians(lat2 - lat1)
     dlon = math.radians(lon2 - lon1)
     a = (
@@ -51,7 +95,18 @@ def haversine(lon1, lat1, lon2, lat2):
 
 
 def filter_overlaps(targets, min_dist_km=2.0):
-    """Removes targets that are geographically too close to each other."""
+    """Remove targets whose coordinates are within *min_dist_km* of an already-kept target.
+
+    Uses a greedy first-come-first-kept strategy in list order. This prevents
+    near-duplicate tiles from inflating a single geographic area in the dataset.
+
+    Args:
+        targets: List of target dicts (must contain ``lon`` and ``lat`` keys).
+        min_dist_km: Minimum separation in km (default 2.0).
+
+    Returns:
+        Filtered list of targets with overlaps removed.
+    """
     unique_targets = []
     skipped = 0
     for t in targets:
@@ -71,7 +126,16 @@ def filter_overlaps(targets, min_dist_km=2.0):
 
 
 def make_record(sample, img_path, include_coords=True):
-    """Builds a single train/val/test record matching the existing JSONL schema."""
+    """Build a single conversation-format JSONL record for LLaVA-style fine-tuning.
+
+    Args:
+        sample: Target dict with ``name``, ``lon``, ``lat``, ``cat``, and ``reason``.
+        img_path: Path to the saved satellite tile image.
+        include_coords: Whether to include GPS coordinates in the prompt.
+
+    Returns:
+        A dict with ``image`` and ``conversations`` keys matching the training schema.
+    """
     return {
         "image": img_path,
         "conversations": [
@@ -90,6 +154,7 @@ def make_record(sample, img_path, include_coords=True):
 
 
 def setup_dirs():
+    """Create the output directory structure and clear any previous JSONL files."""
     os.makedirs(IMAGES_DIR, exist_ok=True)
     for f in [TRAIN_FILE, VAL_FILE, TEST_FILE]:
         if os.path.exists(f):
@@ -97,6 +162,16 @@ def setup_dirs():
 
 
 def fetch_image(lon, lat, filename):
+    """Fetch a satellite tile from SimSat's static Mapbox API and save it to disk.
+
+    Args:
+        lon: Target longitude.
+        lat: Target latitude.
+        filename: Output file path for the PNG image.
+
+    Returns:
+        ``True`` on success, ``False`` if the request failed.
+    """
     params = {
         "lon_target": lon,
         "lat_target": lat,
@@ -115,6 +190,12 @@ def fetch_image(lon, lat, filename):
 
 
 def main():
+    """Generate the full ORION training dataset.
+
+    Shuffles all targets with a fixed seed, splits into train/val/test,
+    fetches each tile from SimSat, and writes the corresponding JSONL records.
+    Train targets are augmented with coordinate dropout (2x records).
+    """
     setup_dirs()
     random.seed(SPLIT_SEED)
 

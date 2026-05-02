@@ -59,7 +59,7 @@ Each frame transmitted over TCP has an 8-byte header followed by the raw pixel p
 
 ### 3.4 Queue Flush Behavior
 
-`flushQueue()` scans `ORION_DOWNLINK_QUEUE_DIR` for files matching `orion_queued_*.raw`, reads each into a heap buffer, transmits via TCP, and deletes the file on success. On the first transmit failure, flushing stops — this prevents losing frames when the receiver is down.
+`flushQueue()` scans `ORION_DOWNLINK_QUEUE_DIR` for files matching `orion_queued_*.raw`, reads each into a heap buffer, transmits via TCP, and deletes the file on success. On the first transmit failure, flushing stops, preventing losing frames when the receiver is down.
 
 The 1 Hz `schedIn` tick retries the flush, so queued frames are not abandoned on a transient failure.
 

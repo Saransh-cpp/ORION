@@ -48,20 +48,20 @@ stateDiagram-v2
     SAFE --> IDLE : clearFault
 ```
 
-**Power doctrine:** The satellite measures during eclipse (on battery, can't charge anyway) and idles during sunlit passes (charge batteries for the next eclipse). This inverts the typical "measure in sunlight" approach — the rationale is that solar charging is the priority when the sun is available.
+**Power doctrine:** The satellite measures during eclipse (on battery, can't charge anyway) and idles during sunlit passes (charge batteries for the next eclipse). This inverts the typical "measure in sunlight" approach, the rationale being solar charging is the priority when the sun is available.
 
 **States:**
 
 | State    | Purpose                                              | Entry Actions                                                     |
 | -------- | ---------------------------------------------------- | ----------------------------------------------------------------- |
 | IDLE     | Startup default, sunlit (charging), post-SAFE        | Broadcast IDLE to all components                                  |
-| MEASURE  | Active imaging — captures, VLM triage, queue results | Broadcast MEASURE; components auto-load model and enable captures |
-| DOWNLINK | Comm window open — flush queued HIGH frames          | Broadcast DOWNLINK; GroundCommsDriver flushes queue               |
+| MEASURE  | Active imaging - captures, VLM triage, queue results | Broadcast MEASURE; components auto-load model and enable captures |
+| DOWNLINK | Comm window open - flush queued HIGH frames          | Broadcast DOWNLINK; GroundCommsDriver flushes queue               |
 | SAFE     | All operations suspended                             | Broadcast SAFE; all components halt                               |
 
 **Signals:**
 
-The state machine signal names are abstract internal identifiers. The physical mapping is inverted from the names — `sunUp` activates MEASURE but is triggered by eclipse entry, and `eclipse` deactivates to IDLE but is triggered by sun visibility.
+The state machine signal names are abstract internal identifiers. The physical mapping is inverted from the names, which means `sunUp` activates MEASURE but is triggered by eclipse entry, and `eclipse` deactivates to IDLE but is triggered by sun visibility.
 
 | Signal             | Source                           | Physical trigger                        | State machine effect    |
 | ------------------ | -------------------------------- | --------------------------------------- | ----------------------- |

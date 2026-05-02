@@ -251,4 +251,4 @@ The variables that configure this data pipeline are documented in full (defaults
 | `ORION_DOWNLINK_QUEUE_DIR` | `./media/sd/downlink_queue/` | Directory for HIGH frames queued outside comm window |
 | `ORION_GDS_HOST`           | `127.0.0.1`                  | Ground station receiver IP address                   |
 | `ORION_GDS_PORT`           | `50050`                      | Ground station receiver TCP port                     |
-| `ORION_SIMSAT_URL`         | (required)                   | SimSat base URL (e.g., `http://192.168.1.183:9005`)  |
+| `ORION_SIMSAT_URL`         | `http://localhost:9005`      | SimSat base URL (e.g., `http://192.168.1.183:9005`)  |

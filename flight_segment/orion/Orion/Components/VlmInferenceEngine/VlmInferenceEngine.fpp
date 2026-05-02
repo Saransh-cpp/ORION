@@ -117,7 +117,7 @@ module Orion {
     @ Emitted on every successful classification with the VLM's reasoning.
     event InferenceComplete(
       category: string size 16
-      reason: string size 512
+      reason: string size 400
       time_ms: U32
     ) \
       severity activity high \

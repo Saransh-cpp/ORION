@@ -39,11 +39,11 @@ flowchart LR
 
 Each capture executes the following steps:
 
-1. **Buffer checkout** — requests a 786,432-byte (512x512x3 RGB) buffer from BufferManager. If the pool is exhausted, logs `BufferPoolExhausted` and aborts.
-2. **Image acquisition** — fetches a Mapbox satellite image from SimSat via `SimSatClient::fetchMapboxImage`. If SimSat is unreachable or reports no image available, logs `CameraHardwareError` and returns the buffer.
-3. **GPS fusion** — synchronously queries NavTelemetry via `navStateOut` for the current lat/lon at the exact moment of capture.
-4. **Dispatch** — fires `inferenceRequestOut` asynchronously to VlmInferenceEngine. Buffer ownership transfers.
-5. **Telemetry** — increments `ImagesCaptured` and logs `ImageDispatched` with coordinates.
+1. **Buffer checkout**: requests a 786,432-byte (512x512x3 RGB) buffer from BufferManager. If the pool is exhausted, logs `BufferPoolExhausted` and aborts.
+2. **Image acquisition**: fetches a Mapbox satellite image from SimSat via `SimSatClient::fetchMapboxImage`. If SimSat is unreachable or reports no image available, logs `CameraHardwareError` and returns the buffer.
+3. **GPS fusion**: synchronously queries NavTelemetry via `navStateOut` for the current lat/lon at the exact moment of capture.
+4. **Dispatch**: fires `inferenceRequestOut` asynchronously to VlmInferenceEngine. Buffer ownership transfers.
+5. **Telemetry**: increments `ImagesCaptured` and logs `ImageDispatched` with coordinates.
 
 ### 3.3 Image Acquisition
 
@@ -61,12 +61,12 @@ If SimSat is unreachable or reports no image available (over ocean, cloud cover)
 
 Auto-capture is driven by the 1 Hz `schedIn` tick with an internal counter:
 
-- **Interval:** configurable via `ENABLE_AUTO_CAPTURE` command (default 45 seconds)
+- **Interval:** configurable via `ENABLE_AUTO_CAPTURE` command (default 65 seconds, minimum 65 seconds)
 - **Enable:** automatically on MEASURE entry, or manually via command
 - **Disable:** automatically on any mode exit from MEASURE, or manually via command
 - **Guard:** `schedIn_handler` checks both `m_autoCaptureEnabled` AND `m_currentMode == MEASURE`
 
-The 45-second default matches the VLM's inference throughput on the Pi 5 (10-45s per frame), preventing queue buildup.
+The 65-second minimum exceeds worst-case VLM inference time (~60s on the Pi 5), preventing queue buildup.
 
 ### 3.5 Port Diagram
 
@@ -97,7 +97,8 @@ The 45-second default matches the VLM's inference throughput on the Pi 5 (10-45s
 | `AutoCaptureEnabled`       | ACTIVITY_HI | Auto-capture started with interval in seconds            |
 | `AutoCaptureDisabled`      | ACTIVITY_HI | Auto-capture stopped (manual or mode change)             |
 | `SimSatImageUnavailable`   | ACTIVITY_LO | SimSat returned no image (over ocean, cloud cover, etc.) |
-| `CommandRejectedWrongMode` | WARNING_LO  | Command rejected — not in MEASURE                        |
+| `CommandRejectedWrongMode` | WARNING_LO  | Command rejected as not in MEASURE                       |
+| `CaptureIntervalClamped`   | WARNING_LO  | Requested interval below 65s minimum, clamped to 65s     |
 
 ### 3.8 Telemetry
 

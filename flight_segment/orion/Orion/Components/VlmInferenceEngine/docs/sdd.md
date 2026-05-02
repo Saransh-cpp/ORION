@@ -4,7 +4,7 @@
 
 The `Orion::VlmInferenceEngine` component runs the LFM2.5-VL-1.6B vision-language model on the satellite's CPU. It receives raw 512x512 RGB image frames from [CameraManager](../../CameraManager/docs/sdd.md), constructs a ChatML-formatted prompt with fused GPS coordinates, executes the llama.cpp forward pass, parses the JSON output into a triage verdict (HIGH/MEDIUM/LOW), and emits the result to [TriageRouter](../../TriageRouter/docs/sdd.md).
 
-The model is a ~700 MB Q4_K_M GGUF file loaded into RAM on demand. Inference takes 50-60 seconds per frame on the Pi 5's Cortex-A76 cores (CPU-only, no GPU). The component runs on a dedicated low-priority thread to avoid blocking other flight software.
+The model is a ~730 MB Q4_K_M GGUF file loaded into RAM on demand. Inference takes 50-70 seconds per frame on the Pi 5's Cortex-A76 cores (CPU-only, no GPU). The component runs on a dedicated low-priority thread to avoid blocking other flight software.
 
 ## 2. Requirements
 
@@ -34,7 +34,7 @@ flowchart LR
 
 For each frame, `runInference()` executes the following stages:
 
-1. **Prompt construction** — ChatML format matching the fine-tuning template:
+1. **Prompt construction**: ChatML format matching the fine-tuning template:
 
    ```
    <|im_start|>user
@@ -45,26 +45,26 @@ For each frame, `runInference()` executes the following stages:
    <|im_start|>assistant
    ```
 
-2. **Image encoding** — `mtmd_bitmap_init()` wraps the raw RGB buffer, `mtmd_tokenize()` replaces the image marker with vision encoder tokens
+2. **Image encoding**: `mtmd_bitmap_init()` wraps the raw RGB buffer, `mtmd_tokenize()` replaces the image marker with vision encoder tokens
 
-3. **KV cache evaluation** — `mtmd_helper_eval_chunks()` processes all prompt chunks (text + vision tokens) into the context. Timeout checked after eval.
+3. **KV cache evaluation**: `mtmd_helper_eval_chunks()` processes all prompt chunks (text + vision tokens) into the context. Timeout checked after eval.
 
-4. **Autoregressive generation** — Greedy sampling up to `MAX_RESPONSE_TOKENS` (200 tokens), stopping on EOG token. Timeout checked per token.
+4. **Autoregressive generation**: Greedy sampling up to `MAX_RESPONSE_TOKENS` (200 tokens), stopping on EOG token. Timeout checked per token.
 
-5. **KV cache reset** — `llama_memory_clear()` and `llama_sampler_reset()` prepare for the next frame
+5. **KV cache reset**: `llama_memory_clear()` and `llama_sampler_reset()` prepare for the next frame
 
-6. **JSON parsing** — `parseVerdictJson()` extracts `"category"` and `"reason"` from the response
+6. **JSON parsing**: `parseVerdictJson()` extracts `"category"` and `"reason"` from the response
 
 ### 3.3 Inference Timeout
 
 A self-watchdog checks elapsed time at two points during inference:
 
-- **After prompt eval** — catches cases where vision encoding + context evaluation exceeds the limit
-- **Per token in generation loop** — catches slow or stuck token generation
+- **After prompt eval**: catches cases where vision encoding + context evaluation exceeds the limit
+- **Per token in generation loop**: catches slow or stuck token generation
 
-If elapsed time exceeds `INFERENCE_TIMEOUT_S` (120s), the inference is aborted: KV cache is cleared, sampler is reset, `InferenceTimeout` event is logged, and the frame is dropped. The model stays loaded and ready for the next frame — no restart required.
+If elapsed time exceeds `INFERENCE_TIMEOUT_S` (120s), the inference is aborted: KV cache is cleared, sampler is reset, `InferenceTimeout` event is logged, and the frame is dropped. The model stays loaded and ready for the next frame; hence, no restart required.
 
-### 3.3 JSON Parser
+### 3.4 JSON Parser
 
 The model is fine-tuned to output:
 
@@ -79,7 +79,7 @@ The parser:
 - Falls back to the raw response as the reason if no `"reason"` key is found
 - Falls back to `"Empty model response"` if the response is empty
 
-### 3.4 Model Lifecycle
+### 3.5 Model Lifecycle
 
 ```mermaid
 stateDiagram-v2
@@ -91,7 +91,7 @@ stateDiagram-v2
 
 The model auto-loads on MEASURE entry and auto-unloads on IDLE or SAFE entry. During DOWNLINK, the model stays loaded to avoid the ~15s reload penalty on the Pi. Manual `LOAD_MODEL` and `UNLOAD_MODEL` commands are available for ground control.
 
-### 3.5 Port Diagram
+### 3.6 Port Diagram
 
 | Port                 | Direction   | Type                   | Description                                                    |
 | -------------------- | ----------- | ---------------------- | -------------------------------------------------------------- |
@@ -100,14 +100,14 @@ The model auto-loads on MEASURE entry and auto-unloads on IDLE or SAFE entry. Du
 | `triageDecisionOut`  | output      | `TriageDecisionPort`   | Emits verdict + reason + buffer to TriageRouter                |
 | `bufferReturnOut`    | output      | `Fw.BufferSend`        | Returns buffer to pool on inference failure                    |
 
-### 3.6 Commands
+### 3.7 Commands
 
 | Command        | Opcode | Behavior                                                                                           |
 | -------------- | ------ | -------------------------------------------------------------------------------------------------- |
 | `LOAD_MODEL`   | 0x00   | Loads GGUF text model + mmproj vision encoder. Idempotent. Rejected if not in MEASURE or DOWNLINK. |
 | `UNLOAD_MODEL` | 0x01   | Frees all llama.cpp state from RAM.                                                                |
 
-### 3.7 Events
+### 3.8 Events
 
 | Event                        | Severity    | Description                                                     |
 | ---------------------------- | ----------- | --------------------------------------------------------------- |
@@ -115,11 +115,11 @@ The model auto-loads on MEASURE entry and auto-unloads on IDLE or SAFE entry. Du
 | `ModelUnloaded`              | ACTIVITY_HI | Model freed from RAM                                            |
 | `ModelLoadFailed`            | WARNING_HI  | GGUF file or mmproj failed to load (with path)                  |
 | `InferenceFailed`            | WARNING_HI  | Tokenization, eval, or generation failed for a frame            |
-| `FrameDroppedModelNotLoaded` | WARNING_LO  | Frame arrived but model not loaded — buffer returned            |
-| `LoadModelRejectedWrongMode` | WARNING_LO  | LOAD_MODEL rejected — not in MEASURE or DOWNLINK                |
+| `FrameDroppedModelNotLoaded` | WARNING_LO  | Frame arrived but model not loaded - buffer returned            |
+| `LoadModelRejectedWrongMode` | WARNING_LO  | LOAD_MODEL rejected - not in MEASURE or DOWNLINK                |
 | `InferenceComplete`          | ACTIVITY_HI | Successful classification with category, reason, and time in ms |
 
-### 3.8 Telemetry
+### 3.9 Telemetry
 
 | Channel             | Type | Description                                       |
 | ------------------- | ---- | ------------------------------------------------- |
@@ -127,7 +127,7 @@ The model auto-loads on MEASURE entry and auto-unloads on IDLE or SAFE entry. Du
 | `TotalInferences`   | U32  | Running total of successful classifications       |
 | `InferenceFailures` | U32  | Running total of failed inference attempts        |
 
-### 3.9 Configuration Constants
+### 3.10 Configuration Constants
 
 | Constant              | Value | Description                                |
 | --------------------- | ----- | ------------------------------------------ |
@@ -139,7 +139,7 @@ The model auto-loads on MEASURE entry and auto-unloads on IDLE or SAFE entry. Du
 | `IMAGE_MAX_TOKENS`    | 1024  | Cap on vision encoder output tokens        |
 | `INFERENCE_TIMEOUT_S` | 120   | Abort inference after this many seconds    |
 
-### 3.10 Environment Variables
+### 3.11 Environment Variables
 
 | Variable            | Default                 | Description                                |
 | ------------------- | ----------------------- | ------------------------------------------ |

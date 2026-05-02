@@ -19,13 +19,14 @@ It runs indefinitely, accepting one connection at a time in a blocking loop. Pre
 
 ## Expected Output
 
-Received frames are saved to the `./orion_downlink/` directory (created automatically):
+Received frames are saved to the `./orion_downlink/` directory (created automatically). Each 512x512 RGB frame is saved as both the original `.raw` bytes and a viewable `.jpg`:
 
 ```
 orion_downlink/
     orion_frame_0000.raw
+    orion_frame_0000.jpg
     orion_frame_0001.raw
-    orion_frame_0002.raw
+    orion_frame_0001.jpg
     ...
 ```
 
@@ -34,29 +35,8 @@ The receiver logs each successful frame:
 ```
 [+] Connection established with satellite at 192.168.1.100
 [*] Valid ORIO frame detected. Payload size: 786432 bytes.
-[+] Success! Saved to ./orion_downlink/orion_frame_0000.raw (512x512 RGB)
+[+] Saved ./orion_downlink/orion_frame_0000.raw + ./orion_downlink/orion_frame_0000.jpg (512x512 RGB)
 ```
-
-## Converting Raw Files to PNG
-
-The raw files contain flat RGB byte arrays and cannot be opened directly by image viewers. Use the `visualise_downlink.py` utility to convert them:
-
-```bash
-cd ground_segment/data
-python visualise_downlink.py
-```
-
-The script scans `./orion_downlink` and `./orion_medium` for `.raw` files. For each valid 786,432-byte file (512 x 512 x 3), it saves a PNG with the same base name:
-
-```
-./orion_downlink/
-    orion_frame_0000.raw -> orion_frame_0000.png
-
-./orion_medium/
-    orion_frame_0001.raw -> orion_frame_0001.png
-```
-
-Files that do not match the expected size are skipped with a warning.
 
 ## Testing Without a Satellite
 
