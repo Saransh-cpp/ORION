@@ -12,9 +12,9 @@ An autonomous LEO satellite triage system built using:
 - a fine-tuned [Liquid AI LFM2.5-VL-1.6B](https://huggingface.co/collections/LiquidAI/lfm2-vl) vision-language model (for inference),
 - [NASA's F-Prime](https://github.com/nasa/fprime) (for flight software),
 - [SimSat](https://github.com/DPhi-Space/SimSat) (to simulate real payload sensors - GNSS and a camera),
-- a Raspberry Pi 5 (to act as satellite's OBC).
+- a Raspberry Pi 5 (to act as the satellite's OBC).
 
-ORION solves the orbital bandwidth bottleneck: roughly 71% of Earth's surface is featureless ocean, yet a traditional satellite downlinks every captured frame. By running a fine-tuned (on a custom dataset collected using SimSat) Q4-quantized VLM on-board, ORION classifies each image as HIGH, MEDIUM, or LOW priority and only transmits the most strategically valuable observations in real time. The model runs directly on raw 512×512 RGB pixels, making it deployable on satellite's On-Board Computer (OBC) for any standard camera payload.
+ORION solves the orbital bandwidth bottleneck: roughly 71% of Earth's surface is featureless ocean, yet a traditional satellite downlinks every captured frame. By running a fine-tuned (on a custom dataset collected using SimSat) Q4-quantized VLM on-board, ORION classifies each image as HIGH, MEDIUM, or LOW priority and only transmits the most strategically valuable observations in real time. The model runs directly on raw 512×512 RGB pixels and is connected to a real flight software (not a Python wrapper), making it deployable on satellite's On-Board Computer (after rigorous testing and mission-specific tweaks) for any standard camera payload.
 
 ## Motivation
 
@@ -24,7 +24,9 @@ This project was born from a real problem flagged on a real mission. Being the F
 
 Earth observation satellites generate far more data than their limited comm windows can downlink, and most of it is open ocean, empty desert, cloud cover, which is scientifically worthless. Our mission's approach was to downlink everything and sort on the ground, which would have wasted precious bandwidth and pass time.
 
-ORION runs a vision-language model directly on the satellite's on-board computer, classifies each frame in real time, and only downlinks what matters. The "what matters" can change mission-to-mission, which would require fine-tuning the VLM on specific data, but ORION serves as a prototype, showing that this approach is technically viable. Furthermore, the local experiments (and the math) proves that this approach does cut-down downlink data and runs in an orbital environment without much issues.
+ORION runs a vision-language model directly on the satellite's on-board computer, classifies each frame in real time, and only downlinks what matters. The "what matters" can change mission-to-mission, which would require fine-tuning the VLM on specific data, but ORION serves as a prototype, showing that this approach is technically viable. Furthermore, the local experiments (and the math) prove that this approach does cut down downlink data and runs in an orbital environment without significant issues.
+
+One of my main aims with this project was to show that Liquid's LFM2 models can run in an orbital environment by simulating one end-to-end. DPhi recently (during the hackathon) [validated this on actual hardware in orbit](https://www.dphispace.com/news/clustergate-2-llm-on-orbit). ORION goes further: it runs entirely on CPU (no orbital GPU) and wraps the model in a complete triage system with flight software, autonomous mode management, and selective downlink.
 
 ## Build and deployment
 
@@ -46,7 +48,23 @@ ORION builds natively on macOS/Linux for development, and cross-compiles for Ras
 
 ## Architecture
 
-The system is split into a [flight segment](https://saransh-cpp.github.io/ORION/components/) (6 F-Prime components on Pi 5) and a [ground segment](https://saransh-cpp.github.io/ORION/ground-segment/) (receiver, training pipeline, dataset). The flight segment runs an FPP state machine governing four mission modes, with autonomous comm window detection via Haversine distance to the ground station at EPFL.
+The system is split into a [flight segment](https://saransh-cpp.github.io/ORION/components/) (6 F-Prime components on Pi 5) and a [ground segment](https://saransh-cpp.github.io/ORION/ground-segment/) (receiver, training pipeline, dataset). The flight segment runs an FPP state machine governing four mission modes (IDLE, MEASURE, DOWNLINK, SAFE), with autonomous comm window detection via Haversine distance to the ground station at EPFL. All image buffers are pre-allocated at startup (20-slot static pool), and the VLM model is loaded/unloaded on mode transitions; hence, there is no runtime dynamic allocation. The flight and ground segments communicate over two independent links: the standard F-Prime command/telemetry channel (TCP :50000) and a custom ORIO frame protocol for real-time HIGH-priority image downlink (TCP :50050).
+
+| ORION Component            | Real Satellite Equivalent                 |
+| -------------------------- | ----------------------------------------- |
+| `EventAction` (C++)        | OBC mode manager / FDIR logic             |
+| `NavTelemetry` (C++)       | GNSS receiver payload                     |
+| `CameraManager` (C++)      | Earth observation camera payload          |
+| `VlmInferenceEngine` (C++) | On-board AI co-processor                  |
+| `TriageRouter` (C++)       | On-board data handling unit               |
+| `GroundCommsDriver` (C++)  | X-band radio transmitter                  |
+| `BufferManager` (F-Prime)  | On-board mass memory                      |
+| `comDriver` (F-Prime)      | UHF radio transceiver                     |
+| Raspberry Pi 5             | On-board computer                         |
+| SimSat                     | GNSS receiver hardware                    |
+| SimSat Mapbox API          | Earth observation camera payload hardware |
+| `receiver.py`              | Ground station X-band receiver            |
+| F-Prime GDS                | Mission control software                  |
 
 - [System overview](https://saransh-cpp.github.io/ORION/architecture/overview/): Component inventory, rate groups, ground segment
 - [State machine](https://saransh-cpp.github.io/ORION/architecture/state-machine/): IDLE / MEASURE / DOWNLINK / SAFE transitions
@@ -122,24 +140,6 @@ The following section goes through the basic usage of this prototype. Refer to t
 - The GGUF model files: [`orion-q4_k_m.gguf` and `orion-mmproj-f16.gguf`](https://drive.google.com/drive/folders/1h6WGNeNzYHdfisELlJodDCKlkREkIzCN?usp=share_link)
 - [SimSat](https://github.com/DPhi-Space/SimSat) running and accessible (default `http://localhost:9005`)
 - [Environment variables](https://saransh-cpp.github.io/ORION/guides/environment-variables/) configured
-
-### What each part maps to on a real satellite
-
-| ORION Component            | Real Satellite Equivalent                 |
-| -------------------------- | ----------------------------------------- |
-| `EventAction` (C++)        | OBC mode manager / FDIR logic             |
-| `NavTelemetry` (C++)       | GNSS receiver payload                     |
-| `CameraManager` (C++)      | Earth observation camera payload          |
-| `VlmInferenceEngine` (C++) | On-board AI co-processor                  |
-| `TriageRouter` (C++)       | On-board data handling unit               |
-| `GroundCommsDriver` (C++)  | X-band radio transmitter                  |
-| `BufferManager` (F-Prime)  | On-board mass memory                      |
-| `comDriver` (F-Prime)      | UHF radio transceiver                     |
-| Raspberry Pi 5             | On-board computer                         |
-| SimSat                     | GNSS receiver hardware                    |
-| SimSat Mapbox API          | Earth observation camera payload hardware |
-| `receiver.py`              | Ground station X-band receiver            |
-| F-Prime GDS                | Mission control software                  |
 
 ### Start SimSat and connect GDS
 
@@ -268,6 +268,26 @@ Auto-generated API documentation for both the C++ flight segment (via Doxygen) a
 ORION uses `clang-format` for C++, `ruff` for Python, and `pre-commit` hooks for automated formatting. CI runs a native clang-tidy build and a Docker ARM64 cross-compile on every push.
 
 - [Contributing guide](https://saransh-cpp.github.io/ORION/contributing/): Dev setup, code style, CI pipeline, adding new components
+
+## Hackathon Rubric Coverage
+
+### Liquid AI LFM2-VL Track
+
+| Criterion (Weight)                          | How ORION addresses it                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Use of Satellite Imagery (10%)**          | DPhi/SimSat satellite tiles are the core data source, applied to autonomous orbital triage — a real operational need for Earth observation missions.                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| **Innovation & Problem-Solution Fit (35%)** | Satellite imagery + LFM2-VL together enable something neither can do alone: the VLM classifies _and explains_ each frame on-board, giving operators actionable reasoning alongside the triage verdict, while eliminating 90–95% of downlink volume. The path to product is concrete — any EO satellite with a standard camera payload can deploy this by fine-tuning on mission-specific targets.                                                                                                                                                                                        |
+| **Technical Implementation (35%)**          | LFM2-VL is fine-tuned via QLoRA on 480 domain-specific samples with coordinate dropout augmentation, quantized to Q4_K_M GGUF, and evaluated under a 4-condition ablation protocol. Fine-tuning yields measurable gains: Condition B +5 pp, C +8.3 pp, D coord-trust failure −3.3 pp. [Weights, training code, and evaluation scripts](ground_segment/training/) are all in the repo. The model is integrated into real flight software (6 F-Prime C++ components, FPP state machine, llama.cpp) that can be deployed on a satellite after rigorous testing and mission-specific tweaks. |
+| **Demo & Communication (20%)**              | Full [documentation site](https://saransh-cpp.github.io/ORION/) with architecture diagrams, data flow, model card, mission budgets, and step-by-step guides.                                                                                                                                                                                                                                                                                                                                                                                                                             |
+
+### General AI Track
+
+| Criterion (Weight)                          | How ORION addresses it                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Use of Satellite Imagery (20%)**          | DPhi/SimSat satellite tiles are the sole data source. The entire system is designed around the constraints of space-based acquisition: limited comm windows, large data volumes, and the 71% ocean problem that makes blind downlink wasteful.                                                                                                                                                                                                                                                                                 |
+| **Innovation & Problem-Solution Fit (25%)** | The problem is real — it originates from an [ESA Review Item Discrepancy](#motivation) on the CHESS mission. On-board VLM triage is a unique way to cut downlink volume in real time; ground-based sorting requires downlinking everything first, which defeats the purpose.                                                                                                                                                                                                                                                   |
+| **Technical Implementation (35%)**          | The app runs end-to-end: 6 custom F-Prime C++ components, an FPP state machine, llama.cpp VLM integration, autonomous mode management, pre-allocated buffer pool, Docker ARM64 cross-compilation, and a custom ORIO frame protocol for selective downlink. This is real flight software deployable on a satellite after rigorous testing and mission-specific tweaks. QLoRA fine-tuning, quantization, and a 4-condition evaluation protocol are documented with [publicly shared weights and code](ground_segment/training/). |
+| **Demo & Communication (20%)**              | Full [documentation site](https://saransh-cpp.github.io/ORION/) with architecture diagrams, data flow, model card, mission budgets, and step-by-step guides.                                                                                                                                                                                                                                                                                                                                                                   |
 
 ## Why "ORION"?
 
