@@ -1,6 +1,6 @@
 # Components Overview
 
-ORION's flight software is built on the [F-Prime](https://fprime.jpl.nasa.gov/) component framework developed by NASA JPL. Each component is an isolated unit with typed input/output ports, commands, events, telemetry channels, and (optionally) an internal state machine. Components communicate exclusively through port connections defined in the system topology — there are no shared globals or direct function calls between components.
+ORION's flight software is built on the [F-Prime](https://fprime.jpl.nasa.gov/) component framework developed by NASA JPL. Each component is an isolated unit with typed input/output ports, commands, events, telemetry channels, and (optionally) an internal state machine. Components communicate exclusively through port connections defined in the system topology; hence, there are no shared globals or direct function calls between components.
 
 The six ORION-specific components form a linear pipeline from sensor input to ground downlink:
 

@@ -85,11 +85,11 @@ No runtime dynamic allocation. All frame memory is pre-allocated at startup; mod
 
 > Full per-condition logs (recall, precision, overall accuracy) are embedded in the [model card](https://saransh-cpp.github.io/ORION/ground-segment/model-card/).
 
-| Condition                               | Base model | Fine-tuned | Δ       |
-| --------------------------------------- | ---------- | ---------- | ------- |
-| A — Vision + GPS coords                 | 58.3%      | 58.3%      | 0 pp    |
-| B — Vision only (no coords)             | 60.0%      | 65.0%      | +5.0 pp |
-| C — Blind LLM (Gaussian noise + coords) | 35.0%      | 43.3%      | +8.3 pp |
+| Condition                              | Base model | Fine-tuned | Δ       |
+| -------------------------------------- | ---------- | ---------- | ------- |
+| A: Vision + GPS coords                 | 58.3%      | 58.3%      | 0 pp    |
+| B: Vision only (no coords)             | 60.0%      | 65.0%      | +5.0 pp |
+| C: Blind LLM (Gaussian noise + coords) | 35.0%      | 43.3%      | +8.3 pp |
 
 **Condition D: Sensor conflict (real image, spoofed GPS coords):** coordinate-trust failure drops from 20.0% to 16.7% after fine-tuning. Visual reasoning improves on Conditions B (+5 pp) and C (+8.3 pp), confirming that the adapter does sharpen classification when GPS is absent or unreliable.
 
@@ -99,7 +99,7 @@ ORION demonstrates that on-board VLM inference on a Pi 5 is technically viable a
 
 ### Bandwidth savings
 
-Each frame is 786 KB (512×512 RGB). The triage doctrine — HIGH downlinked immediately, MEDIUM stored for bulk transfer, LOW discarded — eliminates transmission of all LOW frames.
+Each frame is 786 KB (512×512 RGB). The triage doctrine, HIGH downlinked immediately, MEDIUM stored for bulk transfer, LOW discarded, eliminates transmission of all LOW frames.
 
 Expected triage distribution on a random LEO track (based on target morphology distribution across the training dataset):
 

@@ -112,7 +112,7 @@ For step-by-step instructions, see the guides for [training](../guides/training.
 
 Two shell scripts handle moving data and weights between the local machine and the remote training server:
 
-- `ground_segment/data/upload_to_server.sh` — compresses the local dataset, uploads it via `rsync`, and clones/pulls the ORION repo on the server. Run this before training.
-- `ground_segment/training/download_weights.sh` — pulls `orion_lora_weights/` from the server after training completes and deletes the server's repo and dataset (scorched earth).
+- `ground_segment/data/upload_to_server.sh`: compresses the local dataset, uploads it via `rsync`, and clones/pulls the ORION repo on the server. Run this before training.
+- `ground_segment/training/download_weights.sh`: pulls `orion_lora_weights/` from the server after training completes and deletes the server's repo and dataset (scorched earth).
 
 See [Utility Scripts](scripts.md) for invocation details and [Ground Segment Environment Variables](../guides/environment-variables-gs.md) for the required env vars.

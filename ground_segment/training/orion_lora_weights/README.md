@@ -160,10 +160,10 @@ Model got Confused (Neither)   : 13/60 (21.7%)
 
 | Condition                               | Overall accuracy | Notes |
 | --------------------------------------- | ---------------- | ----- |
-| A — Vision + GPS coords                 | 58.3%            | |
-| B — Vision only (no coords)             | 65.0%            | Improved over base (+5 pp) |
-| C — Blind LLM (Gaussian noise + coords) | 43.3%            | Predicts MEDIUM for most noise inputs |
-| D — Sensor conflict                     | —                | Trusts incorrect coords 16.7% of the time (down from 20.0%) |
+| A: Vision + GPS coords                 | 58.3%            | |
+| B: Vision only (no coords)             | 65.0%            | Improved over base (+5 pp) |
+| C: Blind LLM (Gaussian noise + coords) | 43.3%            | Predicts MEDIUM for most noise inputs |
+| D: Sensor conflict                     | -                | Trusts incorrect coords 16.7% of the time (down from 20.0%) |
 
 #### Per-class accuracy (condition A)
 

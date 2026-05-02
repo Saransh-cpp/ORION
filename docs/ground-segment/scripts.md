@@ -36,7 +36,7 @@ ORION_REPO_DIR=/home/schopra/code/extras \
 3. Downloads `orion_lora_weights/` via `rsync`
 4. On success, deletes the repository and dataset from the server (scorched earth)
 
-**Requires:** `SERVER`, `ORION_SERVER_WEIGHTS_PATH`, `ORION_SERVER_REPO_PATH`, `ORION_SERVER_DATA_PATH` — see [environment-variables-gs.md](../guides/environment-variables-gs.md).
+**Requires:** `SERVER`, `ORION_SERVER_WEIGHTS_PATH`, `ORION_SERVER_REPO_PATH`, `ORION_SERVER_DATA_PATH` - see [environment-variables-gs.md](../guides/environment-variables-gs.md).
 
 ```bash
 chmod +x ./download_weights.sh
@@ -47,4 +47,4 @@ ORION_SERVER_DATA_PATH=~/hdd/gaze/datasets/extras/orion_dataset \
 ./download_weights.sh
 ```
 
-**Important:** On successful download, this script deletes the repository and dataset from the server. This is intentional — the weights are the only artifact needed after training.
+**Important:** On successful download, this script deletes the repository and dataset from the server. This is intentional as the weights are the only artifact needed after training.

@@ -53,7 +53,7 @@ Resource requirements for training, quantization, and dataset generation.
 
 ## Validation / Ablation Studies
 
-`ablation.py` (base model) and `evaluate.py` (fine-tuned) are **device-agnostic** — they run on CUDA, MPS (Apple Silicon), or CPU at FP16. CPU-only inference is functional but will be 50-100x slower than GPU.
+`ablation.py` (base model) and `evaluate.py` (fine-tuned) are **device-agnostic**; hence, they run on CUDA, MPS (Apple Silicon), or CPU at FP16. CPU-only inference is functional but will be 50-100x slower than GPU.
 
 | Resource              | Requirement                                | Notes                                    |
 | --------------------- | ------------------------------------------ | ---------------------------------------- |
