@@ -30,14 +30,14 @@ This loads the raw base model without any LoRA adapters and runs the identical f
 
 ### Per-Class Metrics
 
-Both scripts print per-class recall and precision for conditions A, B, and C. For instance, the evaluate.py
+Both scripts print per-class recall and precision for conditions A, B, and C. The format looks like this (numbers below are the actual ORION fine-tuned model results on the 60-sample test set):
 
 ```text
 --- Condition A: Full System (Vision + Coords) ---
-HIGH  : 11/18 (61.1% Recall) | Precision: 11/14 (78.6%)
-MEDIUM: 18/23 (78.3% Recall) | Precision: 18/22 (81.8%)
-LOW   : 16/19 (84.2% Recall) | Precision: 16/24 (66.7%)
-TOTAL : 45/60 (75.0% Overall Accuracy)
+HIGH  :  7/14 (50.0% Recall) | Precision:  7/15 (46.7%)
+MEDIUM: 10/25 (40.0% Recall) | Precision: 10/15 (66.7%)
+LOW   : 18/21 (85.7% Recall) | Precision: 18/30 (60.0%)
+TOTAL : 35/60 (58.3% Overall Accuracy)
 ```
 
 - **Recall**: Of all actual HIGH/MEDIUM/LOW samples, how many did the model correctly identify?
@@ -46,10 +46,12 @@ TOTAL : 45/60 (75.0% Overall Accuracy)
 
 ### Condition D: Sensor Conflict
 
+The format looks like this (numbers below are the actual ORION fine-tuned model results):
+
 ```text
 --- Condition D: Sensor Conflict (Real Vision + Fake Coords) ---
-Model trusted Vision (Correct) : 45/60 (75.0%)
-Model trusted Coords (Failure) : 2/60 (3.3%)
+Model trusted Vision (Correct) : 37/60 (61.7%)
+Model trusted Coords (Failure) : 10/60 (16.7%)
 Model got Confused   (Neither) : 13/60 (21.7%)
 ```
 

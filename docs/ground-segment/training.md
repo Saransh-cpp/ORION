@@ -23,7 +23,7 @@ orion_merged/ : Standalone FP16 Hugging Face model
 llama.cpp convert + quantize : GGUF Q4_K_M quantization
     |
     v
-orion-q4_k_m.gguf  (~700 MB, flight-ready)
+orion-q4_k_m.gguf  (~730 MB, flight-ready)
 orion-mmproj-f16.gguf  (vision encoder projection)
 ```
 

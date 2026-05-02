@@ -29,7 +29,7 @@ For detailed data, link, storage, power, and timing budgets per orbit, see [Miss
 | ------------------------ | ------------------------------------------------------ |
 | **Processor**            | Raspberry Pi 5, Cortex-A76 quad-core (no NPU/GPU)      |
 | **RAM**                  | 4 GB minimum                                           |
-| **Model**                | LFM2.5-VL-1.6B, Q4_K_M quantization (~700 MB resident) |
+| **Model**                | LFM2.5-VL-1.6B, Q4_K_M quantization (~730 MB resident) |
 | **Image buffer pool**    | 20 slots x 786,432 bytes = ~15.7 MB                    |
 | **Inference latency**    | 50-60 seconds per frame (CPU-only, greedy sampling)    |
 | **Inference timeout**    | 120 seconds (KV cache reset on abort)                  |

@@ -2,8 +2,6 @@
 
 The ORION satellite operates under a four-state finite state machine (`MissionModeSm`) owned by the `EventAction` component. The FSM governs the entire pipeline: capture, inference, routing, and downlink are all gated by the current mission mode.
 
----
-
 ## States
 
 | State        | Description                                                   | Pipeline Behavior                                                                                                                                         |
@@ -13,8 +11,6 @@ The ORION satellite operates under a four-state finite state machine (`MissionMo
 | **DOWNLINK** | Communication window. Ground station is in range.             | HIGH frames transmitted via TCP. Disk queue flushed. MEDIUM bulk download available via `FLUSH_MEDIUM_STORAGE`. Model stays loaded (reload is expensive). |
 | **SAFE**     | Fault condition. All operations suspended.                    | All incoming frames dropped. Model unloaded. No captures, no downlink.                                                                                    |
 
----
-
 ## Power Doctrine
 
 ORION's power doctrine is counterintuitive by design:
@@ -23,8 +19,6 @@ ORION's power doctrine is counterintuitive by design:
 - **IDLE during sunlit**: Solar panels are active, so the satellite charges its batteries and conserves power for the next eclipse pass.
 
 This mapping is reflected in the state machine signals: the `sunUp` signal transitions to MEASURE (eclipse started, activate imaging), and the `eclipse` signal transitions to IDLE (sun visible, charge batteries). The signal names are abstract identifiers in the FPP state machine definition; the `SET_ECLIPSE` command handler inverts them to match the power doctrine.
-
----
 
 ## State Diagram
 
@@ -59,8 +53,6 @@ When a comm window closes, the state machine enters the `POST_DOWNLINK` choice p
 - If the satellite is in eclipse (`m_inEclipse == true`), the guard returns `true` and the FSM transitions to MEASURE to resume imaging.
 - If the sun is visible (`m_inEclipse == false`), the guard returns `false` and the FSM transitions to IDLE to charge batteries.
 
----
-
 ## Commands
 
 | Command                | Opcode | Description                                                                                                                                   | Allowed From            |
@@ -72,8 +64,6 @@ When a comm window closes, the state machine enters the `POST_DOWNLINK` choice p
 | `GOTO_MEASURE`         | 0x11   | Manual transition to MEASURE.                                                                                                                 | IDLE                    |
 | `GOTO_DOWNLINK`        | 0x12   | Manual transition to DOWNLINK.                                                                                                                | IDLE                    |
 | `FLUSH_MEDIUM_STORAGE` | 0x03   | Queues all MEDIUM images for bulk download via F-Prime FileDownlink. Paced at one file per tick to avoid overwhelming the FileDownlink queue. | DOWNLINK                |
-
----
 
 ## Comm Window Detection
 
@@ -90,8 +80,6 @@ The comm window is determined by `NavTelemetry` using the Haversine formula to c
 
 This 10% hysteresis band prevents rapid oscillation when the satellite ground track passes near the range boundary. `NavTelemetry` polls SimSat every 5 seconds and updates the `inCommWindow` flag. `EventAction` detects edges (open/close) at 1 Hz and sends the corresponding `commWindowOpened` / `commWindowClosed` signals to the state machine.
 
----
-
 ## Mode Broadcast
 
 On every state transition, `EventAction` broadcasts the new `MissionMode` to all four pipeline components via the `ModeChangePort` array:
@@ -102,8 +90,6 @@ On every state transition, `EventAction` broadcasts the new `MissionMode` to all
 | 1          | GroundCommsDriver  | Transmits frames in DOWNLINK; queues to disk otherwise. Flushes disk queue on DOWNLINK entry.                  |
 | 2          | VlmInferenceEngine | Auto-loads model on MEASURE entry; unloads on IDLE/SAFE. Drops frames in SAFE. Keeps model loaded in DOWNLINK. |
 | 3          | TriageRouter       | Drops all frames in SAFE mode. Routes normally otherwise.                                                      |
-
----
 
 ## Environment Variables
 

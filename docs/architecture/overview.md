@@ -37,8 +37,6 @@ graph LR
     GCD -->|"buffer return"| BM
 ```
 
----
-
 ## Flight Segment
 
 The flight segment is an F-Prime deployment (`Orion`) composed of six custom active/passive components plus the standard F-Prime infrastructure (CdhCore, ComCcsds, FileHandling, DataProducts subtopologies).
@@ -65,8 +63,6 @@ All ORION components are driven by a 1 Hz Linux timer through three rate groups:
 | RG1        | 1 Hz      | Telemetry send, FileDownlink, SystemResources, ComQueue, CmdDisp, NavTelemetry, CameraManager, GroundCommsDriver, EventAction |
 | RG2        | 0.5 Hz    | CmdSequencer                                                                                                                  |
 | RG3        | 0.25 Hz   | Health watchdog, BufferManagers (Comms, DataProducts, ORION), DataProducts writer/manager                                     |
-
----
 
 ## Ground Segment
 

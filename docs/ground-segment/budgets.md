@@ -11,8 +11,8 @@ Resource requirements for training, quantization, and dataset generation.
 | GPU                     | NVIDIA CUDA-capable, 8+ GB VRAM | QLoRA loads base model in 4-bit (NF4) |
 | CUDA toolkit            | 12.x                            | Matched to the GPU driver             |
 | System RAM              | 8+ GB recommended               | For data loading and preprocessing    |
-| Training time per epoch | 834s                            | 3 epochs total, ~480 training samples |
-| Total training time     | 2503s                           | Depends on GPU                        |
+| Training time per epoch | 830s                            | 3 epochs total, ~480 training samples |
+| Total training time     | ~2492s                          | Depends on GPU                        |
 
 **Reference hardware (verified working):**
 
@@ -31,7 +31,7 @@ Resource requirements for training, quantization, and dataset generation.
 | LoRA adapter weights | `orion_lora_weights/`     | ~50 MB  | r=16, 4 target modules       |
 | Merged FP16 model    | `orion_merged/`           | ~3.2 GB | Full standalone checkpoint   |
 | FP16 GGUF            | `orion-f16.gguf`          | ~3.2 GB | Intermediate conversion      |
-| Q4_K_M GGUF          | `orion-q4_k_m.gguf`       | ~700 MB | Deployed to Pi               |
+| Q4_K_M GGUF          | `orion-q4_k_m.gguf`       | ~730 MB | Deployed to Pi               |
 | Vision projector     | `orion-mmproj-f16.gguf`   | ~854 MB | FP16, deployed to Pi         |
 
 ## Quantization Compute
@@ -53,7 +53,7 @@ Resource requirements for training, quantization, and dataset generation.
 
 ## Validation / Ablation Studies
 
-`ablation.py` (base model) and `evaluate.py` (fine-tuned) are **device-agnostic** — they run on CUDA, MPS (Apple Silicon), or CPU via `device_map="auto"` at FP16. CPU-only inference is functional but will be 50-100x slower than GPU.
+`ablation.py` (base model) and `evaluate.py` (fine-tuned) are **device-agnostic** — they run on CUDA, MPS (Apple Silicon), or CPU at FP16. CPU-only inference is functional but will be 50-100x slower than GPU.
 
 | Resource              | Requirement                                | Notes                                    |
 | --------------------- | ------------------------------------------ | ---------------------------------------- |

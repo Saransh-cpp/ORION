@@ -14,7 +14,7 @@ An autonomous LEO satellite triage system built using:
 - [SimSat](https://github.com/DPhi-Space/SimSat) (to simulate real payload sensors - GNSS and a camera),
 - a Raspberry Pi 5 (to act as satellite's OBC).
 
-ORION solves the orbital bandwidth bottleneck: roughly 71% of Earth's surface is featureless ocean, yet a traditional satellite downlinks every captured frame. By running a Q4-quantized VLM on-board, ORION classifies each image as HIGH, MEDIUM, or LOW priority and only transmits the most strategically valuable observations in real time. The model runs directly on raw 512×512 RGB pixels, making it deployable on satellite's On-Board Computer (OBC) for any standard camera payload.
+ORION solves the orbital bandwidth bottleneck: roughly 71% of Earth's surface is featureless ocean, yet a traditional satellite downlinks every captured frame. By running a fine-tuned (on a custom dataset collected using SimSat) Q4-quantized VLM on-board, ORION classifies each image as HIGH, MEDIUM, or LOW priority and only transmits the most strategically valuable observations in real time. The model runs directly on raw 512×512 RGB pixels, making it deployable on satellite's On-Board Computer (OBC) for any standard camera payload.
 
 ## Motivation
 
@@ -83,17 +83,19 @@ No runtime dynamic allocation. All frame memory is pre-allocated at startup; mod
 
 ### Model accuracy (60-sample test set, 3-class: HIGH / MEDIUM / LOW)
 
-> **TODO:** replace with 360-target dataset results after retraining
-
 > Full per-condition logs (recall, precision, overall accuracy) are embedded in the [model card](https://saransh-cpp.github.io/ORION/ground-segment/model-card/).
 
-| Condition                               | Base model | Fine-tuned | Δ        |
-| --------------------------------------- | ---------- | ---------- | -------- |
-| A — Vision + GPS coords                 | 58.3%      | 75.0%      | +16.7 pp |
-| B — Vision only (no coords)             | 60.0%      | 78.3%      | +18.3 pp |
-| C — Blind LLM (Gaussian noise + coords) | 35.0%      | 40.0%      | —        |
+| Condition                               | Base model | Fine-tuned | Δ       |
+| --------------------------------------- | ---------- | ---------- | ------- |
+| A — Vision + GPS coords                 | 58.3%      | 58.3%      | 0 pp    |
+| B — Vision only (no coords)             | 60.0%      | 65.0%      | +5.0 pp |
+| C — Blind LLM (Gaussian noise + coords) | 35.0%      | 43.3%      | +8.3 pp |
 
-**Condition D — Sensor conflict (real image, spoofed GPS coords):** after fine-tuning, the model trusts visual evidence in 75.0% of conflict cases and defers to the incorrect GPS coordinate in only 3.3% — down from 20.0% on the base model. Coordinate dropout during training teaches the model to treat GPS as a hint rather than an oracle.
+**Condition D: Sensor conflict (real image, spoofed GPS coords):** coordinate-trust failure drops from 20.0% to 16.7% after fine-tuning. Visual reasoning improves on Conditions B (+5 pp) and C (+8.3 pp), confirming that the adapter does sharpen classification when GPS is absent or unreliable.
+
+Condition A (nominal, vision + GPS) shows no gain on this dataset. The HIGH category spans five visually heterogeneous sub-types, mega-ports, airports, energy infrastructure, mines, and military facilities, across only 240 training images. That is not enough for the visual encoder to learn a reliable shared boundary. Fine-tuning on a narrower HIGH sub-type with a larger image corpus (1k–5k images per class) would close this gap significantly.
+
+ORION demonstrates that on-board VLM inference on a Pi 5 is technically viable and that fine-tuning measurably improves robustness. The model card has a full discussion of what would push accuracy further: [model card - Discussion](https://saransh-cpp.github.io/ORION/ground-segment/model-card/).
 
 ### Bandwidth savings
 

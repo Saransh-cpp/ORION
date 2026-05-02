@@ -88,16 +88,12 @@ The adapter was trained on the **ORION dataset**, 360 curated target locations o
 | Driver    | 535.x                                  |
 | OS        | Linux                                  |
 
-### Training time and VRAM
+### Training time
 
-> **TODO:** fill in after retraining on 360-target dataset
-
-| Metric               | Value |
-| -------------------- | ----- |
-| VRAM peak (training) | TBD   |
-| Time per epoch       | TBD   |
-| Total training time  | TBD   |
-| Final `eval_loss`    | TBD   |
+| Metric               | Value  |
+| -------------------- | ------ |
+| Time per epoch       | ~830s  |
+| Total training time  | ~2492s |
 
 ## Model Artifacts
 
@@ -115,21 +111,23 @@ The Q4_K_M GGUF + mmproj pair is the deployed artifact. Pre-built files are avai
 
 Both studies use the same four conditions run against the same 60-sample held-out test set. The ablation (`ablation.py`) tests the unmodified base model; the evaluation (`evaluate.py`) tests the fine-tuned adapter. Running both against identical inputs isolates the exact lift from fine-tuning.
 
+> Refer to [Training Pipeline](https://saransh-cpp.github.io/ORION/ground-segment/training/#validation-and-ablation-studies) for more details on how to read this result.
+
 | Condition           | Input                              | Purpose                                                |
 | ------------------- | ---------------------------------- | ------------------------------------------------------ |
-| A — Full system     | Real image + real GPS coords       | Nominal operating condition                            |
-| B — Vision only     | Real image + no coords             | GPS-denied or noisy environment                        |
-| C — Blind LLM       | Gaussian noise image + real coords | Coordinates-only baseline (tests GPS reliance)         |
-| D — Sensor conflict | Real image + spoofed coords        | Adversarial GPS; tests which modality the model trusts |
+| A: Full system     | Real image + real GPS coords       | Nominal operating condition                            |
+| B: Vision only     | Real image + no coords             | GPS-denied or noisy environment                        |
+| C: Blind LLM       | Gaussian noise image + real coords | Coordinates-only baseline (tests GPS reliance)         |
+| D: Sensor conflict | Real image + spoofed coords        | Adversarial GPS; tests which modality the model trusts |
 
-### Ablation study — base model (`ablation.py`)
+### Ablation study: base model (`ablation.py`)
 
 | Condition                               | Overall accuracy | Notes |
 | --------------------------------------- | ---------------- | ----- |
-| A — Vision + GPS coords                 | 58.3%            | |
-| B — Vision only (no coords)             | 60.0%            | Slightly better: coords can mislead base model |
-| C — Blind LLM (Gaussian noise + coords) | 35.0%            | Predicts LOW for everything; GPS alone is unreliable |
-| D — Sensor conflict                     | —                | Trusts incorrect coords 20.0% of the time |
+| A: Vision + GPS coords                 | 58.3%            | |
+| B: Vision only (no coords)             | 60.0%            | Slightly better: coords can mislead base model |
+| C: Blind LLM (Gaussian noise + coords) | 35.0%            | Predicts LOW for everything; GPS alone is unreliable |
+| D: Sensor conflict                     | —                | Trusts incorrect coords 20.0% of the time |
 
 **Full log:**
 
@@ -160,62 +158,67 @@ Model got Confused (Neither)   : 13/60 (21.7%)
 
 ### Fine-tuned model evaluation (`evaluate.py`)
 
-> **TODO:** replace with 360-target dataset results after retraining and rerunning `evaluate.py`
-
 | Condition                               | Overall accuracy | Notes |
 | --------------------------------------- | ---------------- | ----- |
-| A — Vision + GPS coords                 | 75.0%            | |
-| B — Vision only (no coords)             | 78.3%            | |
-| C — Blind LLM (Gaussian noise + coords) | 40.0%            | Predicts MEDIUM for everything under noise |
-| D — Sensor conflict                     | —                | Trusts incorrect coords only 3.3% of the time |
+| A — Vision + GPS coords                 | 58.3%            | |
+| B — Vision only (no coords)             | 65.0%            | Improved over base (+5 pp) |
+| C — Blind LLM (Gaussian noise + coords) | 43.3%            | Predicts MEDIUM for most noise inputs |
+| D — Sensor conflict                     | —                | Trusts incorrect coords 16.7% of the time (down from 20.0%) |
 
 #### Per-class accuracy (condition A)
 
-> **TODO:** fill in after retraining
-
-| Class  | Precision | Recall | F1  |
-| ------ | --------- | ------ | --- |
-| HIGH   | TBD       | TBD    | TBD |
-| MEDIUM | TBD       | TBD    | TBD |
-| LOW    | TBD       | TBD    | TBD |
+| Class  | Precision | Recall | F1    |
+| ------ | --------- | ------ | ----- |
+| HIGH   | 46.7%     | 50.0%  | 48.3% |
+| MEDIUM | 66.7%     | 40.0%  | 50.0% |
+| LOW    | 60.0%     | 85.7%  | 70.6% |
 
 **Full log:**
 
 ```
 --- Condition A: Full System (Vision + Coords) ---
-HIGH : 11/18 (61.1%)
-MEDIUM: 18/23 (78.3%)
-LOW : 16/19 (84.2%)
-TOTAL : 45/60 (75.0%)
+HIGH  :  7/14 (50.0% Recall) | Precision:  7/15 (46.7%)
+MEDIUM: 10/25 (40.0% Recall) | Precision: 10/15 (66.7%)
+LOW   : 18/21 (85.7% Recall) | Precision: 18/30 (60.0%)
+TOTAL : 35/60 (58.3% Overall Accuracy)
 
 --- Condition B: Vision Only (No Coords) ---
-HIGH : 11/18 (61.1%)
-MEDIUM: 19/23 (82.6%)
-LOW : 17/19 (89.5%)
-TOTAL : 47/60 (78.3%)
+HIGH  :  9/14 (64.3% Recall) | Precision:  9/15 (60.0%)
+MEDIUM: 12/25 (48.0% Recall) | Precision: 12/17 (70.6%)
+LOW   : 18/21 (85.7% Recall) | Precision: 18/28 (64.3%)
+TOTAL : 39/60 (65.0% Overall Accuracy)
 
 --- Condition C: Blind LLM (Gaussian Noise + Coords) ---
-HIGH : 0/18 (0.0%)
-MEDIUM: 23/23 (100.0%)
-LOW : 1/19 (5.3%)
-TOTAL : 24/60 (40.0%)
+HIGH  :  1/14 ( 7.1% Recall) | Precision:  1/ 1 (100.0%)
+MEDIUM: 25/25 (100.0% Recall) | Precision: 25/59 (42.4%)
+LOW   :  0/21 ( 0.0% Recall) | Precision:  0/ 0   (0.0%)
+TOTAL : 26/60 (43.3% Overall Accuracy)
 
 --- Condition D: Sensor Conflict (Real Vision + Fake Coords) ---
-Model trusted Vision (Correct) : 45/60 (75.0%)
-Model trusted Coords (Failure) : 2/60 (3.3%)
-Model got Confused (Neither)   : 13/60 (21.7%)
+Model trusted Vision (Correct) : 37/60 (61.7%)
+Model trusted Coords (Failure) : 10/60 (16.7%)
+Model got Confused   (Neither) : 13/60 (21.7%)
 ```
 
 ### Fine-tuning impact
 
-> **TODO:** replace with 360-target dataset results after retraining
+| Condition                   | Base model | Fine-tuned | Δ            |
+| --------------------------- | ---------- | ---------- | ------------ |
+| A — Vision + GPS coords     | 58.3%      | 58.3%      | 0 pp         |
+| B — Vision only (no coords) | 60.0%      | 65.0%      | **+5.0 pp**  |
+| C — Blind LLM (noise+coords)| 35.0%      | 43.3%      | **+8.3 pp**  |
 
-| Condition                   | Base model | Fine-tuned | Δ        |
-| --------------------------- | ---------- | ---------- | -------- |
-| A — Vision + GPS coords     | 58.3%      | 75.0%      | **+16.7 pp** |
-| B — Vision only (no coords) | 60.0%      | 78.3%      | **+18.3 pp** |
+**Sensor conflict (Condition D):** coordinate-trust failure drops from 20.0% to 16.7% after fine-tuning. The improvement is modest compared to earlier experiments on a smaller dataset - see discussion below.
 
-**Sensor conflict (Condition D):** the fine-tuned model defers to incorrect GPS in only 3.3% of conflict cases — down from 20.0% on the base model. Coordinate dropout during training teaches the model to treat GPS as a hint rather than an oracle, making it robust to sensor noise and spoofing.
+### Discussion
+
+Fine-tuning produces measurable improvements on Conditions B, C, and D, but Condition A (the nominal operating condition with both image and GPS) shows no gain on this 360-target dataset. The most likely explanation is the breadth of the HIGH category: mega-ports, mega-airports, energy infrastructure, open-pit mines, and military facilities are all grouped into a single label. The model can learn to output the correct JSON format quickly (training loss drops to 0.18 in ~41 minutes), but 240 training images spread across five visually heterogeneous HIGH sub-types is not enough for the visual encoder to learn a reliable decision boundary.
+
+This is a prototype demonstrating that on-board VLM inference on a Pi 5 is technically viable. The approach will improve significantly with:
+
+- **Narrower taxonomy**: splitting HIGH into mission-specific sub-classes (e.g., ports only, or energy infrastructure only) and training a specialist adapter
+- **Larger corpus**: 240 training images is a minimal dataset for a 3-class VLM task; 1,000–5,000 images per class is a more realistic target for robust generalization
+- **Higher-resolution tiles**: 512×512 Mapbox tiles lose fine-grained texture that distinguishes, e.g., a cargo terminal from a large parking lot at altitude
 
 ## Deployment
 

@@ -2,8 +2,6 @@
 
 This page describes the end-to-end pipeline from image capture through VLM inference and triage to ground station receipt.
 
----
-
 ## Pipeline Overview
 
 ```mermaid
@@ -41,8 +39,6 @@ sequenceDiagram
     end
 ```
 
----
-
 ## Stage 1: Image Capture
 
 **Component:** CameraManager
@@ -54,8 +50,6 @@ sequenceDiagram
 5. The buffer and coordinates are dispatched asynchronously to `VlmInferenceEngine` via the `InferenceRequestPort`. CameraManager then returns to sleep: it does not wait for inference to complete.
 
 **Auto-capture timing:** In MEASURE mode, auto-capture fires every 65 seconds (configurable, minimum 65s). This interval must exceed the worst-case inference time (~60s) to avoid saturating the 5-entry VLM queue.
-
----
 
 ## Stage 2: VLM Inference
 
@@ -113,8 +107,6 @@ the "category" key.<|im_end|>
 - If tokenization, evaluation, or sampling fails, `InferenceFailed` is emitted and the buffer is returned to the pool directly (bypasses TriageRouter).
 - If inference exceeds 120 seconds, `InferenceTimeout` is emitted, the KV cache is forcibly cleared, and the frame is dropped.
 
----
-
 ## Stage 3: Triage Routing
 
 **Component:** TriageRouter
@@ -134,8 +126,6 @@ MEDIUM files are downloaded to the ground later via the `FLUSH_MEDIUM_STORAGE` c
 ### LOW: Discard
 
 The buffer is returned to the pool immediately. No data is saved. A `LowTargetDiscarded` event is emitted.
-
----
 
 ## Stage 4: Downlink
 
@@ -188,8 +178,6 @@ During a comm window, the driver reads queued `.raw` files from the disk queue d
 3. Read the payload (length specified in the header).
 4. Save the frame to `./orion_downlink/orion_frame_XXXX.raw`.
 
----
-
 ## MEDIUM Bulk Download
 
 MEDIUM images are not transmitted over the custom TCP link. Instead, they use the standard F-Prime `FileDownlink` service over the F-Prime ground link (TCP port 50000).
@@ -201,8 +189,6 @@ The workflow:
 3. Files are paced at one per tick (1 Hz) to stay within FileDownlink's 10-entry queue limit.
 4. If the queue is full, the file is renamed back for retry on the next tick.
 5. If the satellite exits DOWNLINK mode mid-flush, the flush is aborted and a `MediumStorageFlushed` event reports the count of files successfully queued.
-
----
 
 ## Buffer Lifecycle
 
@@ -227,8 +213,6 @@ graph TD
 ```
 
 No buffer is ever leaked. Every code path: success, failure, SAFE mode drop, timeout: ends with a `bufferReturnOut` call back to the `BufferManager`.
-
----
 
 ## Communication Paths
 
@@ -255,9 +239,9 @@ graph TB
 | F-Prime ground link       | 50000 | F-Prime CCSDS framing | Bidirectional    | Commands, telemetry, events, MEDIUM file downloads via FileDownlink |
 | Custom X-band (simulated) | 50050 | ORIO frame protocol   | Flight-to-ground | HIGH-priority image downlink in real time                           |
 
----
-
 ## Environment Variables
+
+The variables that configure this data pipeline are documented in full (defaults, descriptions, and example workflow) in the [Flight Segment Environment Variables](../guides/environment-variables.md) guide. The table below shows where each variable is consumed in the pipeline.
 
 | Variable                   | Default                      | Description                                          |
 | -------------------------- | ---------------------------- | ---------------------------------------------------- |
