@@ -27,7 +27,7 @@ module Orion {
 
     @ Receives image buffer + fused GPS coordinates from CameraManager.
     @ Asynchronous: frames queue here while a prior inference is running.
-    @ This component is not wired to the health watchdog — the per-frame
+    @ This component is not wired to the health watchdog: the per-frame
     @ latency (50-60 s on Pi 5) would exceed any reasonable ping budget.
     @ A self-watchdog (INFERENCE_TIMEOUT_S = 120 s) aborts stuck inferences.
     async input port inferenceRequestIn: InferenceRequestPort
@@ -90,13 +90,13 @@ module Orion {
     event InferenceFailed \
       severity warning high \
       id 0x03 \
-      format "VlmInferenceEngine: Inference failed — buffer returned to pool"
+      format "VlmInferenceEngine: Inference failed - buffer returned to pool"
 
     @ Emitted when a frame is dropped because the model is not loaded.
     event FrameDroppedModelNotLoaded \
       severity warning low \
       id 0x05 \
-      format "VlmInferenceEngine: Frame dropped — model not loaded"
+      format "VlmInferenceEngine: Frame dropped - model not loaded"
 
     @ Emitted when LOAD_MODEL is rejected due to wrong mode.
     event LoadModelRejectedWrongMode(
@@ -104,7 +104,7 @@ module Orion {
     ) \
       severity warning low \
       id 0x06 \
-      format "VlmInferenceEngine: LOAD_MODEL rejected — not in MEASURE or DOWNLINK (current: {})"
+      format "VlmInferenceEngine: LOAD_MODEL rejected - not in MEASURE or DOWNLINK (current: {})"
 
     @ Emitted when inference exceeds the timeout and is aborted.
     event InferenceTimeout(
@@ -112,7 +112,7 @@ module Orion {
     ) \
       severity warning high \
       id 0x07 \
-      format "VlmInferenceEngine: Inference timed out after {}ms — frame dropped, KV cache reset"
+      format "VlmInferenceEngine: Inference timed out after {}ms - frame dropped, KV cache reset"
 
     @ Emitted on every successful classification with the VLM's reasoning.
     event InferenceComplete(
@@ -122,7 +122,7 @@ module Orion {
     ) \
       severity activity high \
       id 0x04 \
-      format "VLM RESULT: {} — {} ({}ms)"
+      format "VLM RESULT: {} - {} ({}ms)"
 
     # --------------------------------------------------------------------------
     # Required F-Prime framework ports

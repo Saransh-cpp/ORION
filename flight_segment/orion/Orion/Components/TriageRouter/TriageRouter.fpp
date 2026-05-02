@@ -45,31 +45,31 @@ module Orion {
     # Events
     # --------------------------------------------------------------------------
 
-    @ Emitted for every HIGH verdict — visible in the GDS as a CRITICAL alert.
+    @ Emitted for every HIGH verdict: visible in the GDS as a CRITICAL alert.
     event HighTargetDetected(
       reason: string size 256
     ) \
       severity activity high \
       id 0x00 \
-      format "ORION PRIORITY: HIGH — {}"
+      format "ORION PRIORITY: HIGH - {}"
 
-    @ Emitted for every MEDIUM verdict — image saved to bulk storage.
+    @ Emitted for every MEDIUM verdict: image saved to bulk storage.
     event MediumTargetStored \
       severity activity low \
       id 0x01 \
-      format "ORION PRIORITY: MEDIUM — Image saved to bulk storage"
+      format "ORION PRIORITY: MEDIUM - Image saved to bulk storage"
 
-    @ Emitted for every LOW verdict — buffer recycled, zone cleared.
+    @ Emitted for every LOW verdict: buffer recycled, zone cleared.
     event LowTargetDiscarded \
       severity activity low \
       id 0x02 \
-      format "ORION PRIORITY: LOW — Buffer recycled, zone cleared"
+      format "ORION PRIORITY: LOW - Buffer recycled, zone cleared"
 
     @ Emitted if the microSD write for a MEDIUM image fails.
     event StorageWriteFailed \
       severity warning high \
       id 0x03 \
-      format "TriageRouter: microSD write failed — buffer returned to pool"
+      format "TriageRouter: microSD write failed - buffer returned to pool"
 
     # --------------------------------------------------------------------------
     # Required F-Prime framework ports

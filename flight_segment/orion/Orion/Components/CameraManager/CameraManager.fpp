@@ -25,7 +25,7 @@ module Orion {
     # Input ports
     # --------------------------------------------------------------------------
 
-    @ Rate group schedule input — drives auto-capture timing.
+    @ Rate group schedule input: drives auto-capture timing.
     async input port schedIn: Svc.Sched
 
     @ Receives mode changes from EventAction.
@@ -75,13 +75,13 @@ module Orion {
     event BufferPoolExhausted \
       severity warning high \
       id 0x01 \
-      format "CameraManager: Buffer pool exhausted — capture dropped"
+      format "CameraManager: Buffer pool exhausted - capture dropped"
 
     @ Emitted when the camera/SimSat image acquisition fails.
     event CameraHardwareError \
       severity warning high \
       id 0x02 \
-      format "CameraManager: Image acquisition failed — buffer returned to pool"
+      format "CameraManager: Image acquisition failed - buffer returned to pool"
 
     @ Emitted when autonomous capture mode is enabled.
     event AutoCaptureEnabled(
@@ -109,7 +109,7 @@ module Orion {
     ) \
       severity warning low \
       id 0x06 \
-      format "CameraManager: Command rejected — not in MEASURE (current: {})"
+      format "CameraManager: Command rejected - not in MEASURE (current: {})"
 
     @ Emitted when the requested capture interval is clamped to the minimum.
     event CaptureIntervalClamped(
@@ -118,7 +118,7 @@ module Orion {
     ) \
       severity warning low \
       id 0x07 \
-      format "CameraManager: Requested interval {}s too low — clamped to {}s"
+      format "CameraManager: Requested interval {}s too low - clamped to {}s"
 
     # --------------------------------------------------------------------------
     # Required F-Prime framework ports

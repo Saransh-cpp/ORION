@@ -17,7 +17,7 @@ static const char* getMediumStoragePath() {
     return p ? p : "./media/sd/medium/";
 }
 
-// Recursive mkdir — creates path and any missing parents (POSIX, like `mkdir -p`).
+// Recursive mkdir: creates path and any missing parents (POSIX, like `mkdir -p`).
 // Existing directories are silently ignored.
 static void ensureDirExists(const char* path) {
     if (!path || !*path) return;
@@ -47,7 +47,7 @@ TriageRouter::TriageRouter(const char* compName)
 TriageRouter::~TriageRouter() {}
 
 // ---------------------------------------------------------------------------
-// Port handler — dispatches to the appropriate routing arm
+// Port handler: dispatches to the appropriate routing arm
 // ---------------------------------------------------------------------------
 
 void TriageRouter::modeChangeIn_handler(FwIndexType portNum, const Orion::MissionMode& mode) { m_currentMode = mode; }
@@ -80,7 +80,7 @@ void TriageRouter::triageDecisionIn_handler(FwIndexType portNum, const Orion::Tr
 // ---------------------------------------------------------------------------
 
 void TriageRouter::routeHigh(const Fw::StringBase& reason, Fw::Buffer& buffer) {
-    // Forward to GroundCommsDriver — buffer ownership transfers to the driver,
+    // Forward to GroundCommsDriver: buffer ownership transfers to the driver,
     // which is responsible for returning it to the pool after transmission.
     this->fileDownlinkOut_out(0, buffer, reason);
 
@@ -123,7 +123,7 @@ void TriageRouter::routeMedium(Fw::Buffer& buffer) {
 }
 
 void TriageRouter::routeLow(Fw::Buffer& buffer) {
-    // Drop the image — return the buffer to the pool immediately.
+    // Drop the image: return the buffer to the pool immediately.
     this->bufferReturnOut_out(0, buffer);
 
     m_lowDiscarded++;

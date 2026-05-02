@@ -31,7 +31,7 @@ class VlmInferenceEngine final : public VlmInferenceEngineComponentBase {
 
     void inferenceRequestIn_handler(FwIndexType portNum, Fw::Buffer& buffer, F64 lat, F64 lon) override;
 
-    //! Mode change handler — stores the current mission mode.
+    //! Mode change handler: stores the current mission mode.
     void modeChangeIn_handler(FwIndexType portNum, const Orion::MissionMode& mode) override;
 
     // -----------------------------------------------------------------------
@@ -57,7 +57,7 @@ class VlmInferenceEngine final : public VlmInferenceEngineComponentBase {
     void freeModel();
 
     // -----------------------------------------------------------------------
-    // State — raw pointers because llama.cpp is a C API
+    // State: raw pointers because llama.cpp is a C API
     // -----------------------------------------------------------------------
 
     llama_model* m_model;

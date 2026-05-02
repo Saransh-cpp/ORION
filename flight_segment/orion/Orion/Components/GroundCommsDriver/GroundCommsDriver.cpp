@@ -29,7 +29,7 @@ static const char* getQueueDir() {
     return p ? p : "./media/sd/downlink_queue/";
 }
 
-// Recursive mkdir — creates path and any missing parents (POSIX, like `mkdir -p`).
+// Recursive mkdir: creates path and any missing parents (POSIX, like `mkdir -p`).
 // Existing directories are silently ignored.
 static void ensureDirExists(const char* path) {
     if (!path || !*path) return;
@@ -70,7 +70,7 @@ GroundCommsDriver::~GroundCommsDriver() {}
 
 void GroundCommsDriver::fileDownlinkIn_handler(FwIndexType portNum, Fw::Buffer& buffer, const Fw::StringBase& reason) {
     if (m_currentMode.e == MissionMode::DOWNLINK) {
-        // In comm window — flush any previously queued frames first
+        // In comm window: flush any previously queued frames first
         U32 flushed = flushQueue();
         if (flushed > 0) {
             this->log_ACTIVITY_HI_QueueFlushed(flushed);
@@ -89,7 +89,7 @@ void GroundCommsDriver::fileDownlinkIn_handler(FwIndexType portNum, Fw::Buffer& 
             this->log_WARNING_HI_TransmitFailed();
         }
     } else {
-        // Outside comm window — save to disk queue
+        // Outside comm window: save to disk queue
         saveToQueue(buffer);
         m_framesQueued++;
         this->tlmWrite_FramesQueued(m_framesQueued);
@@ -101,7 +101,7 @@ void GroundCommsDriver::fileDownlinkIn_handler(FwIndexType portNum, Fw::Buffer& 
 }
 
 // ---------------------------------------------------------------------------
-// Schedule handler — periodic queue flush
+// Schedule handler: periodic queue flush
 // ---------------------------------------------------------------------------
 
 void GroundCommsDriver::modeChangeIn_handler(FwIndexType portNum, const Orion::MissionMode& mode) {
@@ -254,7 +254,7 @@ U32 GroundCommsDriver::flushQueue() {
         if (sent) {
             ::unlink(path);  // Only delete after successful transmit
         } else {
-            // Stop flushing — receiver likely down, no point retrying rest
+            // Stop flushing: receiver likely down, no point retrying rest
             break;
         }
     }

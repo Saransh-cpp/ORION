@@ -28,10 +28,10 @@ class CameraManager final : public CameraManagerComponentBase {
     // Port handlers
     // -----------------------------------------------------------------------
 
-    //! Rate group schedule handler — drives auto-capture timing.
+    //! Rate group schedule handler: drives auto-capture timing.
     void schedIn_handler(FwIndexType portNum, U32 context) override;
 
-    //! Mode change handler — stores the current mission mode.
+    //! Mode change handler: stores the current mission mode.
     void modeChangeIn_handler(FwIndexType portNum, const Orion::MissionMode& mode) override;
 
     // -----------------------------------------------------------------------

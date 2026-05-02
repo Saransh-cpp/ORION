@@ -14,7 +14,7 @@ module Orion {
     @ decision time. Uses the component mutex to prevent tearing.
     guarded input port navStateGet: NavStatePort
 
-    @ Rate group schedule input — drives periodic SimSat polling.
+    @ Rate group schedule input: drives periodic SimSat polling.
     async input port schedIn: Svc.Sched
 
     # --------------------------------------------------------------------------

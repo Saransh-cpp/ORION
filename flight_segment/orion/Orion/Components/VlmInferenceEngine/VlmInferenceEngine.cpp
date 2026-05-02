@@ -34,7 +34,7 @@ static const char* modeStr(MissionMode mode) {
 }
 
 // ---------------------------------------------------------------------------
-// Model paths — text decoder and vision encoder are separate GGUF files.
+// Model paths: text decoder and vision encoder are separate GGUF files.
 // Override via env vars: ORION_GGUF_PATH, ORION_MMPROJ_PATH
 // ---------------------------------------------------------------------------
 static const char* getGgufPath() {
@@ -102,10 +102,10 @@ void VlmInferenceEngine::modeChangeIn_handler(FwIndexType portNum, const Orion::
     m_currentMode = mode;
 
     if (mode.e == MissionMode::MEASURE && !m_model) {
-        // Entering MEASURE — auto-load the model
+        // Entering MEASURE: auto-load the model
         loadModel();
     } else if (mode.e == MissionMode::IDLE || mode.e == MissionMode::SAFE) {
-        // In IDLE or SAFE — unload to free RAM
+        // In IDLE or SAFE: unload to free RAM
         if (m_model) {
             freeModel();
             this->log_ACTIVITY_HI_ModelUnloaded();
@@ -122,7 +122,7 @@ void VlmInferenceEngine::inferenceRequestIn_handler(FwIndexType portNum, Fw::Buf
     }
 
     if (!m_model || !m_ctx || !m_mtmd) {
-        // Model not resident — drop the frame and recycle the buffer.
+        // Model not resident: drop the frame and recycle the buffer.
         this->log_WARNING_LO_FrameDroppedModelNotLoaded();
         this->bufferReturnOut_out(0, buffer);
         return;
@@ -157,7 +157,7 @@ void VlmInferenceEngine::inferenceRequestIn_handler(FwIndexType portNum, Fw::Buf
 }
 
 // ---------------------------------------------------------------------------
-// runInference — core llama.cpp / mtmd pipeline
+// runInference: core llama.cpp / mtmd pipeline
 // ---------------------------------------------------------------------------
 
 bool VlmInferenceEngine::runInference(const Fw::Buffer& buffer, F64 lat, F64 lon, Orion::TriagePriority& verdict,
@@ -336,7 +336,7 @@ void VlmInferenceEngine::parseVerdictJson(const char* json, Orion::TriagePriorit
                     reason[len] = '\0';
                     return;
                 }
-                // No closing quote found — take everything until end
+                // No closing quote found: take everything until end
                 FwSizeType len = static_cast<FwSizeType>(::strlen(start));
                 if (len >= reasonLen) len = reasonLen - 1;
                 ::memcpy(reason, start, len);
@@ -346,7 +346,7 @@ void VlmInferenceEngine::parseVerdictJson(const char* json, Orion::TriagePriorit
         }
     }
 
-    // No "reason" key found — use the whole response as the reason
+    // No "reason" key found: use the whole response as the reason
     FwSizeType len = static_cast<FwSizeType>(::strlen(json));
     if (len >= reasonLen) len = reasonLen - 1;
     if (len > 0) {

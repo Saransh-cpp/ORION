@@ -81,7 +81,7 @@ void CameraManager::DISABLE_AUTO_CAPTURE_cmdHandler(FwOpcodeType opCode, U32 cmd
 }
 
 // ---------------------------------------------------------------------------
-// Schedule handler — rate group driven auto-capture
+// Schedule handler - rate group driven auto-capture
 // ---------------------------------------------------------------------------
 
 void CameraManager::modeChangeIn_handler(FwIndexType portNum, const Orion::MissionMode& mode) {
@@ -152,7 +152,7 @@ void CameraManager::doCapture() {
 }
 
 // ---------------------------------------------------------------------------
-// Camera capture — fetch from SimSat Mapbox API
+// Camera capture - fetch from SimSat Mapbox API
 // ---------------------------------------------------------------------------
 
 bool CameraManager::captureIntoBuffer(Fw::Buffer& buf) {

@@ -18,7 +18,7 @@ class NavTelemetry final : public NavTelemetryComponentBase {
     //! Returns the last cached NavState to the caller.
     NavState navStateGet_handler(FwIndexType portNum) override;
 
-    //! Rate group schedule handler — polls SimSat periodically.
+    //! Rate group schedule handler: polls SimSat periodically.
     void schedIn_handler(FwIndexType portNum, U32 context) override;
 
     // -----------------------------------------------------------------------

@@ -15,7 +15,7 @@ class EventAction final : public EventActionComponentBase {
     // Port handlers
     // -----------------------------------------------------------------------
 
-    //! Rate group handler — evaluates mode transitions at 1 Hz.
+    //! Rate group handler: evaluates mode transitions at 1 Hz.
     void schedIn_handler(FwIndexType portNum, U32 context) override;
 
     // -----------------------------------------------------------------------

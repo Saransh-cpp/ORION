@@ -18,7 +18,7 @@ class TriageRouter final : public TriageRouterComponentBase {
     void triageDecisionIn_handler(FwIndexType portNum, const Orion::TriagePriority& verdict,
                                   const Fw::StringBase& reason, Fw::Buffer& buffer) override;
 
-    //! Mode change handler — stores the current mission mode.
+    //! Mode change handler: stores the current mission mode.
     void modeChangeIn_handler(FwIndexType portNum, const Orion::MissionMode& mode) override;
 
     // -----------------------------------------------------------------------
@@ -31,7 +31,7 @@ class TriageRouter final : public TriageRouterComponentBase {
     //! Writes buffer to microSD bulk storage, then returns buffer to pool.
     void routeMedium(Fw::Buffer& buffer);
 
-    //! Returns buffer to pool immediately — no data is retained.
+    //! Returns buffer to pool immediately: no data is retained.
     void routeLow(Fw::Buffer& buffer);
 
     // -----------------------------------------------------------------------

@@ -43,7 +43,7 @@ NavTelemetry::NavTelemetry(const char* compName)
 NavTelemetry::~NavTelemetry() {}
 
 // ---------------------------------------------------------------------------
-// Port handler — synchronous getter
+// Port handler: synchronous getter
 // ---------------------------------------------------------------------------
 
 NavState NavTelemetry::navStateGet_handler(FwIndexType portNum) {
@@ -57,7 +57,7 @@ NavState NavTelemetry::navStateGet_handler(FwIndexType portNum) {
 }
 
 // ---------------------------------------------------------------------------
-// Schedule handler — rate group driven
+// Schedule handler: rate group driven
 // ---------------------------------------------------------------------------
 
 void NavTelemetry::schedIn_handler(FwIndexType portNum, U32 context) {

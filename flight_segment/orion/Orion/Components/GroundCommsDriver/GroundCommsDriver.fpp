@@ -13,7 +13,7 @@ module Orion {
     @ Receives HIGH-priority image buffers from TriageRouter for downlink.
     async input port fileDownlinkIn: FileDownlinkPort
 
-    @ Rate group schedule input — periodically flushes the disk queue
+    @ Rate group schedule input: periodically flushes the disk queue
     @ when in DOWNLINK mode.
     async input port schedIn: Svc.Sched
 
@@ -60,13 +60,13 @@ module Orion {
     event TransmitFailed \
       severity warning high \
       id 0x01 \
-      format "GroundCommsDriver: Transmit failed — buffer returned to pool"
+      format "GroundCommsDriver: Transmit failed - buffer returned to pool"
 
     @ Emitted when a frame is queued to disk because comm window is closed.
     event FrameQueued \
       severity activity low \
       id 0x02 \
-      format "GroundCommsDriver: Frame queued to disk — outside comm window"
+      format "GroundCommsDriver: Frame queued to disk - outside comm window"
 
     @ Emitted when queued frames are flushed during a comm window.
     event QueueFlushed(
@@ -80,7 +80,7 @@ module Orion {
     event QueueWriteFailed \
       severity warning high \
       id 0x04 \
-      format "GroundCommsDriver: Failed to write frame to disk queue — frame lost"
+      format "GroundCommsDriver: Failed to write frame to disk queue - frame lost"
 
     # --------------------------------------------------------------------------
     # Required F-Prime framework ports

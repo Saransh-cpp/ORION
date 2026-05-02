@@ -18,7 +18,7 @@ module Orion {
 
     initial enter IDLE
 
-    @ Central state — sunlit (charging) or post-SAFE.
+    @ Central state: sunlit (charging) or post-SAFE.
     state IDLE {
       entry do { broadcastMode, logModeChange }
       on sunUp enter MEASURE
@@ -26,7 +26,7 @@ module Orion {
       on fault enter SAFE
     }
 
-    @ Active imaging mode (eclipse — on battery).
+    @ Active imaging mode (eclipse: on battery).
     state MEASURE {
       entry do { broadcastMode, logModeChange }
       on commWindowOpened enter DOWNLINK
@@ -48,7 +48,7 @@ module Orion {
       if sunIsUp enter MEASURE else enter IDLE
     }
 
-    @ Safe mode — all operations suspended.
+    @ Safe mode: all operations suspended.
     state SAFE {
       entry do { broadcastMode, logModeChange }
       on clearFault enter IDLE
@@ -72,7 +72,7 @@ module Orion {
     # Input ports
     # --------------------------------------------------------------------------
 
-    @ Rate group schedule input — evaluates mode transitions at 1 Hz.
+    @ Rate group schedule input: evaluates mode transitions at 1 Hz.
     async input port schedIn: Svc.Sched
 
     # --------------------------------------------------------------------------
@@ -145,13 +145,13 @@ module Orion {
     event SafeModeEntered \
       severity warning high \
       id 0x01 \
-      format "EventAction: SAFE MODE — all operations suspended"
+      format "EventAction: SAFE MODE - all operations suspended"
 
     @ Emitted when exiting SAFE mode.
     event SafeModeExited \
       severity activity high \
       id 0x02 \
-      format "EventAction: SAFE MODE exited — returning to IDLE"
+      format "EventAction: SAFE MODE exited - returning to IDLE"
 
     @ Emitted when the comm window opens.
     event CommWindowOpened(
@@ -183,7 +183,7 @@ module Orion {
     ) \
       severity warning low \
       id 0x06 \
-      format "EventAction: FLUSH_MEDIUM_STORAGE rejected — not in DOWNLINK (current: {})"
+      format "EventAction: FLUSH_MEDIUM_STORAGE rejected - not in DOWNLINK (current: {})"
 
     @ Emitted when a MEDIUM file path exceeds the 100-char FileDownlink limit.
     event MediumPathTooLong \
@@ -198,7 +198,7 @@ module Orion {
     ) \
       severity warning low \
       id 0x08 \
-      format "EventAction: GOTO {} rejected — not allowed from {}"
+      format "EventAction: GOTO {} rejected - not allowed from {}"
 
     # --------------------------------------------------------------------------
     # Required F-Prime framework ports

@@ -25,7 +25,7 @@ EventAction::EventAction(const char* compName)
 EventAction::~EventAction() {}
 
 // ---------------------------------------------------------------------------
-// Schedule handler — evaluates mode transitions at 1 Hz
+// Schedule handler: evaluates mode transitions at 1 Hz
 // ---------------------------------------------------------------------------
 
 void EventAction::schedIn_handler(FwIndexType portNum, U32 context) {
@@ -77,7 +77,7 @@ void EventAction::schedIn_handler(FwIndexType portNum, U32 context) {
                     if (resp.get_status() == Svc::SendFileStatus::STATUS_OK) {
                         m_mediumFlushed++;
                     } else {
-                        // Queue full — rename back for next attempt
+                        // Queue full: rename back for next attempt
                         ::rename(sentPath, srcPath);
                     }
                     found = true;
@@ -87,7 +87,7 @@ void EventAction::schedIn_handler(FwIndexType portNum, U32 context) {
             }
 
             if (!found) {
-                // Directory empty or gone — flush complete
+                // Directory empty or gone: flush complete
                 this->log_ACTIVITY_HI_MediumStorageFlushed(m_mediumFlushed);
                 m_flushingMedium = false;
             }
@@ -179,7 +179,7 @@ void EventAction::FLUSH_MEDIUM_STORAGE_cmdHandler(FwOpcodeType opCode, U32 cmdSe
         return;
     }
 
-    // Start the paced flush — schedIn will queue one file per tick
+    // Start the paced flush: schedIn will queue one file per tick
     m_flushingMedium = true;
     m_mediumFlushed = 0;
     this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::OK);
@@ -223,7 +223,7 @@ void EventAction::GOTO_DOWNLINK_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) {
 // ---------------------------------------------------------------------------
 
 void EventAction::Orion_MissionModeSm_action_broadcastMode(SmId smId, Orion_MissionModeSm::Signal signal) {
-    // Skip broadcast during state machine init — ports aren't connected yet
+    // Skip broadcast during state machine init: ports aren't connected yet
     if (!m_portsConnected) {
         return;
     }
