@@ -207,6 +207,9 @@ ground_segment/data/orion_dataset/images/*
 ground_segment/data/test_raw/*
 ground_segment/data/orion_downlink/*
 ground_segment/data/orion_medium/*
+# images downlinked from the spacecraft to the ground (which can be the same machine)
+*.raw
+*.jpg
 
 # weights and models
 ground_segment/training/orion_merged/

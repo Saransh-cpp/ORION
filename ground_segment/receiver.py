@@ -12,7 +12,8 @@ as both ``orion_frame_XXXX.raw`` (original bytes) and ``orion_frame_XXXX.jpg``
 Usage:
 
 ```bash
-uv run ground_segment/receiver.py
+cd ground_segment
+uv run receiver.py
 ```
 
 See the [ORIO frame protocol](../../../ground-segment/receiver/) documentation

@@ -205,6 +205,8 @@ IDLE transitions to MEASURE (eclipse = imaging on battery). In the `Events` tab 
 - `ModelLoaded`: VLM loads into RAM (~15s on Pi)
 - `AutoCaptureEnabled every 65 seconds`
 
+These events are sent by the satellite (Pi or your local terminal instance running the flight software binary, whether explicitly or in a background process by `fprime-gds`) to the GDS machine (your local machine or the terminal instance running GDS) over TCP.
+
 ### Observe autonomous capture and inference
 
 Every 65 seconds, CameraManager fetches a Mapbox satellite tile, fuses GPS, and dispatches to the VLM. Watch for the following in `Events` tab (or in `flight_segment/orion/logs/<latest-one>/event.log`):
@@ -214,8 +216,8 @@ Every 65 seconds, CameraManager fetches a Mapbox satellite tile, fuses GPS, and 
 
 After inference, TriageRouter routes the frame:
 
-- **HIGH**: `HighTargetDetected`, frame forwarded to GroundCommsDriver for downlink
-- **MEDIUM**: `MediumTargetStored`, image saved to disk
+- **HIGH**: `HighTargetDetected`, frame forwarded to GroundCommsDriver for downlink on the Pi / your local machine through the terminal acting as the satellite's OBC (launched by fprime-gds in the background). These images are then downlinked automatically during the comm window to your ground machine / the same local machine but through the terminal running `receiver.py`.
+- **MEDIUM**: `MediumTargetStored`, image saved to disk on the Pi / your local machine through the terminal acting as the satellite's OBC (launched by fprime-gds in the background). These images are then downlinked on command during the comm window to your ground machine / the same local machine but through the terminal running fprime-gds.
 - **LOW**: `LowTargetDiscarded`, buffer recycled
 
 ### Downlink during comm window
