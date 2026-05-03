@@ -29,7 +29,7 @@ GroundCommsDriver connects to the receiver using `ORION_GDS_HOST` and `ORION_GDS
 - **Immediate downlink**: HIGH-priority frames transmitted directly during DOWNLINK mode
 - **Queue flush**: previously queued HIGH frames flushed when entering DOWNLINK mode
 
-MEDIUM-priority files are downlinked separately via the F-Prime FileDownlink service (triggered by `FLUSH_MEDIUM_STORAGE`), which uses the F-Prime ground link (port 50000) and does not go through `receiver.py`. Reassembled files arrive in the directory set via `--file-storage-directory` when launching GDS (e.g. `./downlinked_UHF/`).
+MEDIUM-priority files are downlinked separately via the F-Prime FileDownlink service (triggered by `FLUSH_MEDIUM_STORAGE`), which uses the F-Prime ground link (port 50000) and does not go through `receiver.py`. Reassembled files arrive in the directory set via `--file-storage-directory` when launching GDS (e.g. `./downlinked_UHF/`). Convert them to viewable JPGs with `uv run raw_to_jpg.py ../flight_segment/orion/downlinked_UHF/fprime-downlink`.
 
 ## Configuration
 

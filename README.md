@@ -245,7 +245,13 @@ uv run receiver.py
 FLUSH_MEDIUM_STORAGE
 ```
 
-This queues one file per second to F-Prime's FileDownlink service (TCP :50000). Each file is **renamed** to `.raw.sent` before transmission to avoid re-queuing. Files arrive in `./downlinked_UHF/` (the directory set via `--file-storage-directory` when launching GDS). The command is rejected if the spacecraft is not in DOWNLINK mode.
+This queues one file per second to F-Prime's FileDownlink service (TCP :50000). Each file is **renamed** to `.raw.sent` before transmission to avoid re-queuing. Files arrive in `./downlinked_UHF/` (the directory set via `--file-storage-directory` when launching GDS). The command is rejected if the spacecraft is not in DOWNLINK mode. Convert the downloaded `.raw` files to viewable JPGs:
+
+```bash
+cd ground_segment
+# in the ground segment venv
+uv run raw_to_jpg.py ../flight_segment/orion/downlinked_UHF/fprime-downlink
+```
 
 ### Return to IDLE
 

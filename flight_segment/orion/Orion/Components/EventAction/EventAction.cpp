@@ -61,7 +61,6 @@ void EventAction::schedIn_handler(FwIndexType portNum, U32 context) {
                     if (::strncmp(entry->d_name, "orion_medium_", 13) != 0) {
                         continue;
                     }
-                    // Skip already-sent files to avoid .sent.sent.sent chaining
                     size_t len = ::strlen(entry->d_name);
                     if (len >= 5 && ::strcmp(entry->d_name + len - 5, ".sent") == 0) {
                         continue;
@@ -70,8 +69,6 @@ void EventAction::schedIn_handler(FwIndexType portNum, U32 context) {
                     char srcPath[256];
                     ::snprintf(srcPath, sizeof(srcPath), "%s%s", storageDir, entry->d_name);
 
-                    // Rename before queueing so we don't re-queue on next tick.
-                    // FileDownlink reads from the renamed path asynchronously.
                     char sentPath[256];
                     ::snprintf(sentPath, sizeof(sentPath), "%s.sent", srcPath);
                     ::rename(srcPath, sentPath);
@@ -82,11 +79,10 @@ void EventAction::schedIn_handler(FwIndexType portNum, U32 context) {
                     if (resp.get_status() == Svc::SendFileStatus::STATUS_OK) {
                         m_mediumFlushed++;
                     } else {
-                        // Queue full: rename back for next attempt
                         ::rename(sentPath, srcPath);
                     }
                     found = true;
-                    break;  // One file per tick
+                    break;
                 }
                 ::closedir(dir);
             }
@@ -175,6 +171,12 @@ void EventAction::FLUSH_MEDIUM_STORAGE_cmdHandler(FwOpcodeType opCode, U32 cmdSe
         return;
     }
 
+    // Reject if a flush is already in progress
+    if (m_flushingMedium) {
+        this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::EXECUTION_ERROR);
+        return;
+    }
+
     const char* storageDir = getMediumStoragePath();
 
     // Validate path length (FileDownlink limit is 100 chars)
@@ -182,6 +184,24 @@ void EventAction::FLUSH_MEDIUM_STORAGE_cmdHandler(FwOpcodeType opCode, U32 cmdSe
         this->log_WARNING_HI_MediumPathTooLong();
         this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::EXECUTION_ERROR);
         return;
+    }
+
+    // Clean up .sent files from any previous flush (FileDownlink is done with them by now)
+    DIR* dir = ::opendir(storageDir);
+    if (dir) {
+        struct dirent* entry;
+        while ((entry = ::readdir(dir)) != nullptr) {
+            if (::strncmp(entry->d_name, "orion_medium_", 13) != 0) {
+                continue;
+            }
+            size_t len = ::strlen(entry->d_name);
+            if (len >= 5 && ::strcmp(entry->d_name + len - 5, ".sent") == 0) {
+                char sentPath[256];
+                ::snprintf(sentPath, sizeof(sentPath), "%s%s", storageDir, entry->d_name);
+                ::unlink(sentPath);
+            }
+        }
+        ::closedir(dir);
     }
 
     // Start the paced flush: schedIn will queue one file per tick

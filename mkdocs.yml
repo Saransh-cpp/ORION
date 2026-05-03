@@ -124,6 +124,7 @@ nav:
               - File List: flight-segment/files.md
       - Python (Ground Segment):
           - Receiver: api/python/receiver.md
+          - raw_to_jpg: api/python/raw_to_jpg.md
           - Training:
               - fine_tune: api/python/training/fine_tune.md
               - evaluate: api/python/training/evaluate.md

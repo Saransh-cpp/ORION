@@ -98,15 +98,17 @@ The state machine signal names are abstract internal identifiers. The physical m
 
 ### 3.4 Commands
 
-| Command                | Opcode | Arguments         | Behavior                                                                 |
-| ---------------------- | ------ | ----------------- | ------------------------------------------------------------------------ |
-| `SET_ECLIPSE`          | 0x00   | `inEclipse: bool` | Sets eclipse flag. `true` → MEASURE (eclipse). `false` → IDLE (charge).  |
-| `ENTER_SAFE_MODE`      | 0x01   | none              | Sends `fault` signal. Rejected if already in SAFE.                       |
-| `EXIT_SAFE_MODE`       | 0x02   | none              | Sends `clearFault` signal; re-syncs conditions. Rejected if not in SAFE. |
-| `FLUSH_MEDIUM_STORAGE` | 0x03   | none              | Paced downlink of MEDIUM files (1/sec). Renamed to `.sent` after queue.  |
-| `GOTO_IDLE`            | 0x10   | none              | Returns to IDLE. Only allowed from MEASURE or DOWNLINK.                  |
-| `GOTO_MEASURE`         | 0x11   | none              | Transitions to MEASURE. Only allowed from IDLE.                          |
-| `GOTO_DOWNLINK`        | 0x12   | none              | Transitions to DOWNLINK. Only allowed from IDLE.                         |
+| Command                | Opcode | Arguments         | Behavior                                                                                                                                                                      |
+| ---------------------- | ------ | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SET_ECLIPSE`          | 0x00   | `inEclipse: bool` | Sets eclipse flag. `true` → MEASURE (eclipse). `false` → IDLE (charge).                                                                                                       |
+| `ENTER_SAFE_MODE`      | 0x01   | none              | Sends `fault` signal. Rejected if already in SAFE.                                                                                                                            |
+| `EXIT_SAFE_MODE`       | 0x02   | none              | Sends `clearFault` signal; re-syncs conditions. Rejected if not in SAFE.                                                                                                      |
+| `FLUSH_MEDIUM_STORAGE` | 0x03   | none              | Paced downlink of MEDIUM files (1/sec). Rejected if flush already in progress. Cleans up `.sent` files from previous flush, then renames each file to `.sent` before queuing. |
+| `GOTO_IDLE`            | 0x10   | none              | Returns to IDLE. Only allowed from MEASURE or DOWNLINK.                                                                                                                       |
+| `GOTO_MEASURE`         | 0x11   | none              | Transitions to MEASURE. Only allowed from IDLE.                                                                                                                               |
+| `GOTO_DOWNLINK`        | 0x12   | none              | Transitions to DOWNLINK. Only allowed from IDLE.                                                                                                                              |
+
+The `GOTO_*` commands are ground operator overrides for forcing a mode entry that the autonomous logic would not trigger on its own (e.g. entering DOWNLINK outside a comm window). Once in the target state, autonomous transitions still apply normally; for instance, `GOTO_IDLE` during a comm window will be followed by an automatic transition to DOWNLINK on the next `commWindowOpened` edge.
 
 ### 3.5 Events
 
@@ -136,13 +138,13 @@ The state machine signal names are abstract internal identifiers. The physical m
 
 ## 4. Change Log
 
-| Date       | Description                                                                     |
-| ---------- | ------------------------------------------------------------------------------- |
-| 2026-04-18 | Initial implementation: state machine, mode broadcasting, SAFE mode             |
-| 2026-04-18 | Added CommWindow events, SAFE exit re-sync, FLUSH_MEDIUM_STORAGE                |
-| 2026-04-20 | Inverted power doctrine: MEASURE during eclipse, IDLE during sunlit             |
-| 2026-04-24 | Added GOTO commands and returnToIdle signal; guarded ENTER/EXIT_SAFE            |
-| 2026-04-25 | Fixed MEDIUM flush: rename to `.sent` before queueing, rename back on failure   |
-| 2026-04-26 | Fixed MEDIUM storage default path to use relative `./media/sd/medium/`          |
-| 2026-05-03 | Fixed SDD cross-reference links for mkdocs                                      |
-| 2026-05-03 | Fixed `.sent.sent` chaining bug: skip already-renamed files during MEDIUM flush |
+| Date       | Description                                                                                         |
+| ---------- | --------------------------------------------------------------------------------------------------- |
+| 2026-04-18 | Initial implementation: state machine, mode broadcasting, SAFE mode                                 |
+| 2026-04-18 | Added CommWindow events, SAFE exit re-sync, FLUSH_MEDIUM_STORAGE                                    |
+| 2026-04-20 | Inverted power doctrine: MEASURE during eclipse, IDLE during sunlit                                 |
+| 2026-04-24 | Added GOTO commands and returnToIdle signal; guarded ENTER/EXIT_SAFE                                |
+| 2026-04-25 | Fixed MEDIUM flush: rename to `.sent` before queueing, rename back on failure                       |
+| 2026-04-26 | Fixed MEDIUM storage default path to use relative `./media/sd/medium/`                              |
+| 2026-05-03 | Fixed SDD cross-reference links for mkdocs                                                          |
+| 2026-05-03 | Fixed `.sent` cleanup: deferred to next `FLUSH_MEDIUM_STORAGE` command; reject if flush in progress |

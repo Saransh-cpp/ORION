@@ -169,7 +169,7 @@ The driver's behavior depends on the current mission mode:
 
 ### Queue Flush Logic
 
-During a comm window, the driver reads queued `.raw` files from the disk queue directory, transmits each one using the ORIO frame protocol, and deletes the file only after a successful transmit. If a transmit fails (receiver down), the flush stops immediately to avoid wasting time on a dead link.
+During a comm window, the driver reads queued `.raw` files from the disk queue directory, transmits each one using the ORIO frame protocol, and deletes the file after a successful transmit. If a transmit fails (receiver down), the flush stops immediately to avoid wasting time on a dead link. HIGH queue files are deleted immediately after transmit (the data is already in memory). MEDIUM files use a deferred cleanup: they are renamed to `.sent` when queued to FileDownlink (which reads asynchronously), then deleted when the next `FLUSH_MEDIUM_STORAGE` command is issued.
 
 ### Ground Station Receiver
 
@@ -192,6 +192,7 @@ The workflow:
 4. If the queue is full, the file is renamed back for retry on the next tick.
 5. If the satellite exits DOWNLINK mode mid-flush, the flush is aborted and a `MediumStorageFlushed` event reports the count of files successfully queued.
 6. On the GDS side, reassembled files arrive in the directory set via `--file-storage-directory` when launching GDS (e.g. `./downlinked_UHF/`).
+7. Convert the downloaded `.raw` files to viewable JPGs: `python ground_segment/raw_to_jpg.py ./downlinked_UHF`
 
 ## Buffer Lifecycle
 

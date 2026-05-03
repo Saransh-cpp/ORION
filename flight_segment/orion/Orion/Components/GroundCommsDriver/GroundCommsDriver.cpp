@@ -252,7 +252,7 @@ U32 GroundCommsDriver::flushQueue() {
         delete[] tmpBuf;
 
         if (sent) {
-            ::unlink(path);  // Only delete after successful transmit
+            ::unlink(path);
         } else {
             // Stop flushing: receiver likely down, no point retrying rest
             break;

@@ -1,6 +1,26 @@
 # Utility Scripts
 
-The ground segment includes two shell scripts for managing data and model weights across local and remote training servers.
+The ground segment includes utility scripts for post-processing downlinked images and managing data and model weights across local and remote training servers.
+
+## raw_to_jpg.py
+
+`ground_segment/raw_to_jpg.py` batch-converts 512x512 RGB `.raw` images to `.jpg`. Intended for MEDIUM images downloaded via `FLUSH_MEDIUM_STORAGE`, but works with any 512x512x3 `.raw` file (including HIGH frames).
+
+**Usage:**
+
+```bash
+cd ground_segment
+# in the ground segment venv
+uv run raw_to_jpg.py ../flight_segment/orion/downlinked_UHF/fprime-downlink
+```
+
+**Arguments:**
+
+| Argument      | Description                                   |
+| ------------- | --------------------------------------------- |
+| `<directory>` | Path to the directory containing `.raw` files |
+
+Files that are not exactly 786,432 bytes (512x512x3) are skipped. Each `.raw` file produces a `.jpg` alongside it with the same base name.
 
 ## upload_to_server.sh
 
