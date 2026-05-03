@@ -205,11 +205,12 @@ pyrightconfig.json
 ground_segment/data/orion_dataset/images/*
 *.tar.gz
 ground_segment/data/test_raw/*
-ground_segment/data/orion_downlink/*
+ground_segment/data/downlinked_XBand/*
 ground_segment/data/orion_medium/*
 # images downlinked from the spacecraft to the ground (which can be the same machine)
 *.raw
 *.jpg
+*.sent
 
 # weights and models
 ground_segment/training/orion_merged/

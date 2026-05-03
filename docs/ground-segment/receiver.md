@@ -20,7 +20,7 @@ The receiver validates the magic bytes on each connection. Frames with invalid m
 
 ## Output
 
-Files are saved to `./orion_downlink/` as `orion_frame_XXXX.raw` (raw RGB bytes) and `orion_frame_XXXX.jpg` (viewable image). Each `.raw` file contains 786,432 bytes of raw pixel data for 512x512 RGB images.
+Files are saved to `./downlinked_XBand/` as `orion_frame_XXXX.raw` (raw RGB bytes) and `orion_frame_XXXX.jpg` (viewable image). Each `.raw` file contains 786,432 bytes of raw pixel data for 512x512 RGB images.
 
 ## Relationship to Flight Segment
 
@@ -29,18 +29,18 @@ GroundCommsDriver connects to the receiver using `ORION_GDS_HOST` and `ORION_GDS
 - **Immediate downlink**: HIGH-priority frames transmitted directly during DOWNLINK mode
 - **Queue flush**: previously queued HIGH frames flushed when entering DOWNLINK mode
 
-MEDIUM-priority files are downlinked separately via the F-Prime FileDownlink service (triggered by `FLUSH_MEDIUM_STORAGE`), which uses the F-Prime ground link (port 50000) and does not go through `receiver.py`.
+MEDIUM-priority files are downlinked separately via the F-Prime FileDownlink service (triggered by `FLUSH_MEDIUM_STORAGE`), which uses the F-Prime ground link (port 50000) and does not go through `receiver.py`. Reassembled files arrive in the directory set via `--file-storage-directory` when launching GDS (e.g. `./downlinked_UHF/`).
 
 ## Configuration
 
 The receiver uses hardcoded values:
 
-| Setting     | Value              | Notes                                           |
-| ----------- | ------------------ | ----------------------------------------------- |
-| Listen IP   | `0.0.0.0`          | Listens on all network interfaces               |
-| Listen port | `50050`            | Must match the flight binary's `ORION_GDS_PORT` |
-| Output dir  | `./orion_downlink` | Created automatically if it does not exist      |
-| Backlog     | 5                  | Maximum pending connections                     |
-| Chunk size  | 4096 bytes         | TCP read chunk size for payload reception       |
+| Setting     | Value                | Notes                                           |
+| ----------- | -------------------- | ----------------------------------------------- |
+| Listen IP   | `0.0.0.0`            | Listens on all network interfaces               |
+| Listen port | `50050`              | Must match the flight binary's `ORION_GDS_PORT` |
+| Output dir  | `./downlinked_XBand` | Created automatically if it does not exist      |
+| Backlog     | 5                    | Maximum pending connections                     |
+| Chunk size  | 4096 bytes           | TCP read chunk size for payload reception       |
 
 For instructions on running the receiver, see the [Receiver guide](../guides/receiver.md).

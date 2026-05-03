@@ -101,11 +101,11 @@ Each `transmitRaw` call opens a new TCP connection, sends the header + payload, 
 
 ### 3.9 Environment Variables
 
-| Variable                   | Default                      | Description                      |
-| -------------------------- | ---------------------------- | -------------------------------- |
-| `ORION_GDS_HOST`           | `127.0.0.1`                  | Ground receiver IP address       |
-| `ORION_GDS_PORT`           | `50050`                      | Ground receiver TCP port         |
-| `ORION_DOWNLINK_QUEUE_DIR` | `./media/sd/downlink_queue/` | Directory for disk-queued frames |
+| Variable                   | Default                            | Description                      |
+| -------------------------- | ---------------------------------- | -------------------------------- |
+| `ORION_GDS_HOST`           | `127.0.0.1`                        | Ground receiver IP address       |
+| `ORION_GDS_PORT`           | `50050`                            | Ground receiver TCP port         |
+| `ORION_DOWNLINK_QUEUE_DIR` | `./media/sd/downlink_XBand_queue/` | Directory for disk-queued frames |
 
 ## 4. Known Issues
 
@@ -119,6 +119,7 @@ Each `transmitRaw` call opens a new TCP connection, sends the header + payload, 
 | ---------- | ------------------------------------------------------------------------------------- |
 | 2026-04-17 | Initial implementation: TCP transmit, disk queue, mode gating                         |
 | 2026-04-18 | Fixed queue flush to preserve files on transmit failure; added QueueWriteFailed event |
-| 2026-04-25 | Fixed default queue path to use relative `./media/sd/downlink_queue/`                 |
+| 2026-04-25 | Fixed default queue path to use relative `./media/sd/downlink_XBand_queue/`           |
 | 2026-04-26 | Added recursive `ensureDirExists` for queue directory creation                        |
 | 2026-05-03 | Fixed SDD cross-reference links for mkdocs                                            |
+| 2026-05-03 | Renamed queue directory from `downlink_queue` to `downlink_XBand_queue`               |

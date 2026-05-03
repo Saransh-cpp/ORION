@@ -178,7 +178,7 @@ During a comm window, the driver reads queued `.raw` files from the disk queue d
 1. Accept an incoming TCP connection.
 2. Read the 8-byte header and validate the `ORIO` magic word.
 3. Read the payload (length specified in the header).
-4. Save the frame to `./orion_downlink/orion_frame_XXXX.raw` and convert it to a viewable `.jpg`.
+4. Save the frame to `./downlinked_XBand/orion_frame_XXXX.raw` and convert it to a viewable `.jpg`.
 
 ## MEDIUM Bulk Download
 
@@ -191,6 +191,7 @@ The workflow:
 3. Files are paced at one per tick (1 Hz) to stay within FileDownlink's 10-entry queue limit.
 4. If the queue is full, the file is renamed back for retry on the next tick.
 5. If the satellite exits DOWNLINK mode mid-flush, the flush is aborted and a `MediumStorageFlushed` event reports the count of files successfully queued.
+6. On the GDS side, reassembled files arrive in the directory set via `--file-storage-directory` when launching GDS (e.g. `./downlinked_UHF/`).
 
 ## Buffer Lifecycle
 
@@ -245,12 +246,12 @@ graph TB
 
 The variables that configure this data pipeline are documented in full (defaults, descriptions, and example workflow) in the [Flight Segment Environment Variables](../guides/environment-variables.md) guide. The table below shows where each variable is consumed in the pipeline.
 
-| Variable                   | Default                      | Description                                          |
-| -------------------------- | ---------------------------- | ---------------------------------------------------- |
-| `ORION_GGUF_PATH`          | `./orion-q4_k_m.gguf`        | Path to the Q4_K_M quantized text model              |
-| `ORION_MMPROJ_PATH`        | `./orion-mmproj-f16.gguf`    | Path to the F16 multimodal projection model          |
-| `ORION_MEDIUM_STORAGE_DIR` | `./media/sd/medium/`         | Directory for MEDIUM image bulk storage              |
-| `ORION_DOWNLINK_QUEUE_DIR` | `./media/sd/downlink_queue/` | Directory for HIGH frames queued outside comm window |
-| `ORION_GDS_HOST`           | `127.0.0.1`                  | Ground station receiver IP address                   |
-| `ORION_GDS_PORT`           | `50050`                      | Ground station receiver TCP port                     |
-| `ORION_SIMSAT_URL`         | `http://localhost:9005`      | SimSat base URL (e.g., `http://192.168.1.183:9005`)  |
+| Variable                   | Default                            | Description                                          |
+| -------------------------- | ---------------------------------- | ---------------------------------------------------- |
+| `ORION_GGUF_PATH`          | `./orion-q4_k_m.gguf`              | Path to the Q4_K_M quantized text model              |
+| `ORION_MMPROJ_PATH`        | `./orion-mmproj-f16.gguf`          | Path to the F16 multimodal projection model          |
+| `ORION_MEDIUM_STORAGE_DIR` | `./media/sd/medium/`               | Directory for MEDIUM image bulk storage              |
+| `ORION_DOWNLINK_QUEUE_DIR` | `./media/sd/downlink_XBand_queue/` | Directory for HIGH frames queued outside comm window |
+| `ORION_GDS_HOST`           | `127.0.0.1`                        | Ground station receiver IP address                   |
+| `ORION_GDS_PORT`           | `50050`                            | Ground station receiver TCP port                     |
+| `ORION_SIMSAT_URL`         | `http://localhost:9005`            | SimSat base URL (e.g., `http://192.168.1.183:9005`)  |

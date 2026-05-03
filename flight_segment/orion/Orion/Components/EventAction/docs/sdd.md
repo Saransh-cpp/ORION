@@ -136,12 +136,13 @@ The state machine signal names are abstract internal identifiers. The physical m
 
 ## 4. Change Log
 
-| Date       | Description                                                                   |
-| ---------- | ----------------------------------------------------------------------------- |
-| 2026-04-18 | Initial implementation: state machine, mode broadcasting, SAFE mode           |
-| 2026-04-18 | Added CommWindow events, SAFE exit re-sync, FLUSH_MEDIUM_STORAGE              |
-| 2026-04-20 | Inverted power doctrine: MEASURE during eclipse, IDLE during sunlit           |
-| 2026-04-24 | Added GOTO commands and returnToIdle signal; guarded ENTER/EXIT_SAFE          |
-| 2026-04-25 | Fixed MEDIUM flush: rename to `.sent` before queueing, rename back on failure |
-| 2026-04-26 | Fixed MEDIUM storage default path to use relative `./media/sd/medium/`        |
-| 2026-05-03 | Fixed SDD cross-reference links for mkdocs                                    |
+| Date       | Description                                                                     |
+| ---------- | ------------------------------------------------------------------------------- |
+| 2026-04-18 | Initial implementation: state machine, mode broadcasting, SAFE mode             |
+| 2026-04-18 | Added CommWindow events, SAFE exit re-sync, FLUSH_MEDIUM_STORAGE                |
+| 2026-04-20 | Inverted power doctrine: MEASURE during eclipse, IDLE during sunlit             |
+| 2026-04-24 | Added GOTO commands and returnToIdle signal; guarded ENTER/EXIT_SAFE            |
+| 2026-04-25 | Fixed MEDIUM flush: rename to `.sent` before queueing, rename back on failure   |
+| 2026-04-26 | Fixed MEDIUM storage default path to use relative `./media/sd/medium/`          |
+| 2026-05-03 | Fixed SDD cross-reference links for mkdocs                                      |
+| 2026-05-03 | Fixed `.sent.sent` chaining bug: skip already-renamed files during MEDIUM flush |

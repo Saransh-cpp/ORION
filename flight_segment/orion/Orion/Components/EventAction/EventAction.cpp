@@ -61,6 +61,11 @@ void EventAction::schedIn_handler(FwIndexType portNum, U32 context) {
                     if (::strncmp(entry->d_name, "orion_medium_", 13) != 0) {
                         continue;
                     }
+                    // Skip already-sent files to avoid .sent.sent.sent chaining
+                    size_t len = ::strlen(entry->d_name);
+                    if (len >= 5 && ::strcmp(entry->d_name + len - 5, ".sent") == 0) {
+                        continue;
+                    }
 
                     char srcPath[256];
                     ::snprintf(srcPath, sizeof(srcPath), "%s%s", storageDir, entry->d_name);

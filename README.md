@@ -164,7 +164,7 @@ The following section goes through the basic usage of this prototype. Refer to t
 Launch the ORION binary on the Pi:
 
 > [!NOTE]
-> You don't need to launch the binary manually for development build (running it on your local Linux/OSX machine).
+> You don't need to launch the binary manually for development build (running it in a single-machine setup, on your local Linux/OSX machine).
 
 ```bash
 ./Orion -a <gds-host-ip> -p 50000 # on Pi
@@ -175,7 +175,7 @@ If running the binary on Pi, connect GDS from the ground station (your local mac
 ```bash
 # from flight_segment/orion
 # make sure the environment created during installation is active
-fprime-gds -n --ip-address 0.0.0.0 --ip-port 50000
+fprime-gds -n --ip-address 0.0.0.0 --ip-port 50000 --file-storage-directory ./downlinked_UHF
 ```
 
 If running the whole setup on your local machine, launching the GDS will automatically run the FS binary in background (and wire all the addresses automatically):
@@ -186,7 +186,7 @@ If running the whole setup on your local machine, launching the GDS will automat
 ```bash
 # from flight_segment/orion
 # make sure the environment created during installation is active
-fprime-gds
+fprime-gds --file-storage-directory ./downlinked_UHF
 ```
 
 Open `http://localhost:5000`: you should see `SimSatPositionUpdate` events arriving every 5 seconds. The satellite starts in **IDLE** mode (charging).
@@ -216,8 +216,8 @@ Every 65 seconds, CameraManager fetches a Mapbox satellite tile, fuses GPS, and 
 
 After inference, TriageRouter routes the frame:
 
-- **HIGH**: `HighTargetDetected`, frame forwarded to GroundCommsDriver for downlink on the Pi / your local machine through the terminal acting as the satellite's OBC (launched by fprime-gds in the background). The files are stored `/home/<user>/ORION/media/sd/downlink_queue` (Pi) / `flight_segment/orion/media/sd/downlink_queue/` (single machine set-up) / the path overridden through environment variables.
-- **MEDIUM**: `MediumTargetStored`, image saved to disk on the Pi / your local machine through the terminal acting as the satellite's OBC (launched by fprime-gds in the background). The files are stored `/home/<user>/ORION/media/sd/medium` (Pi) / `flight_segment/orion/media/sd/medium/` (single machine set-up) / the path overridden through environment variables.
+- **HIGH**: `HighTargetDetected`, frame forwarded to GroundCommsDriver for downlink on the Pi / your local machine through the process acting as the satellite's OBC (launched by fprime-gds in the background). The files are stored in `/home/<user>/ORION/media/sd/downlink_XBand_queue` (Pi) / `flight_segment/orion/media/sd/downlink_XBand_queue/` (single machine set-up) / the path overridden through environment variables.
+- **MEDIUM**: `MediumTargetStored`, image saved to disk on the Pi / your local machine through the process acting as the satellite's OBC (launched by fprime-gds in the background). The files are stored in `/home/<user>/ORION/media/sd/medium` (Pi) / `flight_segment/orion/media/sd/medium/` (single machine set-up) / the path overridden through environment variables.
 - **LOW**: `LowTargetDiscarded`, buffer recycled
 
 ### Downlink during comm window
@@ -237,7 +237,7 @@ cd ground_segment
 uv run receiver.py
 ```
 
-**HIGH frames** are downlinked automatically via the ORIO protocol (TCP :50050). Each file is **deleted** after successful transmission. The receiver saves them to `ground_segment/orion_downlink/` as `orion_frame_XXXX.raw` + `orion_frame_XXXX.jpg`. On a single-machine setup, both directories are on the same machine.
+**HIGH frames** are downlinked automatically via the ORIO protocol (TCP :50050). Each file is **deleted** after successful transmission. The receiver saves them to `ground_segment/downlinked_XBand/` as `orion_frame_XXXX.raw` + `orion_frame_XXXX.jpg`. On a single-machine setup, both directories are on the same machine.
 
 **MEDIUM frames** can be bulk-downloaded during the comm window by sending the following command from the `Commanding` tab of GDS:
 
@@ -245,7 +245,7 @@ uv run receiver.py
 FLUSH_MEDIUM_STORAGE
 ```
 
-This queues one file per second to F-Prime's FileDownlink service (TCP :50000). Each file is **renamed** to `.raw.sent` before transmission to avoid re-queuing. Files arrive in the GDS's default downlink directory (`flight_segment/orion/`). The command is rejected if the spacecraft is not in DOWNLINK mode.
+This queues one file per second to F-Prime's FileDownlink service (TCP :50000). Each file is **renamed** to `.raw.sent` before transmission to avoid re-queuing. Files arrive in `./downlinked_UHF/` (the directory set via `--file-storage-directory` when launching GDS). The command is rejected if the spacecraft is not in DOWNLINK mode.
 
 ### Return to IDLE
 

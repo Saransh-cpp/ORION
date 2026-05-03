@@ -95,7 +95,7 @@ cd flight_segment/orion
 uv venv --python 314  # if not created (if did not follow installation)
 source .venv/bin/activate
 uv pip install -r lib/fprime/requirements.txt
-fprime-gds -n --ip-address 0.0.0.0 --ip-port 50000
+fprime-gds -n --ip-address 0.0.0.0 --ip-port 50000 --file-storage-directory ./downlinked_UHF
 ```
 
 - `-n`: headless mode (no browser GUI auto-launch)
@@ -116,7 +116,7 @@ uv sync
 uv run receiver.py
 ```
 
-The receiver listens on TCP port 50050 and saves incoming frames as `.raw` files in `./orion_downlink/`. See [Receiver](../ground-segment/receiver.md) for protocol details.
+The receiver listens on TCP port 50050 and saves incoming frames as `.raw` files in `./downlinked_XBand/`. See [Receiver](../ground-segment/receiver.md) for protocol details.
 
 ## Verify the System
 

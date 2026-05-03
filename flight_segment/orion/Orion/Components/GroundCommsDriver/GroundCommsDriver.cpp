@@ -26,7 +26,7 @@ static U16 getGdsPort() {
 // Disk queue directory for frames buffered outside comm window.
 static const char* getQueueDir() {
     const char* p = ::getenv("ORION_DOWNLINK_QUEUE_DIR");
-    return p ? p : "./media/sd/downlink_queue/";
+    return p ? p : "./media/sd/downlink_XBand_queue/";
 }
 
 // Recursive mkdir: creates path and any missing parents (POSIX, like `mkdir -p`).
