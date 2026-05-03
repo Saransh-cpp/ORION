@@ -7,11 +7,11 @@
 #include <cstring>
 #include <string>
 
-// stb_image declarations only — the implementation is already compiled
+// stb_image declarations only as the implementation is already compiled
 // inside libmtmd.a (llama.cpp's multimodal library).
 #include "Vendor/stb_image.h"
 
-// stb_image_resize2 implementation — not in llama.cpp, compiled here.
+// stb_image_resize2 implementation as not in llama.cpp, compiled here.
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
 #include "Vendor/stb_image_resize2.h"
 
@@ -203,7 +203,7 @@ bool SimSatClient::fetchMapboxImage(uint8_t* rgbOut, uint32_t outWidth, uint32_t
 
     // Resize to target dimensions if needed
     if (static_cast<uint32_t>(imgW) == outWidth && static_cast<uint32_t>(imgH) == outHeight) {
-        // No resize needed — direct copy
+        // No resize needed, just a direct copy
         memcpy(rgbOut, decoded, outWidth * outHeight * 3);
     } else {
         // Resize using stb_image_resize2

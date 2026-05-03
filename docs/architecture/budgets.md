@@ -23,7 +23,7 @@ Measured on Raspberry Pi 5 (Cortex-A76 quad-core, CPU-only):
 | Vision encoding (mtmd)      | ~10-15 s    | Included in inference total     |
 | Token generation (200 max)  | ~40-55 s    | Greedy sampling, 4 threads      |
 | JSON parse + triage routing | < 1 ms      | Negligible                      |
-| **Total per frame**         | **50-72 s** | Measured from Pi telemetry logs |
+| **Total per frame**         | **50-70 s** | Measured from Pi telemetry logs |
 
 Inference timeout is set at 120 seconds.
 
@@ -87,7 +87,7 @@ This section documents the compute duty cycle.
 | VLM active time    | ~32 min of MEASURE        | 32 frames × ~60 s inference; nearly continuous during eclipse |
 | VLM idle time      | ~3 min of MEASURE         | ~5 s gap per capture cycle × 32 cycles                        |
 | DOWNLINK           | ~3-6 min (if pass occurs) | Queue flush. Model stays loaded.                              |
-| **VLM duty cycle** | **~35%** of orbit         | 32 min inference / 90 min orbit                               |
+| **VLM duty cycle** | **~32%** of orbit         | 32 min inference / ~101 min orbit                             |
 
 ## Memory Budget
 
@@ -106,11 +106,3 @@ Available headroom: ~2,212 MB (MEASURE) / ~3,860 MB (IDLE)
 ```
 
 No runtime dynamic allocation is used in the ORION pipeline. The buffer pool is pre-allocated at startup, and the model weights are loaded once into RAM when entering MEASURE mode.
-
-## How to Obtain These Numbers
-
-- **Inference time**: check `InferenceComplete` events in GDS event log (`InferenceTime_Ms` telemetry channel)
-- **Altitude**: check `SimSatPositionUpdate` events (`CurrentAlt` telemetry channel)
-- **Comm window duration**: computed from orbital velocity and comm radius. Do not use SimSat logs directly if the simulation speed is accelerated.
-- **Memory**: run `free -m` on the Pi during MEASURE and IDLE modes
-- **Triage distribution**: check `HighTargetsRouted`, `MediumTargetsSaved`, `LowTargetsDiscarded` telemetry channels after a full orbit

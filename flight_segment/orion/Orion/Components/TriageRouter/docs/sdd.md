@@ -2,9 +2,9 @@
 
 ## 1. Introduction
 
-The `Orion::TriageRouter` component executes the ORION triage doctrine. It receives classified image frames from [VlmInferenceEngine](../../VlmInferenceEngine/docs/sdd.md) and routes them based on the VLM's verdict:
+The `Orion::TriageRouter` component executes the ORION triage doctrine. It receives classified image frames from [VlmInferenceEngine](../vlm-inference-engine/) and routes them based on the VLM's verdict:
 
-- **HIGH**: forwarded to [GroundCommsDriver](../../GroundCommsDriver/docs/sdd.md) for immediate X-band downlink
+- **HIGH**: forwarded to [GroundCommsDriver](../ground-comms-driver/) for immediate X-band downlink
 - **MEDIUM**: written to bulk storage on the microSD card for later retrieval
 - **LOW**: discarded, buffer returned to pool
 
@@ -93,3 +93,5 @@ flowchart TD
 | ---------- | ------------------------------------------------------------------------------------- |
 | 2026-04-17 | Initial implementation: three-way routing, disk storage, SAFE mode gating             |
 | 2026-04-18 | Added partial write detection in routeMedium; added logging for SAFE mode frame drops |
+| 2026-04-25 | Fixed default MEDIUM storage path to use relative `./media/sd/medium/`                |
+| 2026-05-03 | Fixed SDD cross-reference links for mkdocs                                            |

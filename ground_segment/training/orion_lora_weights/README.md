@@ -127,7 +127,7 @@ Both studies use the same four conditions run against the same 60-sample held-ou
 | A: Vision + GPS coords                 | 58.3%            | |
 | B: Vision only (no coords)             | 60.0%            | Slightly better: coords can mislead base model |
 | C: Blind LLM (Gaussian noise + coords) | 35.0%            | Predicts LOW for everything; GPS alone is unreliable |
-| D: Sensor conflict                     | —                | Trusts incorrect coords 20.0% of the time |
+| D: Sensor conflict                     | N/A                | Trusts incorrect coords 20.0% of the time |
 
 **Full log:**
 
@@ -204,9 +204,9 @@ Model got Confused   (Neither) : 13/60 (21.7%)
 
 | Condition                   | Base model | Fine-tuned | Δ            |
 | --------------------------- | ---------- | ---------- | ------------ |
-| A — Vision + GPS coords     | 58.3%      | 58.3%      | 0 pp         |
-| B — Vision only (no coords) | 60.0%      | 65.0%      | **+5.0 pp**  |
-| C — Blind LLM (noise+coords)| 35.0%      | 43.3%      | **+8.3 pp**  |
+| A: Vision + GPS coords     | 58.3%      | 58.3%      | 0 pp         |
+| B: Vision only (no coords) | 60.0%      | 65.0%      | **+5.0 pp**  |
+| C: Blind LLM (noise+coords)| 35.0%      | 43.3%      | **+8.3 pp**  |
 
 **Sensor conflict (Condition D):** coordinate-trust failure drops from 20.0% to 16.7% after fine-tuning. The improvement is modest compared to earlier experiments on a smaller dataset - see discussion below.
 

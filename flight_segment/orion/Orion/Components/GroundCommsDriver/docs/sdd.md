@@ -2,9 +2,9 @@
 
 ## 1. Introduction
 
-The `Orion::GroundCommsDriver` component manages the simulated X-band downlink from the satellite to the ground station. It receives HIGH-priority image frames from [TriageRouter](../../TriageRouter/docs/sdd.md), transmits them over TCP to the ground receiver (`receiver.py`), and manages a disk-based queue for frames that arrive outside the comm window.
+The `Orion::GroundCommsDriver` component manages the simulated X-band downlink from the satellite to the ground station. It receives HIGH-priority image frames from [TriageRouter](../triage-router/), transmits them over TCP to the ground receiver (`receiver.py`), and manages a disk-based queue for frames that arrive outside the comm window.
 
-The component is mode-aware via [EventAction](../../EventAction/docs/sdd.md) broadcasts: it only transmits in DOWNLINK mode and queues frames to disk in all other modes.
+The component is mode-aware via [EventAction](../event-action/) broadcasts: it only transmits in DOWNLINK mode and queues frames to disk in all other modes.
 
 ## 2. Requirements
 
@@ -119,3 +119,6 @@ Each `transmitRaw` call opens a new TCP connection, sends the header + payload, 
 | ---------- | ------------------------------------------------------------------------------------- |
 | 2026-04-17 | Initial implementation: TCP transmit, disk queue, mode gating                         |
 | 2026-04-18 | Fixed queue flush to preserve files on transmit failure; added QueueWriteFailed event |
+| 2026-04-25 | Fixed default queue path to use relative `./media/sd/downlink_queue/`                 |
+| 2026-04-26 | Added recursive `ensureDirExists` for queue directory creation                        |
+| 2026-05-03 | Fixed SDD cross-reference links for mkdocs                                            |

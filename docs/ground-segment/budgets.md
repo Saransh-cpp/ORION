@@ -40,7 +40,7 @@ Resource requirements for training, quantization, and dataset generation.
 | ----------------------- | ------------ | ----- | ------------------------------------------- |
 | HF to GGUF conversion   | ~8 GB        | 17.5s | Full FP16 model loaded into RAM             |
 | mmproj extraction       | ~4 GB        | 14s   | Vision encoder only                         |
-| Q4_K_M quantization     | ~4 GB        | 18.6  | Reads FP16 GGUF, writes Q4                  |
+| Q4_K_M quantization     | ~4 GB        | 18.6s | Reads FP16 GGUF, writes Q4                  |
 | Total disk (all stages) | ~11 GB       |       | Base + merged + F16 GGUF + Q4 GGUF + mmproj |
 
 ## Weight Fusion Compute

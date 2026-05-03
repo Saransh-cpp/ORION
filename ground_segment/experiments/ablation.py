@@ -1,3 +1,30 @@
+"""Base-model ablation study - 4-condition evaluation of the **untuned** LFM2.5-VL-1.6B.
+
+Runs the base (non-fine-tuned) Liquid VLM through the same 4-condition protocol used by
+the fine-tuned evaluation in `evaluate`. Comparing the two scripts' outputs quantifies
+the effect of QLoRA fine-tuning on each input channel.
+
+**Conditions:**
+
+| ID | Name | Image | Coordinates | Tests |
+|----|------|-------|-------------|-------|
+| A  | Full system | Real | Real | Nominal end-to-end accuracy |
+| B  | Vision only | Real | Stripped | Visual-feature reliance |
+| C  | Blind LLM | Gaussian noise | Real | Coordinate memorisation |
+| D  | Sensor conflict | Real | Spoofed | Vision-vs-telemetry trust |
+
+Usage:
+
+```bash
+cd ground_segment/experiments
+uv run ablation.py              # test split (default)
+uv run ablation.py --file val   # validation split
+```
+
+See the [validation and ablation studies guide](../../../../guides/studies/) for
+how to interpret each condition and compare against the fine-tuned results.
+"""
+
 import argparse
 import json
 import time
@@ -8,16 +35,28 @@ import numpy as np
 from PIL import Image
 from transformers import AutoProcessor, AutoModelForImageTextToText
 
-# Exact case-sensitive Hugging Face Hub ID
 MODEL_ID = "LiquidAI/LFM2.5-VL-1.6B"
 DATASET_DIR = "../data/orion_dataset"
-TEST_FILE = f"{DATASET_DIR}/test_dataset.jsonl"  # 60 IID held-out targets
-VAL_FILE = f"{DATASET_DIR}/val_dataset.jsonl"  # 60 IID validation targets
+TEST_FILE = f"{DATASET_DIR}/test_dataset.jsonl"
+VAL_FILE = f"{DATASET_DIR}/val_dataset.jsonl"
 random.seed(42)
 
 
 def extract_json(text):
-    """Strictly extracts JSON, failing over to ERROR if the model disobeys formatting."""
+    """Extract the first JSON object from VLM output, falling back to an ERROR dict.
+
+    Scans *text* for the outermost ``{…}`` pair and attempts ``json.loads``.
+    If the model produced blank output, hallucinated prose, or malformed JSON,
+    returns a sentinel ``{"category": "ERROR", "reason": "…"}`` so that the
+    caller always gets a dict with a ``category`` key.
+
+    Args:
+        text: Raw decoded string from the VLM's generation output.
+
+    Returns:
+        A dict with at least a ``category`` key (``HIGH``, ``MEDIUM``, ``LOW``,
+        or ``ERROR``).
+    """
     try:
         start = text.find("{")
         end = text.rfind("}") + 1
@@ -31,7 +70,22 @@ def extract_json(text):
 
 
 def run_inference(model, processor, image, prompt):
-    """Runs a single image+prompt through the VLM and returns parsed JSON + raw text."""
+    """Run a single image+prompt through the VLM and return parsed JSON plus raw text.
+
+    Applies the processor's chat template, runs greedy generation with a
+    200-token cap, then parses the output via `extract_json`.
+
+    Args:
+        model: Loaded ``AutoModelForImageTextToText`` instance.
+        processor: Matching ``AutoProcessor`` for tokenisation and image encoding.
+        image: PIL Image (512x512 RGB) to classify.
+        prompt: Text prompt including classification instructions and (optionally)
+            GPS coordinates.
+
+    Returns:
+        A ``(parsed, raw)`` tuple where *parsed* is the dict from `extract_json`
+        and *raw* is the full decoded generation string.
+    """
     messages = [{"role": "user", "content": f"<image>\n{prompt}"}]
     text_input = processor.apply_chat_template(
         messages, tokenize=False, add_generation_prompt=True
@@ -54,7 +108,17 @@ def run_inference(model, processor, image, prompt):
 
 
 def print_confusion_matrix(truths, preds, condition_name):
-    """Prints a per-class Recall and Precision breakdown, plus an aggregate total."""
+    """Print per-class recall/precision and aggregate accuracy for one condition.
+
+    Iterates over the three triage classes (HIGH, MEDIUM, LOW), computing
+    recall and precision for each, then prints overall accuracy.
+
+    Args:
+        truths: List of ground-truth category strings.
+        preds: List of predicted category strings (same length as *truths*).
+        condition_name: Human-readable label printed as the section header
+            (e.g. ``"Condition A: Full System (Vision + Coords)"``).
+    """
     print(f"\n--- {condition_name} ---")
     total_correct = 0
     total_samples = len(truths)
@@ -84,6 +148,13 @@ def print_confusion_matrix(truths, preds, condition_name):
 
 
 def main():
+    """Run the 4-condition ablation protocol on the base (untuned) LFM2.5-VL-1.6B.
+
+    Loads the base model from Hugging Face, iterates over every sample in the
+    chosen split, and evaluates each sample under all four conditions (A–D).
+    Prints per-class recall/precision tables for Conditions A–C and a
+    vision-vs-coordinate trust breakdown for Condition D.
+    """
     t_start = time.perf_counter()
 
     parser = argparse.ArgumentParser(

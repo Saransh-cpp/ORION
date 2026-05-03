@@ -2,7 +2,7 @@
 
 ## 1. Introduction
 
-The `Orion::CameraManager` component acquires Earth observation imagery for the ORION satellite. In autonomous mode, it periodically fetches Mapbox satellite images from [SimSat](../../../Utils/SimSatClient.hpp) via HTTP, fuses GPS coordinates from [NavTelemetry](../../NavTelemetry/docs/sdd.md), and dispatches the raw image buffer to [VlmInferenceEngine](../../VlmInferenceEngine/docs/sdd.md) for triage classification.
+The `Orion::CameraManager` component acquires Earth observation imagery for the ORION satellite. In autonomous mode, it periodically fetches Mapbox satellite images from SimSat via HTTP, fuses GPS coordinates from [NavTelemetry](../nav-telemetry/), and dispatches the raw image buffer to [VlmInferenceEngine](../vlm-inference-engine/) for triage classification.
 
 CameraManager also supports manual ground-commanded captures via `TRIGGER_CAPTURE`. Both manual and auto-capture commands are gated to MEASURE mode only.
 
@@ -51,9 +51,11 @@ Each capture executes the following steps:
 
 - HTTP GET to `ORION_SIMSAT_URL/data/current/image/mapbox` (30s timeout)
 - Checks `mapbox_metadata` header for `image_available` and `target_visible`
-- Decodes the PNG response via `stb_image`
-- Resizes to 512x512 via `stb_image_resize2` if dimensions don't match
+- Decodes the PNG response via [stb_image](https://github.com/nothings/stb)
+- Resizes to 512x512 via stb_image_resize2 if dimensions don't match
 - Writes raw RGB bytes directly into the F-Prime buffer
+
+Both stb headers are vendored in `Orion/Vendor/` as single-file header-only libraries, avoiding any external image processing dependency.
 
 If SimSat is unreachable or reports no image available (over ocean, cloud cover), `captureIntoBuffer` logs `SimSatImageUnavailable` and returns false. The caller logs `CameraHardwareError`, returns the buffer to the pool, and skips the capture.
 
@@ -132,3 +134,5 @@ The 65-second minimum exceeds worst-case VLM inference time (~60s on the Pi 5), 
 | 2026-04-18 | Added mode-aware auto-capture lifecycle, AutoCaptureDisabled event on mode exit |
 | 2026-04-18 | Removed test image fallback; SimSat is sole image source                        |
 | 2026-04-20 | Added mode gating on commands; added CommandRejectedWrongMode event             |
+| 2026-04-24 | Added CaptureIntervalClamped event; interval clamping with warning              |
+| 2026-05-03 | Fixed SDD cross-reference links for mkdocs; corrected auto-capture defaults     |

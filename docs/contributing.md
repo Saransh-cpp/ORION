@@ -4,47 +4,13 @@ This guide covers the development setup, code style, CI pipeline, and how to add
 
 ## Development Setup
 
-### Prerequisites
+Follow the [Development](guides/installation.md) guide to clone, build llama.cpp, set up the Python environment, and compile the flight segment. For Pi deployment, see [Deployment](guides/deployment.md).
 
-See [Installation](guides/installation.md) for the full list. In addition, install pre-commit for automated code formatting:
+After the build, install pre-commit for automated code formatting:
 
 ```bash
 pip install pre-commit
 pre-commit install
-```
-
-### Clone and Build
-
-```bash
-git clone --recursive https://github.com/Saransh-cpp/ORION.git
-cd ORION
-
-# Build llama.cpp
-cd ground_segment/llama.cpp
-cmake -B build \
-  -DBUILD_SHARED_LIBS=OFF \
-  -DLLAMA_BUILD_TESTS=OFF \
-  -DLLAMA_BUILD_EXAMPLES=OFF \
-  -DLLAMA_BUILD_SERVER=OFF
-cmake --build build -j$(nproc)
-cd ../..
-
-# Set up Python environment
-uv venv
-source .venv/bin/activate
-uv pip install -r flight_segment/orion/lib/fprime/requirements.txt
-
-# Build flight segment
-cd flight_segment/orion
-fprime-util generate
-fprime-util build --all -j$(nproc)
-```
-
-### Ground Segment Dependencies
-
-```bash
-cd ground_segment
-uv sync
 ```
 
 ## Pre-Commit Hooks
@@ -129,3 +95,47 @@ ORION/
   .clang-format           : C++ formatting rules
   docker-compose.yml      : Docker Compose for Pi cross-compilation
 ```
+
+## Building Documentation
+
+The documentation site is built with [MkDocs Material](https://squidfun.github.io/mkdocs-material/), [mkdocstrings](https://mkdocstrings.github.io/) (Python API docs), and [mkdoxy](https://mkdoxy.kubaandrysek.cz/) (C++ API docs via Doxygen).
+
+### Prerequisites
+
+Install Doxygen for C++ API generation:
+
+=== "macOS"
+
+    ```bash
+    brew install doxygen
+    ```
+
+=== "Ubuntu / Debian"
+
+    ```bash
+    sudo apt-get install doxygen
+    ```
+
+### Install Python Dependencies
+
+```bash
+uv venv --python 312  # 312 does not work on OSX
+. .venv/bin/activate
+uv pip install -r docs/requirements.txt
+```
+
+### Serve Locally
+
+```bash
+mkdocs serve
+```
+
+This starts a local server at `http://127.0.0.1:8000` with live reload. Changes to `docs/`, `mkdocs.yml`, and Python/C++ source files are reflected automatically.
+
+### Build Static Site
+
+```bash
+mkdocs build
+```
+
+The output is written to `site/`. CI builds and deploys this to GitHub Pages on every push to `main`.

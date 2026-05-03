@@ -12,11 +12,15 @@ Each downlinked frame uses a simple binary protocol with an 8-byte header:
 | 4      | 4 bytes | Payload length | Size of the raw image data in bytes, big-endian    |
 | 8      | N bytes | Payload        | Raw pixel data (786,432 bytes for 512x512 RGB)     |
 
-The receiver validates the magic bytes on each connection. Frames with invalid magic are rejected and the connection is closed. Each frame arrives on its own TCP connection (one-connection-per-frame model).
+- All multi-byte integers are in **network byte order** (big-endian).
+- For a standard 512x512 RGB frame, the payload length is 786,432 bytes.
+- Each frame is sent over a new TCP connection to the ground station receiver (`ORION_GDS_HOST`:`ORION_GDS_PORT`, default `127.0.0.1:50050`).
+
+The receiver validates the magic bytes on each connection. Frames with invalid magic are rejected and the connection is closed.
 
 ## Output
 
-Files are saved to `./orion_downlink/` as `orion_frame_XXXX.raw`. Each `.raw` file contains raw RGB pixel data - 786,432 bytes for 512x512 images.
+Files are saved to `./orion_downlink/` as `orion_frame_XXXX.raw` (raw RGB bytes) and `orion_frame_XXXX.jpg` (viewable image). Each `.raw` file contains 786,432 bytes of raw pixel data for 512x512 RGB images.
 
 ## Relationship to Flight Segment
 

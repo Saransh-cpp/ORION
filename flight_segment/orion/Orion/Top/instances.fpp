@@ -12,7 +12,7 @@ module Orion {
   }
 
   # ----------------------------------------------------------------------
-  # Active component instances — standard F-Prime infrastructure
+  # Active component instances: standard F-Prime infrastructure
   # ----------------------------------------------------------------------
 
   instance rateGroup1Comp: Svc.ActiveRateGroup base id 0x10001000 \
@@ -36,7 +36,7 @@ module Orion {
     priority 40
 
   # ----------------------------------------------------------------------
-  # Active component instances — ORION mission pipeline
+  # Active component instances: ORION mission pipeline
   # ----------------------------------------------------------------------
 
   instance cameraManager: Orion.CameraManager base id 0x10005000 \
@@ -65,14 +65,14 @@ module Orion {
     priority 20
 
   # EventAction owns the mission mode state machine. Highest ORION
-  # priority — mode decisions must not be preempted by pipeline work.
+  # priority: mode decisions must not be preempted by pipeline work.
   instance eventAction: Orion.EventAction base id 0x10009000 \
     queue size Default.QUEUE_SIZE \
     stack size Default.STACK_SIZE \
     priority 38
 
   # ----------------------------------------------------------------------
-  # Passive component instances — standard F-Prime infrastructure
+  # Passive component instances: standard F-Prime infrastructure
   # ----------------------------------------------------------------------
 
   instance posixTime: Svc.PosixTime base id 0x10020000
@@ -86,7 +86,7 @@ module Orion {
   instance comDriver: Drv.TcpClient base id 0x10025000
 
   # ----------------------------------------------------------------------
-  # Active component instances — ORION mission (NavTelemetry)
+  # Active component instances: ORION mission (NavTelemetry)
   # ----------------------------------------------------------------------
 
   # NavTelemetry polls SimSat for orbital position every 5 seconds
@@ -97,7 +97,7 @@ module Orion {
     priority 35
 
   # ----------------------------------------------------------------------
-  # Passive component instances — ORION mission
+  # Passive component instances: ORION mission
   # ----------------------------------------------------------------------
 
   # Static pool of 20 × 786432-byte (512×512×3 RGB) image buffers.

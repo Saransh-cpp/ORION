@@ -6,8 +6,8 @@ The `Orion::NavTelemetry` component manages the satellite's position state. It p
 
 NavTelemetry serves as the single source of truth for position data. Other components query it synchronously via the `navStateGet` guarded input port:
 
-- [CameraManager](../../CameraManager/docs/sdd.md) reads position at capture time to fuse GPS coordinates with images
-- [EventAction](../../EventAction/docs/sdd.md) reads position at 1 Hz to detect comm window edges and drive mode transitions
+- [CameraManager](../camera-manager/) reads position at capture time to fuse GPS coordinates with images
+- [EventAction](../event-action/) reads position at 1 Hz to detect comm window edges and drive mode transitions
 
 In a real mission, SimSat polling would be replaced by a hardware GNSS receiver driver.
 
@@ -107,7 +107,8 @@ The `NavState` struct returned by `navStateGet` contains:
 
 ## 5. Change Log
 
-| Date       | Description                                                                   |
-| ---------- | ----------------------------------------------------------------------------- |
-| 2026-04-17 | Initial implementation: SimSat polling, Haversine distance, comm window       |
-| 2026-04-18 | Added gsDistanceKm to NavState, cached distance, added comm window hysteresis |
+| Date       | Description                                                                          |
+| ---------- | ------------------------------------------------------------------------------------ |
+| 2026-04-17 | Initial implementation: SimSat polling, Haversine distance, comm window              |
+| 2026-04-18 | Added gsDistanceKm to NavState, cached distance, added comm window hysteresis        |
+| 2026-05-03 | Fixed SDD cross-reference links for mkdocs; corrected GS default coordinates to EPFL |

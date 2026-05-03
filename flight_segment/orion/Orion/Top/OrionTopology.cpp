@@ -16,7 +16,7 @@ Fw::MallocAllocator mallocator;
 //   Rate Group 3: 0.25 Hz (divider 4, offset 0)
 Svc::RateGroupDriver::DividerSet rateGroupDivisorsSet{{{1, 0}, {2, 0}, {4, 0}}};
 
-// Context tokens for rate group members (unused — set to zero)
+// Context tokens for rate group members (unused are set to zero)
 U32 rateGroup1Context[Svc::ActiveRateGroup::CONNECTION_COUNT_MAX] = {};
 U32 rateGroup2Context[Svc::ActiveRateGroup::CONNECTION_COUNT_MAX] = {};
 U32 rateGroup3Context[Svc::ActiveRateGroup::CONNECTION_COUNT_MAX] = {};

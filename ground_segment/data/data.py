@@ -1,17 +1,17 @@
-"""ORION triage target catalogue — the ground-truth dataset for fine-tuning and evaluation.
+"""ORION triage target catalogue - the ground-truth dataset for fine-tuning and evaluation.
 
 Each target is a dict with keys ``name``, ``lon``, ``lat``, ``cat`` (HIGH / MEDIUM / LOW),
 and ``reason`` (human-written triage justification). The catalogue is split into three
 lists by priority:
 
-* :data:`LOW_TARGETS`: featureless natural terrain (oceans, deserts, forests, ice).
-* :data:`MEDIUM_TARGETS`: standard human civilization (cities, suburbs, farmland).
-* :data:`HIGH_TARGETS`: extreme-scale strategic or geological anomalies.
+* `LOW_TARGETS`: featureless natural terrain (oceans, deserts, forests, ice).
+* `MEDIUM_TARGETS`: standard human civilization (cities, suburbs, farmland).
+* `HIGH_TARGETS`: extreme-scale strategic or geological anomalies.
 
-:data:`ALL_TARGETS` concatenates all three and is consumed by :mod:`data_gen` for
+`ALL_TARGETS` concatenates all three and is consumed by `data_gen` for
 dataset generation and splitting.
 
-See the `target morphology breakdown <../../docs/guides/studies.md>`_ for the full
+See the [target morphology breakdown](../../../../guides/studies/) for the full
 taxonomy of sub-categories within each priority level.
 """
 

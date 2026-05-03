@@ -13,6 +13,8 @@ The six ORION-specific components form a linear pipeline from sensor input to gr
 | [TriageRouter](triage-router.md)              | Routes frames by verdict: downlink, store, or discard      | `triageDecisionIn`, `modeChangeIn`, `fileDownlinkOut`           |
 | [GroundCommsDriver](ground-comms-driver.md)   | Simulated X-band TCP downlink with disk queue              | `fileDownlinkIn`, `schedIn`, `modeChangeIn`                     |
 
+In addition, the `Orion/Utils/` directory contains `SimSatClient`, a plain C++ libcurl wrapper used by NavTelemetry and CameraManager to fetch position and imagery from SimSat. It is not an F-Prime component. See the [architecture overview](../architecture/overview.md#shared-utilities-orionutils) for details.
+
 ## Communication Model
 
 All inter-component communication flows through F-Prime's port system. Ports are either **synchronous** (caller blocks until the callee returns) or **asynchronous** (message is enqueued on the callee's thread). Key patterns in ORION:
@@ -22,20 +24,3 @@ All inter-component communication flows through F-Prime's port system. Ports are
 - **Pipeline forwarding:** The image pipeline flows CameraManager -> VlmInferenceEngine -> TriageRouter -> GroundCommsDriver, with buffer ownership transferring at each stage. Buffers are returned to the shared BufferManager pool after use.
 
 For detailed data, link, storage, power, and timing budgets per orbit, see [Mission Budgets](../architecture/budgets.md).
-
-## Hardware Constraints
-
-| Resource                 | Specification                                          |
-| ------------------------ | ------------------------------------------------------ |
-| **Processor**            | Raspberry Pi 5, Cortex-A76 quad-core (no NPU/GPU)      |
-| **RAM**                  | 4 GB minimum                                           |
-| **Model**                | LFM2.5-VL-1.6B, Q4_K_M quantization (~730 MB resident) |
-| **Image buffer pool**    | 20 slots x 786,432 bytes = ~15.7 MB                    |
-| **Inference latency**    | 50-60 seconds per frame (CPU-only, greedy sampling)    |
-| **Inference timeout**    | 120 seconds (KV cache reset on abort)                  |
-| **Context window**       | 4096 tokens (N_CTX), 512 batch size                    |
-| **Vision encoder**       | mtmd (multimodal), 1024 max image tokens               |
-| **Threads**              | 4 (matches Pi 5 core count)                            |
-| **LEO pass duration**    | 8-10 minutes (480-600 seconds)                         |
-| **Max throughput**       | ~7-9 classifications per LEO pass                      |
-| **Min capture interval** | 65 seconds (must exceed worst-case inference time)     |

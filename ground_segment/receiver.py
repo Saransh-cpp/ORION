@@ -9,11 +9,13 @@ Received frames are saved sequentially to the ``orion_downlink/`` directory
 as both ``orion_frame_XXXX.raw`` (original bytes) and ``orion_frame_XXXX.jpg``
 (viewable image).
 
-Usage::
+Usage:
 
-    uv run ground_segment/receiver.py
+```bash
+uv run ground_segment/receiver.py
+```
 
-See the `ORIO frame protocol <../docs/architecture/data-flow.md>`_ documentation
+See the [ORIO frame protocol](../../../ground-segment/receiver/) documentation
 for the full wire format specification.
 """
 

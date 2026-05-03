@@ -1,4 +1,4 @@
-# ORION Flight Segment — Software Design Document
+# ORION Flight Segment's Software Design Document
 
 ## Architecture
 
@@ -47,7 +47,7 @@ Runs LFM2.5-VL-1.6B (Q4_K_M GGUF) via llama.cpp on the Pi 5's CPU. Inference pip
 4. Greedy decode up to 200 tokens
 5. Extract `"category"` value from JSON response → HIGH / MEDIUM / LOW verdict
 
-Self-watchdog: if inference exceeds 120 seconds, the frame is dropped and the model stays loaded. **Not wired to the F-Prime health watchdog** — the 120s wall-clock timeout is self-contained.
+Self-watchdog: if inference exceeds 120 seconds, the frame is dropped and the model stays loaded. **Not wired to the F-Prime health watchdog**; hence, the 120s wall-clock timeout is self-contained.
 
 Auto-loads the model on MEASURE entry, auto-unloads on IDLE or SAFE entry, stays loaded through DOWNLINK.
 
@@ -83,7 +83,7 @@ IDLE ──(eclipse)──> MEASURE ──(comm window)──> DOWNLINK ──(w
  └──────(fault)──────> SAFE ──(clearFault)──> IDLE
 ```
 
-**Power doctrine:** MEASURE runs during eclipse (battery compute, solar panels idle); IDLE during sunlit passes (charging). This is counter-intuitive but correct — `SET_ECLIPSE true` signals the battery is the sole power source, so the satellite uses it for inference.
+**Power doctrine:** MEASURE runs during eclipse (battery compute, solar panels idle); IDLE during sunlit passes (charging). This is counter-intuitive but correct, so `SET_ECLIPSE true` signals the battery is the sole power source, so the satellite uses it for inference.
 
 Polls NavTelemetry at 1 Hz for comm window edge detection. On DOWNLINK entry, GroundCommsDriver automatically flushes its disk queue. MEDIUM storage can be bulk-flushed via `FLUSH_MEDIUM_STORAGE` (paced at 1 file/sec to avoid saturating the F-Prime FileDownlink queue).
 
@@ -91,7 +91,7 @@ Commands: `SET_ECLIPSE`, `ENTER_SAFE_MODE`, `EXIT_SAFE_MODE`, `FLUSH_MEDIUM_STOR
 
 ### BufferManager (Standard F-Prime)
 
-Static pool: 20 × 786,432 bytes (~15.7 MB total). No custom code — standard `Svc.BufferManager` instance configured in `instances.fpp`.
+Static pool: 20 × 786,432 bytes (~15.7 MB total). No custom code, standard `Svc.BufferManager` instance configured in `instances.fpp`.
 
 ---
 

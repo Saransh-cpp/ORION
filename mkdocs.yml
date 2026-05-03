@@ -44,6 +44,8 @@ plugins:
             RECURSIVE: YES
             EXCLUDE_PATTERNS: "*/build-*/* */Top/*"
             EXTRACT_ALL: YES
+            EXTRACT_PRIVATE: YES
+            EXTRACT_STATIC: YES
             GENERATE_HTML: NO
             GENERATE_XML: YES
   - mkdocstrings:
@@ -125,6 +127,8 @@ nav:
               - fine_tune: api/python/training/fine_tune.md
               - evaluate: api/python/training/evaluate.md
               - fuse: api/python/training/fuse.md
+          - Experiments:
+              - ablation: api/python/experiments/ablation.md
           - Data:
               - data: api/python/data/data.md
               - data_gen: api/python/data/data_gen.md

@@ -7,7 +7,7 @@
 namespace Orion {
 
 /// Plain C++ utility wrapping libcurl to fetch data from the SimSat REST API.
-/// Not an F-Prime component — called directly by NavTelemetry and CameraManager.
+/// Not an F-Prime component; hence, called directly by NavTelemetry and CameraManager.
 /// Uses standard C++ types to avoid depending on F-Prime headers.
 class SimSatClient {
   public:
@@ -28,10 +28,10 @@ class SimSatClient {
     /// defaulting to "http://localhost:9005".
     static const char* getBaseUrl();
 
-    /// libcurl write callback — appends received data to a std::string buffer.
+    /// libcurl write callback: appends received data to a std::string buffer.
     static size_t writeCallback(void* contents, size_t size, size_t nmemb, void* userp);
 
-    /// libcurl header callback — captures the mapbox_metadata header value.
+    /// libcurl header callback: captures the mapbox_metadata header value.
     static size_t headerCallback(char* buffer, size_t size, size_t nitems, void* userp);
 };
 

@@ -133,6 +133,8 @@ The buffer is returned to the pool immediately. No data is saved. A `LowTargetDi
 
 ### ORIO Frame Protocol
 
+> Full field-level specification: [Ground Receiver - ORIO Frame Protocol](../ground-segment/receiver.md#orio-frame-protocol)
+
 Every image transmitted over the custom TCP link uses a simple framing protocol:
 
 ```
@@ -176,7 +178,7 @@ During a comm window, the driver reads queued `.raw` files from the disk queue d
 1. Accept an incoming TCP connection.
 2. Read the 8-byte header and validate the `ORIO` magic word.
 3. Read the payload (length specified in the header).
-4. Save the frame to `./orion_downlink/orion_frame_XXXX.raw`.
+4. Save the frame to `./orion_downlink/orion_frame_XXXX.raw` and convert it to a viewable `.jpg`.
 
 ## MEDIUM Bulk Download
 

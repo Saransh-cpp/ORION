@@ -64,13 +64,28 @@ All ORION components are driven by a 1 Hz Linux timer through three rate groups:
 | RG2        | 0.5 Hz    | CmdSequencer                                                                                                                  |
 | RG3        | 0.25 Hz   | Health watchdog, BufferManagers (Comms, DataProducts, ORION), DataProducts writer/manager                                     |
 
+### Shared Utilities (`Orion/Utils/`)
+
+The `Utils/` directory contains plain C++ helpers that are not F-Prime components. They are linked into the flight binary and called directly by components:
+
+| Utility        | Consumers                   | Description                                                                                                                                                                                                                                                                   |
+| -------------- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SimSatClient` | NavTelemetry, CameraManager | Stateless libcurl wrapper for the SimSat REST API. `fetchPosition()` returns lat/lon/alt; `fetchMapboxImage()` fetches a Mapbox tile, decodes the PNG via vendored `stb_image`, resizes to 512x512 via `stb_image_resize2`, and writes raw RGB into a caller-provided buffer. |
+
+Vendored single-file libraries in `Orion/Vendor/`:
+
+| Header                | Version                                | Purpose                                                  |
+| --------------------- | -------------------------------------- | -------------------------------------------------------- |
+| `stb_image.h`         | [stb](https://github.com/nothings/stb) | PNG decoding of SimSat Mapbox responses                  |
+| `stb_image_resize2.h` | [stb](https://github.com/nothings/stb) | Resizing to 512x512 when the tile dimensions don't match |
+
 ## Ground Segment
 
 The ground segment consists of three software elements:
 
 ### receiver.py: Image Downlink Receiver
 
-A standalone Python TCP server listening on port **50050**. Accepts incoming ORIO-framed image data from `GroundCommsDriver`, validates the 8-byte header (magic `ORIO` + payload length), and writes each 512x512 RGB frame to disk as a `.raw` file.
+A standalone Python TCP server listening on port **50050**. Accepts incoming ORIO-framed image data from `GroundCommsDriver`, validates the 8-byte header (magic `ORIO` + payload length), and writes each 512x512 RGB frame to disk as both a `.raw` file and a viewable `.jpg`.
 
 ### F-Prime GDS: Command and Telemetry
 

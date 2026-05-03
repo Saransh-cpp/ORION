@@ -2,9 +2,9 @@
 
 ## 1. Introduction
 
-The `Orion::EventAction` component is the centralized mission mode controller for the ORION satellite. It owns an FPP state machine (`MissionModeSm`) that governs the satellite's operational mode and broadcasts mode changes to all pipeline components. It evaluates transitions based on comm window state from [NavTelemetry](../../NavTelemetry/docs/sdd.md), eclipse commands from ground, and fault signals.
+The `Orion::EventAction` component is the centralized mission mode controller for the ORION satellite. It owns an FPP state machine (`MissionModeSm`) that governs the satellite's operational mode and broadcasts mode changes to all pipeline components. It evaluates transitions based on comm window state from [NavTelemetry](../nav-telemetry/), eclipse commands from ground, and fault signals.
 
-EventAction also provides the `FLUSH_MEDIUM_STORAGE` command, which gates bulk file downlink behind comm window availability by forwarding requests to the F-Prime [Svc::FileDownlink](../../../../../lib/fprime/Svc/FileDownlink/docs/sdd.md) service.
+EventAction also provides the `FLUSH_MEDIUM_STORAGE` command, which gates bulk file downlink behind comm window availability by forwarding requests to the F-Prime Svc::FileDownlink service.
 
 ## 2. Requirements
 
@@ -136,9 +136,12 @@ The state machine signal names are abstract internal identifiers. The physical m
 
 ## 4. Change Log
 
-| Date       | Description                                                          |
-| ---------- | -------------------------------------------------------------------- |
-| 2026-04-18 | Initial implementation: state machine, mode broadcasting, SAFE mode  |
-| 2026-04-18 | Added CommWindow events, SAFE exit re-sync, FLUSH_MEDIUM_STORAGE     |
-| 2026-04-20 | Inverted power doctrine: MEASURE during eclipse, IDLE during sunlit  |
-| 2026-04-24 | Added GOTO commands and returnToIdle signal; guarded ENTER/EXIT_SAFE |
+| Date       | Description                                                                   |
+| ---------- | ----------------------------------------------------------------------------- |
+| 2026-04-18 | Initial implementation: state machine, mode broadcasting, SAFE mode           |
+| 2026-04-18 | Added CommWindow events, SAFE exit re-sync, FLUSH_MEDIUM_STORAGE              |
+| 2026-04-20 | Inverted power doctrine: MEASURE during eclipse, IDLE during sunlit           |
+| 2026-04-24 | Added GOTO commands and returnToIdle signal; guarded ENTER/EXIT_SAFE          |
+| 2026-04-25 | Fixed MEDIUM flush: rename to `.sent` before queueing, rename back on failure |
+| 2026-04-26 | Fixed MEDIUM storage default path to use relative `./media/sd/medium/`        |
+| 2026-05-03 | Fixed SDD cross-reference links for mkdocs                                    |

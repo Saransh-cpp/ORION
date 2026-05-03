@@ -1,27 +1,31 @@
 """ORION dataset generator - fetches satellite tiles from SimSat and writes JSONL splits.
 
-For each target in :data:`data.ALL_TARGETS`, this script:
+For each target in `data.ALL_TARGETS`, this script:
 
 1. Fetches a 512x512 Mapbox satellite tile from SimSat's static image API.
 2. Assigns the target to a deterministic train/val/test split (seeded shuffle).
 3. Writes a conversation-format JSONL record suitable for LLaVA-style fine-tuning.
 
 Train records are augmented with **coordinate dropout**: each target produces two
-records — one with GPS coordinates in the prompt and one without — so the model
+records, one with GPS coordinates in the prompt and one without, so the model
 learns to classify from imagery alone when telemetry is unavailable.
 
-Usage::
+Usage:
 
-    cd ground_segment/data
-    uv run data_gen.py        # requires SimSat running on localhost:9005
+```bash
+cd ground_segment/data
+uv run data_gen.py        # requires SimSat running on localhost:9005
+```
 
-Output structure::
+Output structure:
 
-    orion_dataset/
-        images/              # 512x512 PNG tiles
-        train_dataset.jsonl  # 2x train targets (coord augmentation)
-        val_dataset.jsonl    # eval-loss tracking during training
-        test_dataset.jsonl   # held-out evaluation set
+```
+orion_dataset/
+    images/              # 512x512 PNG tiles
+    train_dataset.jsonl  # 2x train targets (coord augmentation)
+    val_dataset.jsonl    # eval-loss tracking during training
+    test_dataset.jsonl   # held-out evaluation set
+```
 """
 
 import requests
@@ -203,7 +207,7 @@ def main():
     clean_targets = filter_overlaps(ALL_TARGETS)
 
     # 2. Deterministic shuffle, then carve fixed-size test and val sets off the front.
-    #    Remaining samples become train. IID — no distributional gap between splits.
+    #    Remaining samples become train. IID so no distributional gap between splits.
     random.shuffle(clean_targets)
     test_set = clean_targets[:TEST_SIZE]
     val_set = clean_targets[TEST_SIZE : TEST_SIZE + VAL_SIZE]

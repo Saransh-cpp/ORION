@@ -27,7 +27,7 @@ register_fprime_config(
 # This includes project-wide objects
 add_fprime_subdirectory("${CMAKE_CURRENT_LIST_DIR}/Orion")
 
-# Register the Orion deployment — produces the 'Orion' executable
+# Register the Orion deployment: produces the 'Orion' executable
 register_fprime_deployment(
     SOURCES
         "${CMAKE_CURRENT_LIST_DIR}/Orion/Main.cpp"

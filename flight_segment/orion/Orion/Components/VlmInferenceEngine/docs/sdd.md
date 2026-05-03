@@ -2,7 +2,7 @@
 
 ## 1. Introduction
 
-The `Orion::VlmInferenceEngine` component runs the LFM2.5-VL-1.6B vision-language model on the satellite's CPU. It receives raw 512x512 RGB image frames from [CameraManager](../../CameraManager/docs/sdd.md), constructs a ChatML-formatted prompt with fused GPS coordinates, executes the llama.cpp forward pass, parses the JSON output into a triage verdict (HIGH/MEDIUM/LOW), and emits the result to [TriageRouter](../../TriageRouter/docs/sdd.md).
+The `Orion::VlmInferenceEngine` component runs the LFM2.5-VL-1.6B vision-language model on the satellite's CPU. It receives raw 512x512 RGB image frames from [CameraManager](../camera-manager/), constructs a ChatML-formatted prompt with fused GPS coordinates, executes the llama.cpp forward pass, parses the JSON output into a triage verdict (HIGH/MEDIUM/LOW), and emits the result to [TriageRouter](../triage-router/).
 
 The model is a ~730 MB Q4_K_M GGUF file loaded into RAM on demand. Inference takes 50-70 seconds per frame on the Pi 5's Cortex-A76 cores (CPU-only, no GPU). The component runs on a dedicated low-priority thread to avoid blocking other flight software.
 
@@ -127,7 +127,35 @@ The model auto-loads on MEASURE entry and auto-unloads on IDLE or SAFE entry. Du
 | `TotalInferences`   | U32  | Running total of successful classifications       |
 | `InferenceFailures` | U32  | Running total of failed inference attempts        |
 
-### 3.10 Configuration Constants
+### 3.10 llama.cpp Integration
+
+The inference engine uses the [llama.cpp](https://github.com/ggml-org/llama.cpp) C API to run the quantized VLM entirely on CPU. The integration involves three layers:
+
+**Static linking.** llama.cpp is built as a set of static libraries (`libllama.a`, `libmtmd.a`, `libggml.a`, `libggml-base.a`, `libggml-cpu.a`) from the `ground_segment/llama.cpp` submodule. The component's `CMakeLists.txt` links these directly into the F-Prime binary. On macOS, Metal and Accelerate frameworks are additionally linked for GPU/BLAS acceleration; on Linux/Pi 5, OpenMP (`gomp`) provides CPU parallelism.
+
+**Header vendoring.** llama.cpp's public headers (`llama.h`, `mtmd.h`, `mtmd-helper.h`) are included directly from the submodule source tree via `include_directories()` in CMake. The headers define opaque struct types (`llama_model`, `llama_context`, `mtmd_context`, `llama_sampler`) that the component forward-declares in its own `.hpp` to avoid exposing llama.cpp includes to F-Prime's autocoded headers. A `DEPRECATED` macro conflict between F-Prime and llama.cpp is resolved with `#pragma push_macro` / `#pragma pop_macro` in the `.cpp` file.
+
+**API surface used.** The component uses four llama.cpp subsystems:
+
+| Subsystem        | Key functions                                                                         | Purpose                                                                  |
+| ---------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Model loading    | `llama_model_load_from_file`, `llama_context_init_from_model`                         | Load GGUF text model and create inference context                        |
+| Vision encoder   | `mtmd_init_from_file`, `mtmd_bitmap_init`, `mtmd_tokenize`, `mtmd_helper_eval_chunks` | Load mmproj, wrap raw RGB buffer, tokenize image, evaluate into KV cache |
+| Sampling         | `llama_sampler_chain_init`, `llama_sampler_chain_add`, `llama_sampler_sample`         | Greedy autoregressive token generation                                   |
+| State management | `llama_memory_clear`, `llama_sampler_reset`                                           | Reset KV cache and sampler between frames                                |
+
+### 3.11 F-Prime Constant Overrides
+
+The `InferenceComplete` event carries the VLM's reason string (up to 400 characters). F-Prime's default `FW_LOG_STRING_MAX_SIZE` (200) truncates this in the GDS event log. The project overrides four framework constants via `config/FpConstants.fpp` (registered as a `CONFIGURATION_OVERRIDES` target in CMake):
+
+| Constant                      | Default | Override | Reason                                                                                           |
+| ----------------------------- | ------- | -------- | ------------------------------------------------------------------------------------------------ |
+| `FW_LOG_STRING_MAX_SIZE`      | 200     | 400      | Match the `InferenceComplete` reason field size                                                  |
+| `FW_COM_BUFFER_MAX_SIZE`      | 512     | 768      | Accommodate larger log buffers within CCSDS TmFramer limits (payload capacity 1016, overhead 13) |
+| `FW_LOG_TEXT_BUFFER_SIZE`     | 256     | 600      | Fit the fully formatted event text                                                               |
+| `FW_FIXED_LENGTH_STRING_SIZE` | 256     | 400      | Must be >= `FW_LOG_STRING_MAX_SIZE` per framework static_assert                                  |
+
+### 3.12 Configuration Constants
 
 | Constant              | Value | Description                                |
 | --------------------- | ----- | ------------------------------------------ |
@@ -139,7 +167,7 @@ The model auto-loads on MEASURE entry and auto-unloads on IDLE or SAFE entry. Du
 | `IMAGE_MAX_TOKENS`    | 1024  | Cap on vision encoder output tokens        |
 | `INFERENCE_TIMEOUT_S` | 120   | Abort inference after this many seconds    |
 
-### 3.11 Environment Variables
+### 3.13 Environment Variables
 
 | Variable            | Default                 | Description                                |
 | ------------------- | ----------------------- | ------------------------------------------ |
@@ -148,10 +176,14 @@ The model auto-loads on MEASURE entry and auto-unloads on IDLE or SAFE entry. Du
 
 ## 4. Change Log
 
-| Date       | Description                                                               |
-| ---------- | ------------------------------------------------------------------------- |
-| 2026-04-17 | Initial implementation: llama.cpp integration, ChatML prompt, JSON parser |
-| 2026-04-18 | Fixed chat template (Phi-3 to ChatML), token limit, auto-lifecycle        |
-| 2026-04-18 | Fixed model not unloading on DOWNLINK → SAFE transition                   |
-| 2026-04-20 | Added mode gating, FrameDroppedModelNotLoaded, LoadModelRejectedWrongMode |
-| 2026-04-24 | Removed health ping; added 120s self-watchdog with InferenceTimeout event |
+| Date       | Description                                                                               |
+| ---------- | ----------------------------------------------------------------------------------------- |
+| 2026-04-17 | Initial implementation: llama.cpp integration, ChatML prompt, JSON parser                 |
+| 2026-04-18 | Fixed chat template (Phi-3 to ChatML), token limit, auto-lifecycle                        |
+| 2026-04-18 | Fixed model not unloading on DOWNLINK → SAFE transition                                   |
+| 2026-04-20 | Added mode gating, FrameDroppedModelNotLoaded, LoadModelRejectedWrongMode                 |
+| 2026-04-24 | Removed health ping; added 120s self-watchdog with InferenceTimeout event                 |
+| 2026-05-01 | Improved JSON parser: extract category value by key instead of global search              |
+| 2026-05-02 | InferenceComplete event reason field reduced from string size 512 to 400                  |
+| 2026-05-03 | Fixed SDD cross-reference links for mkdocs; corrected model size to ~730 MB               |
+| 2026-05-03 | Added llama.cpp integration design, header vendoring, and FPP constant overrides sections |

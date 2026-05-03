@@ -1,3 +1,36 @@
+"""Fine-tuned model evaluation: 4-condition protocol on the QLoRA-adapted LFM2.5-VL-1.6B.
+
+Runs the same 4-condition ablation protocol as `ablation`, but loads the
+ORION QLoRA adapter on top of the base model via PEFT. Comparing outputs from
+the two scripts quantifies the effect of fine-tuning on each input channel.
+
+**Conditions:**
+
+| ID | Name | Image | Coordinates | Tests |
+|----|------|-------|-------------|-------|
+| A  | Full system | Real | Real | Nominal end-to-end accuracy |
+| B  | Vision only | Real | Stripped | Visual-feature reliance |
+| C  | Blind LLM | Gaussian noise | Real | Coordinate memorisation |
+| D  | Sensor conflict | Real | Spoofed | Vision-vs-telemetry trust |
+
+The key difference from `ablation` is the model loading path: this script
+loads the base LFM2.5-VL-1.6B, then grafts the QLoRA adapter from
+``orion_lora_weights/`` using ``peft.PeftModel``. It also handles
+``device_map`` explicitly (CUDA / MPS / CPU) to avoid an ``accelerate``
+crash with LFM2's config.
+
+Usage:
+
+```bash
+cd ground_segment/training
+uv run evaluate.py              # test split (default)
+uv run evaluate.py --file val   # validation split
+```
+
+See the [validation and ablation studies guide](../../../../guides/studies/) for
+how to interpret each condition and compare against the base-model results.
+"""
+
 import argparse
 import json
 import time
@@ -9,17 +42,29 @@ from PIL import Image
 from transformers import AutoProcessor, AutoModelForImageTextToText
 from peft import PeftModel
 
-# --- CONFIGURATION ---
 BASE_MODEL_ID = "LiquidAI/LFM2.5-VL-1.6B"
 LORA_WEIGHTS_PATH = "./orion_lora_weights"
 DATASET_DIR = "../data/orion_dataset"
-TEST_FILE = f"{DATASET_DIR}/test_dataset.jsonl"  # 60 IID held-out targets, never seen during training
-VAL_FILE = f"{DATASET_DIR}/val_dataset.jsonl"  # 60 IID validation targets, used during training
+TEST_FILE = f"{DATASET_DIR}/test_dataset.jsonl"
+VAL_FILE = f"{DATASET_DIR}/val_dataset.jsonl"
 random.seed(42)
 
 
 def extract_json(text):
-    """Strictly extracts JSON, failing over to ERROR if the model disobeys formatting."""
+    """Extract the first JSON object from VLM output, falling back to an ERROR dict.
+
+    Scans *text* for the outermost ``{…}`` pair and attempts ``json.loads``.
+    If the model produced blank output, hallucinated prose, or malformed JSON,
+    returns a sentinel ``{"category": "ERROR", "reason": "…"}`` so that the
+    caller always gets a dict with a ``category`` key.
+
+    Args:
+        text: Raw decoded string from the VLM's generation output.
+
+    Returns:
+        A dict with at least a ``category`` key (``HIGH``, ``MEDIUM``, ``LOW``,
+        or ``ERROR``).
+    """
     try:
         start = text.find("{")
         end = text.rfind("}") + 1
@@ -32,7 +77,24 @@ def extract_json(text):
 
 
 def run_inference(model, processor, image, prompt):
-    """Runs a single image+prompt through the VLM and returns parsed JSON + raw text."""
+    """Run a single image+prompt through the fine-tuned VLM and return parsed JSON plus raw text.
+
+    Applies the processor's chat template, runs greedy generation with a
+    200-token cap, then parses the output via `extract_json`. Unlike the
+    base-model `ablation` variant, this resolves the device from the model's
+    own parameters to handle CUDA, MPS, and CPU transparently.
+
+    Args:
+        model: Fine-tuned ``PeftModel`` wrapping the base LFM2.5-VL-1.6B.
+        processor: Matching ``AutoProcessor`` for tokenisation and image encoding.
+        image: PIL Image (512x512 RGB) to classify.
+        prompt: Text prompt including classification instructions and (optionally)
+            GPS coordinates.
+
+    Returns:
+        A ``(parsed, raw)`` tuple where *parsed* is the dict from `extract_json`
+        and *raw* is the full decoded generation string.
+    """
     messages = [{"role": "user", "content": f"<image>\n{prompt}"}]
     text_input = processor.apply_chat_template(
         messages, tokenize=False, add_generation_prompt=True
@@ -56,7 +118,17 @@ def run_inference(model, processor, image, prompt):
 
 
 def print_confusion_matrix(truths, preds, condition_name):
-    """Prints a per-class Recall and Precision breakdown, plus an aggregate total."""
+    """Print per-class recall/precision and aggregate accuracy for one condition.
+
+    Iterates over the three triage classes (HIGH, MEDIUM, LOW), computing
+    recall and precision for each, then prints overall accuracy.
+
+    Args:
+        truths: List of ground-truth category strings.
+        preds: List of predicted category strings (same length as *truths*).
+        condition_name: Human-readable label printed as the section header
+            (e.g. ``"Condition A: Full System (Vision + Coords)"``).
+    """
     print(f"\n--- {condition_name} ---")
     total_correct = 0
     total_samples = len(truths)
@@ -86,6 +158,14 @@ def print_confusion_matrix(truths, preds, condition_name):
 
 
 def main():
+    """Run the 4-condition evaluation protocol on the fine-tuned ORION model.
+
+    Loads the base LFM2.5-VL-1.6B, grafts the QLoRA adapter from
+    ``orion_lora_weights/``, then evaluates every sample in the chosen
+    split under all four conditions (A–D). Prints per-class recall/precision
+    tables for Conditions A–C and a vision-vs-coordinate trust breakdown
+    for Condition D.
+    """
     t_start = time.perf_counter()
 
     parser = argparse.ArgumentParser(
@@ -107,7 +187,7 @@ def main():
     # 1. Load Processor
     processor = AutoProcessor.from_pretrained(BASE_MODEL_ID, trust_remote_code=True)
 
-    # 2. Load Base Model — pick MPS (Apple Silicon) or CPU explicitly.
+    # 2. Load Base Model: pick MPS (Apple Silicon) or CPU explicitly.
     # device_map="auto" triggers accelerate's get_balanced_memory which crashes
     # when the model config stores no_split_module_classes as a set (unhashable).
     if torch.cuda.is_available():

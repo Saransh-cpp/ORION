@@ -13,7 +13,7 @@ module Orion {
   topology Orion {
 
     # ------------------------------------------------------------------
-    # Subtopology instances — standard F-Prime infrastructure
+    # Subtopology instances: standard F-Prime infrastructure
     # ------------------------------------------------------------------
 
     instance CdhCore.Subtopology
@@ -45,7 +45,7 @@ module Orion {
     instance bufferManager
 
     # ------------------------------------------------------------------
-    # Pattern graph specifiers — auto-wired framework services
+    # Pattern graph specifiers: auto-wired framework services
     # ------------------------------------------------------------------
 
     command connections instance CdhCore.cmdDisp
@@ -71,7 +71,7 @@ module Orion {
       # Linux timer drives the rate group driver at 1 Hz
       linuxTimer.CycleOut -> rateGroupDriverComp.CycleIn
 
-      # Rate group 1 (1 Hz) — telemetry, file downlink, comms, SimSat polling, auto-capture
+      # Rate group 1 (1 Hz): telemetry, file downlink, comms, SimSat polling, auto-capture
       rateGroupDriverComp.CycleOut[Ports_RateGroups.rateGroup1] -> rateGroup1Comp.CycleIn
       rateGroup1Comp.RateGroupMemberOut[0] -> CdhCore.Subtopology.tlmSendRun
       rateGroup1Comp.RateGroupMemberOut[1] -> FileHandling.Subtopology.fileDownlinkRun
@@ -84,11 +84,11 @@ module Orion {
       rateGroup1Comp.RateGroupMemberOut[8] -> groundCommsDriver.schedIn
       rateGroup1Comp.RateGroupMemberOut[9] -> eventAction.schedIn
 
-      # Rate group 2 (0.5 Hz) — sequencer
+      # Rate group 2 (0.5 Hz): sequencer
       rateGroupDriverComp.CycleOut[Ports_RateGroups.rateGroup2] -> rateGroup2Comp.CycleIn
       rateGroup2Comp.RateGroupMemberOut[0] -> cmdSeq.schedIn
 
-      # Rate group 3 (0.25 Hz) — health, buffer managers, data products
+      # Rate group 3 (0.25 Hz): health, buffer managers, data products
       rateGroupDriverComp.CycleOut[Ports_RateGroups.rateGroup3] -> rateGroup3Comp.CycleIn
       rateGroup3Comp.RateGroupMemberOut[0] -> CdhCore.Subtopology.healthRun
       rateGroup3Comp.RateGroupMemberOut[1] -> ComCcsds.Subtopology.bufferManagerSchedIn
