@@ -1,7 +1,10 @@
 """Batch-convert 512x512 RGB .raw images to .jpg.
 
 Usage:
-    python raw_to_jpg.py <directory>
+
+```bash
+uv run raw_to_jpg.py <directory>
+```
 
 Converts every .raw file in the given directory to a .jpg alongside it.
 Intended for MEDIUM images downloaded via FLUSH_MEDIUM_STORAGE, but works

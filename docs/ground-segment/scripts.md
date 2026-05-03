@@ -6,7 +6,7 @@ The ground segment includes utility scripts for post-processing downlinked image
 
 `ground_segment/raw_to_jpg.py` batch-converts 512x512 RGB `.raw` images to `.jpg`. Intended for MEDIUM images downloaded via `FLUSH_MEDIUM_STORAGE`, but works with any 512x512x3 `.raw` file (including HIGH frames).
 
-**Usage:**
+Usage:
 
 ```bash
 cd ground_segment
