@@ -1,15 +1,27 @@
-"""
-ORION QLoRA fine-tuning pipeline.
+"""ORION QLoRA fine-tuning pipeline - trains a LoRA adapter on the LFM2.5-VL-1.6B base model.
 
-REQUIRES an NVIDIA CUDA GPU with >=8 GB VRAM. The training stack uses bitsandbytes
-(4-bit NF4 quantization + paged_adamw_8bit optimizer), which is CUDA-only, this
-script will NOT run on Apple Silicon (MPS), AMD GPUs, or CPU-only machines.
+Loads the base Liquid VLM in 4-bit NF4 quantisation via bitsandbytes, injects
+LoRA adapters into the attention projections (q/k/v/o, rank 16, alpha 32), and
+trains for 3 epochs on the ORION dataset (240 train images with coordinate-dropout
+augmentation). The best checkpoint (by validation loss) is saved to
+``orion_lora_weights/``.
 
-Verified on: NVIDIA RTX 4070 Ti, 12 GB, CUDA 12.2, driver 535.x.
+**Requirements:** NVIDIA CUDA GPU with >= 8 GB VRAM. The training stack uses
+bitsandbytes (NF4 quantisation + ``paged_adamw_8bit``), which is CUDA-only -
+this script will **not** run on Apple Silicon (MPS), AMD GPUs, or CPU-only
+machines. Verified on NVIDIA RTX 4070 Ti, 12 GB, CUDA 12.2, driver 535.x.
 
-Set ORION_DATASET_ROOT before invoking. See:
-  docs/guides/environment-variables-gs.md
-  docs/ground-segment/budgets.md  (full compute requirements)
+Usage:
+
+```bash
+export ORION_DATASET_ROOT=/path/to/dir/containing/orion_dataset
+cd ground_segment/training
+uv run fine_tune.py
+```
+
+See the [training guide](../../../../guides/training/) for the full walkthrough
+and the [ground segment budgets](../../../../ground-segment/budgets/) for compute
+requirements.
 """
 
 import os
@@ -47,7 +59,16 @@ VAL_FILE = f"{DATASET_ROOT}/orion_dataset/val_dataset.jsonl"
 
 
 class OrionDataset(Dataset):
-    """Simply loads the raw JSON data. Processing happens in the Collator."""
+    """Thin wrapper around a JSONL split for use with the HuggingFace Trainer.
+
+    Loads the JSONL file via ``datasets.load_dataset`` at init time. Each item
+    is a raw conversation dict; image loading and tokenisation are deferred to
+    `VLMDataCollator` so that batching and padding happen in one place.
+
+    Args:
+        jsonl_file: Path to a ``train_dataset.jsonl`` or ``val_dataset.jsonl``
+            produced by `data_gen`.
+    """
 
     def __init__(self, jsonl_file):
         self.data = load_dataset("json", data_files={"train": jsonl_file})["train"]
@@ -60,13 +81,34 @@ class OrionDataset(Dataset):
 
 
 class VLMDataCollator:
-    """Processes an entire batch of images and texts perfectly for the VLM."""
+    """Batch collator that loads images and tokenises conversations for the VLM.
+
+    For each item in the batch, opens the corresponding 512x512 RGB tile from
+    disk, formats the user/assistant conversation via the processor's chat
+    template, and returns a single padded batch tensor with cloned
+    ``input_ids`` as ``labels`` for causal-LM loss.
+
+    Args:
+        processor: ``AutoProcessor`` instance for the LFM2.5-VL model.
+        dataset_root: Root directory containing the ``orion_dataset/`` tree
+            (image paths in the JSONL are relative to this).
+    """
 
     def __init__(self, processor, dataset_root):
         self.processor = processor
         self.dataset_root = dataset_root
 
     def __call__(self, batch):
+        """Collate a list of conversation dicts into a model-ready batch.
+
+        Args:
+            batch: List of dicts, each with ``image`` (relative path) and
+                ``conversations`` (list of user/assistant message dicts).
+
+        Returns:
+            A dict of padded tensors (``input_ids``, ``attention_mask``,
+            ``pixel_values``, ``labels``) suitable for ``Trainer.train()``.
+        """
         images = []
         texts = []
 
@@ -83,20 +125,26 @@ class VLMDataCollator:
             ]
             texts.append(self.processor.apply_chat_template(messages, tokenize=False))
 
-        # Process the entire batch at once!
         inputs = self.processor(
             images=images,
             text=texts,
             return_tensors="pt",
-            padding=True,  # Just dynamic padding. No truncation, let the image fit
+            padding=True,
         )
 
-        # Define labels for the loss calculation
         inputs["labels"] = inputs["input_ids"].clone()
         return inputs
 
 
 def main():
+    """Run the full QLoRA fine-tuning pipeline and save the adapter weights.
+
+    Steps: load the base LFM2.5-VL-1.6B in 4-bit NF4, prepare for k-bit
+    training, monkey-patch ``enable_input_require_grads`` to handle
+    non-tensor outputs safely, inject LoRA adapters (rank 16, alpha 32) into
+    q/k/v/o projections, train for 3 epochs with ``paged_adamw_8bit``, and
+    save the best checkpoint to ``orion_lora_weights/``.
+    """
     t_start = time.perf_counter()
     print(" Initializing ORION QLoRA Training Pipeline...")
 

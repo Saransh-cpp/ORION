@@ -39,6 +39,7 @@ plugins:
         flight-segment:
           src-dirs: flight_segment/orion/Orion
           full-doc: true
+          template-dir: docs/templates
           doxy-cfg:
             FILE_PATTERNS: "*.hpp *.cpp"
             RECURSIVE: YES

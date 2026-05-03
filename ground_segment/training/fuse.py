@@ -1,15 +1,41 @@
+"""LoRA weight fusion - merges the QLoRA adapter into the base model for GGUF export.
+
+Loads the base LFM2.5-VL-1.6B in FP16 on CPU, grafts the LoRA adapter from
+``orion_lora_weights/``, calls ``merge_and_unload()`` to permanently fuse the
+adapter matrices into the base weights, and saves the result as a standalone
+SafeTensors model in ``orion_merged/``. The merged output is the input to
+the GGUF quantisation step.
+
+This script runs entirely on CPU (~8 GB RAM) and does not require a GPU.
+
+Usage:
+
+```bash
+cd ground_segment/training
+uv run fuse.py
+```
+
+See the [quantisation guide](../../../../guides/quantization/) for the next
+step (converting the merged model to Q4_K_M GGUF for Pi deployment).
+"""
+
 import time
 import torch
 from transformers import AutoModelForImageTextToText, AutoProcessor
 from peft import PeftModel
 
-# --- CONFIGURATION ---
 BASE_MODEL_ID = "LiquidAI/LFM2.5-VL-1.6B"
 LORA_WEIGHTS_PATH = "./orion_lora_weights"
 OUTPUT_DIR = "./orion_merged"
 
 
 def main():
+    """Load base model + LoRA adapter, fuse weights, and save as standalone FP16 model.
+
+    The merged model and processor are saved to ``orion_merged/`` in
+    SafeTensors format, ready for GGUF conversion via ``llama.cpp``'s
+    ``convert_hf_to_gguf.py``.
+    """
     t_start = time.perf_counter()
     print(" INITIATING ORION PAYLOAD MERGE PROTOCOL...")
 
