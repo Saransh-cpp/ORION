@@ -159,7 +159,7 @@ The following section goes through the basic usage of this prototype. Refer to t
 
 ### Start SimSat and connect GDS
 
-[SimSat](https://github.com/DPhi-Space/SimSat) provides position data and Mapbox imagery. Start it on your ground station machine (default port 9005).
+[SimSat](https://github.com/DPhi-Space/SimSat) provides position data and Mapbox imagery. Set `MAPBOX_ACCESS_TOKEN` (see SimSat's documentation) and start it on your ground station machine / a stand-alone terminal (default port 9005 and 8000). Remember to actually start the simulation.
 
 Launch the ORION binary on the Pi:
 
@@ -193,11 +193,13 @@ Open `http://localhost:5000`: you should see `SimSatPositionUpdate` events arriv
 
 ### Enter MEASURE mode
 
+In `Commanding` tab of the GDS, send `Orion.eventAction.SET_ECLIPSE` command with `True` as the only argument:
+
 ```text
 SET_ECLIPSE true
 ```
 
-IDLE transitions to MEASURE (eclipse = imaging on battery). You will see:
+IDLE transitions to MEASURE (eclipse = imaging on battery). In the `Events` tab (or in `flight_segment/orion/logs/<latest-one>/event.log`), you will see:
 
 - `ModeChanged: IDLE -> MEASURE`
 - `ModelLoaded`: VLM loads into RAM (~15s on Pi)
@@ -205,7 +207,7 @@ IDLE transitions to MEASURE (eclipse = imaging on battery). You will see:
 
 ### Observe autonomous capture and inference
 
-Every 65 seconds, CameraManager fetches a Mapbox satellite tile, fuses GPS, and dispatches to the VLM. Watch for:
+Every 65 seconds, CameraManager fetches a Mapbox satellite tile, fuses GPS, and dispatches to the VLM. Watch for the following in `Events` tab (or in `flight_segment/orion/logs/<latest-one>/event.log`):
 
 - `ImageDispatched`: image captured at Lat/Lon
 - `InferenceComplete`: VLM result: `HIGH`, `MEDIUM`, or `LOW` with reasoning and inference time
@@ -218,21 +220,21 @@ After inference, TriageRouter routes the frame:
 
 ### Downlink during comm window
 
-When the satellite passes within 2000 km of the ground station (EPFL Ecublens), EventAction auto-transitions to DOWNLINK:
+When the satellite passes within 2000 km of the ground station (EPFL Ecublens) (you can speed up the simulation for this using SimSat), EventAction auto-transitions to DOWNLINK:
 
 - `CommWindowOpened (distance XXXX km)`
 - `ModeChanged: MEASURE -> DOWNLINK`
 - GroundCommsDriver flushes queued HIGH frames
 - `FrameDownlinked` for each transmitted frame
 
-Start the ground receiver (in another terminal) to accept frames:
+Start the ground receiver (in another terminal) to accept frames (can be started earlier):
 
 ```bash
 # in the ground segment venv
-uv run ground_segment/receiver.py
+uv run receiver.py
 ```
 
-To bulk-download MEDIUM images during the comm window:
+To bulk-download MEDIUM images during the comm window, send the following command from the `Commanding` tab of GDS:
 
 ```text
 FLUSH_MEDIUM_STORAGE
@@ -241,6 +243,8 @@ FLUSH_MEDIUM_STORAGE
 Files are queued to F-Prime FileDownlink at 1 file/sec. Rejected if not in DOWNLINK.
 
 ### Return to IDLE
+
+Send the following command from the `Commanding` tab of GDS:
 
 ```text
 SET_ECLIPSE false

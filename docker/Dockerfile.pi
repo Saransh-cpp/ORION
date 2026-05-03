@@ -8,7 +8,7 @@ RUN cd flight_segment/orion && \
     fprime-util build --all -j$(nproc)
 
 # Minimal output stage: binary + runtime deps
-FROM arm64v8/ubuntu:22.04 AS output
+FROM ubuntu:22.04 AS output
 
 COPY --from=builder /orion/flight_segment/orion/build-fprime-automatic-native/bin/Linux/Orion /output/Orion
 

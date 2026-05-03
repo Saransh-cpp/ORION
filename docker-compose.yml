@@ -3,12 +3,14 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile.base
+    platform: linux/arm64
     image: orion-base
 
   pi-build:
     build:
       context: .
       dockerfile: docker/Dockerfile.pi
+    platform: linux/arm64
     depends_on:
       base:
         condition: service_completed_successfully

@@ -6,7 +6,6 @@ This guide covers building ORION from source on a development machine (macOS or 
 
 | Dependency   | Minimum Version | Purpose                                          |
 | ------------ | --------------- | ------------------------------------------------ |
-| Python       | 3.10+           | F-Prime tooling and ground segment scripts       |
 | CMake        | 3.20+           | Building llama.cpp and the F-Prime project       |
 | uv           | latest          | Python environment and dependency management     |
 | libcurl      | any             | SimSat HTTP client (NavTelemetry, CameraManager) |
@@ -87,6 +86,13 @@ The compiled binary is located at:
 ./build-artifacts/Linux/Orion/bin/Orion    # Linux
 ```
 
+Check if the executable was indeed produced in the right location:
+
+```bash
+# macOS
+file ./build-artifacts/Darwin/Orion/bin/Orion
+```
+
 ## Install Ground Segment Dependencies (Optional)
 
 If you plan to run the training pipeline, data generation scripts, or evaluation studies, install the ground segment Python dependencies:
@@ -103,20 +109,6 @@ uv sync
 ```
 
 This installs PyTorch, Transformers, PEFT, and other ML dependencies defined in `ground_segment/pyproject.toml`.
-
-## Verify the Build
-
-Check if the executable was indeed produced in the right location:
-
-```bash
-deactivate  # if GS environment is active
-cd ../flight_segment/orion  # if in ground_segment
-```
-
-```bash
-# macOS
-file ./build-artifacts/Darwin/Orion/bin/Orion
-```
 
 ## Next Steps
 

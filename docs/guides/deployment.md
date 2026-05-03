@@ -15,6 +15,16 @@ The Pi connects to the GDS over TCP port 50000 and to the ground receiver over T
 
 ORION uses Docker with QEMU emulation to cross-compile an ARM64 binary from any host architecture.
 
+### Prerequisites (x86_64 hosts only)
+
+Docker Desktop (macOS/Windows) includes QEMU ARM64 emulation out of the box. On bare Docker Engine (Linux x86_64), register the ARM64 binfmt handler once:
+
+```bash
+docker run --privileged --rm tonistiigi/binfmt --install arm64
+```
+
+This persists across reboots. Native ARM64 hosts (Apple Silicon, Pi, ARM CI runners) need no setup.
+
 ### Step 1: Build the Docker Images
 
 From the root folder, run:
@@ -82,7 +92,9 @@ On your development machine, start the F-Prime Ground Data System in headless mo
 
 ```bash
 cd flight_segment/orion
-. .venv/bin/activate  # created during installation
+uv venv --python 314  # if not created (if did not follow installation)
+source .venv/bin/activate
+uv pip install -r lib/fprime/requirements.txt
 fprime-gds -n --ip-address 0.0.0.0 --ip-port 50000
 ```
 
@@ -97,8 +109,10 @@ Open `http://localhost:5000` in a browser to access the GDS web interface for se
 On the development machine (in a new terminal), start the ground receiver to accept downlinked image frames:
 
 ```bash
-cd ground_segment
-. .venv/bin/activate  # created during installation
+cd ground_segment  # from repo root
+uv venv --python 314  # if not created (if did not follow installation)
+source .venv/bin/activate
+uv sync
 uv run receiver.py
 ```
 
