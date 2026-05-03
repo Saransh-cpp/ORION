@@ -18,7 +18,7 @@ ORION solves the orbital bandwidth bottleneck: roughly 71% of Earth's surface is
 
 ## Motivation
 
-This project was born from a real problem flagged on a real mission. Being the Flight Software subsystems lead on [EPFL Spacecraft Team's](https://www.epflspacecraftteam.ch) [CHESS](https://www.epflspacecraftteam.ch/project#chess) mission (part of [ESA's Fly Your Satellite! Design Booster programme](https://www.esa.int/Education/Educational_Satellites/About_Design_Booster)), I received a Review Item Discrepancy (RID) during our Final Design Review (FDR) from an ESA expert:
+This project was born from a real problem flagged on a real mission. Being the Flight Software subsystems lead on [EPFL Spacecraft Team's](https://www.epflspacecraftteam.ch) [CHESS](https://www.epflspacecraftteam.ch/project#chess) mission (part of [ESA's Fly Your Satellite! Design Booster programme](https://www.esa.int/Education/Educational_Satellites/About_Design_Booster)), I received a Review Item Discrepancy during our Final Design Review from an ESA expert:
 
 > _"From experience I recommend thinking about pre-loading software that allows you to check that a picture is worth downloading before you do it."_
 
@@ -32,7 +32,7 @@ One of my other main aim with this project was to show that Liquid's LFM2.5-VL m
 
 ## Build and deployment
 
-ORION builds natively on macOS/Linux for development, and cross-compiles for Raspberry Pi 5 via Docker. The flight segment uses CMake + F-Prime's `fprime-util` toolchain, and the ground segment uses `uv` for Python dependency management.
+ORION builds natively on macOS/Linux for development, and cross-compiles for Raspberry Pi 5 via Docker. The flight segment uses CMake + F-Prime's `fprime-util` toolchain (via `uv`), and the ground segment uses only `uv` for Python dependency management.
 
 **Flight segment:**
 

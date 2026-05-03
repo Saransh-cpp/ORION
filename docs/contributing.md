@@ -119,7 +119,7 @@ Install Doxygen for C++ API generation:
 ### Install Python Dependencies
 
 ```bash
-uv venv --python 312  # 312 does not work on OSX
+uv venv --python 312  # one dependency is only available on 312
 . .venv/bin/activate
 uv pip install -r docs/requirements.txt
 ```

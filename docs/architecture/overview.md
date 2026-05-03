@@ -51,8 +51,8 @@ The flight segment is an F-Prime deployment (`Orion`) composed of six custom act
 | **VlmInferenceEngine**  | On-board AI co-processor             | Active  | 10       | Runs the LFM2.5-VL-1.6B model via llama.cpp. 120-second per-frame timeout with KV cache reset on abort.                                        |
 | **TriageRouter**        | On-board data handling unit          | Active  | 25       | Executes triage doctrine: HIGH to downlink, MEDIUM to storage, LOW discarded. Drops all frames in SAFE mode.                                   |
 | **GroundCommsDriver**   | X-band radio transmitter             | Active  | 20       | Manages the simulated X-band link. Transmits HIGH frames over TCP. Queues to disk outside comm window.                                         |
-| **BufferManager**       | On-board mass memory                 | Passive | :        | Static pool of 20 x 786,432-byte (512x512 RGB) image buffers.                                                                                  |
-| **comDriver** (F-Prime) | UHF radio transceiver                | Passive | :        | F-Prime TcpClient on port 50000. Always-on command/telemetry link to GDS.                                                                      |
+| **BufferManager**       | On-board mass memory                 | Passive | -        | Static pool of 20 x 786,432-byte (512x512 RGB) image buffers.                                                                                  |
+| **comDriver** (F-Prime) | UHF radio transceiver                | Passive | -        | F-Prime TcpClient on port 50000. Always-on command/telemetry link to GDS.                                                                      |
 
 ### Rate Groups
 
