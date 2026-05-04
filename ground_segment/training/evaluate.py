@@ -162,8 +162,8 @@ def main():
 
     Loads the base LFM2.5-VL-1.6B, grafts the QLoRA adapter from
     ``orion_lora_weights/``, then evaluates every sample in the chosen
-    split under all four conditions (A–D). Prints per-class recall/precision
-    tables for Conditions A–C and a vision-vs-coordinate trust breakdown
+    split under all four conditions (A-D). Prints per-class recall/precision
+    tables for Conditions A-C and a vision-vs-coordinate trust breakdown
     for Condition D.
     """
     t_start = time.perf_counter()

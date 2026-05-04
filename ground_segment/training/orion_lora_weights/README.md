@@ -19,7 +19,7 @@ language:
 
 QLoRA fine-tune of [LiquidAI/LFM2.5-VL-1.6B](https://huggingface.co/LiquidAI/LFM2.5-VL-1.6B) for autonomous satellite image triage. Classifies 512×512 RGB frames captured at LEO as **HIGH** (strategic anomaly, downlink immediately), **MEDIUM** (human infrastructure, store for bulk transfer), or **LOW** (featureless terrain, discard).
 
-Developed for [ORION](https://github.com/Saransh-cpp/ORION), an autonomous LEO satellite triage system running on a Raspberry Pi 5 via [NASA F-Prime](https://github.com/nasa/fprime). The Q4_K_M GGUF quantization of this adapter is deployed on-board and runs inference at 50–72 s/frame entirely on CPU.
+Developed for [ORION](https://github.com/Saransh-cpp/ORION), an autonomous LEO satellite triage system running on a Raspberry Pi 5 via [NASA F-Prime](https://github.com/nasa/fprime). The Q4_K_M GGUF quantization of this adapter is deployed on-board and runs inference at 50-70 s/frame entirely on CPU.
 
 ## Uses
 
@@ -217,7 +217,7 @@ Fine-tuning produces measurable improvements on Conditions B, C, and D, but Cond
 This is a prototype demonstrating that on-board VLM inference on a Pi 5 is technically viable. The approach will improve significantly with:
 
 - **Narrower taxonomy**: splitting HIGH into mission-specific sub-classes (e.g., ports only, or energy infrastructure only) and training a specialist adapter
-- **Larger corpus**: 240 training images is a minimal dataset for a 3-class VLM task; 1,000–5,000 images per class is a more realistic target for robust generalization
+- **Larger corpus**: 240 training images is a minimal dataset for a 3-class VLM task; 1,000-5,000 images per class is a more realistic target for robust generalization
 - **Higher-resolution tiles**: 512×512 Mapbox tiles lose fine-grained texture that distinguishes, e.g., a cargo terminal from a large parking lot at altitude
 
 ## Deployment
@@ -225,9 +225,9 @@ This is a prototype demonstrating that on-board VLM inference on a Pi 5 is techn
 The adapter is converted to Q4_K_M GGUF via `llama-quantize` and runs on the Pi 5 via [llama.cpp](https://github.com/ggerganov/llama.cpp)'s multimodal (`mtmd`) API:
 
 ```
-Vision encoding (mtmd):      ~10–15 s
-Token generation (200 max):  ~40–55 s
-Total per frame:             ~50–72 s  (CPU only, Cortex-A76)
+Vision encoding (mtmd):      ~10-15 s
+Token generation (200 max):  ~40-55 s
+Total per frame:             ~50-70 s  (CPU only, Cortex-A76)
 ```
 
 See the [quantization guide](https://saransh-cpp.github.io/ORION/guides/quantization/) and [deployment guide](https://saransh-cpp.github.io/ORION/guides/deployment/) for full instructions.
@@ -237,5 +237,5 @@ See the [quantization guide](https://saransh-cpp.github.io/ORION/guides/quantiza
 - Trained on Mapbox RGB tiles only; hence, no multispectral, SAR, or thermal data.
 - 512×512 pixel resolution matches the Pi 5 inference pipeline; different resolutions require re-cropping.
 - Three-class taxonomy (HIGH / MEDIUM / LOW) is fixed at training time. Mission-specific priorities require fine-tuning on a new labeled dataset.
-- Inference at 50–72 s/frame is too slow for real-time video or burst imaging modes.
+- Inference at 50-70 s/frame is too slow for real-time video or burst imaging modes.
 - Coordinate dropout improves GPS robustness but does not eliminate coord-biased errors on hard edge cases.

@@ -109,15 +109,16 @@ The model auto-loads on MEASURE entry and auto-unloads on IDLE or SAFE entry. Du
 
 ### 3.8 Events
 
-| Event                        | Severity    | Description                                                     |
-| ---------------------------- | ----------- | --------------------------------------------------------------- |
-| `ModelLoaded`                | ACTIVITY_HI | Model and vision encoder loaded into RAM                        |
-| `ModelUnloaded`              | ACTIVITY_HI | Model freed from RAM                                            |
-| `ModelLoadFailed`            | WARNING_HI  | GGUF file or mmproj failed to load (with path)                  |
-| `InferenceFailed`            | WARNING_HI  | Tokenization, eval, or generation failed for a frame            |
-| `FrameDroppedModelNotLoaded` | WARNING_LO  | Frame arrived but model not loaded - buffer returned            |
-| `LoadModelRejectedWrongMode` | WARNING_LO  | LOAD_MODEL rejected - not in MEASURE or DOWNLINK                |
-| `InferenceComplete`          | ACTIVITY_HI | Successful classification with category, reason, and time in ms |
+| Event                        | Severity    | Description                                                                 |
+| ---------------------------- | ----------- | --------------------------------------------------------------------------- |
+| `ModelLoaded`                | ACTIVITY_HI | Model and vision encoder loaded into RAM                                    |
+| `ModelUnloaded`              | ACTIVITY_HI | Model freed from RAM                                                        |
+| `ModelLoadFailed`            | WARNING_HI  | GGUF file or mmproj failed to load (with path)                              |
+| `InferenceFailed`            | WARNING_HI  | Tokenization, eval, or generation failed for a frame                        |
+| `FrameDroppedModelNotLoaded` | WARNING_LO  | Frame arrived but model not loaded - buffer returned                        |
+| `LoadModelRejectedWrongMode` | WARNING_LO  | LOAD_MODEL rejected - not in MEASURE or DOWNLINK                            |
+| `InferenceTimeout`           | WARNING_HI  | Inference exceeded `INFERENCE_TIMEOUT_S`; frame dropped, model stays loaded |
+| `InferenceComplete`          | ACTIVITY_HI | Successful classification with category, reason, and time in ms             |
 
 ### 3.9 Telemetry
 

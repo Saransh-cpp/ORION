@@ -92,9 +92,9 @@ Each class includes deliberately hard sub-types (e.g., coastlines that mimic art
 
 | Metric                                    | Value                                                        |
 | ----------------------------------------- | ------------------------------------------------------------ |
-| Vision encoding (mtmd)                    | ~10–15 s                                                     |
-| Token generation (200 tokens max, greedy) | ~40–55 s                                                     |
-| **Total per frame**                       | **50–72 s**                                                  |
+| Vision encoding (mtmd)                    | ~10-15 s                                                     |
+| Token generation (200 tokens max, greedy) | ~40-55 s                                                     |
+| **Total per frame**                       | **50-70 s**                                                  |
 | Self-watchdog ceiling                     | 120 s (frame dropped, model stays loaded)                    |
 | Frames captured per 35-min eclipse        | ~32 (65 s capture interval)                                  |
 | Frames inferred per eclipse               | ~32 (all captured; 5-frame queue absorbs inference overflow) |
@@ -127,7 +127,7 @@ The table below compares the base LFM2.5-VL-1.6B model against the ORION fine-tu
 
 **Condition D: Sensor conflict (real image, spoofed GPS coords):** coordinate-trust failure drops from 20.0% to 16.7% after fine-tuning. Visual reasoning improves on Conditions B (+5 pp) and C (+8.3 pp), confirming that the adapter does sharpen classification when GPS is absent or unreliable.
 
-Condition A (nominal, vision + GPS) shows no gain on this dataset. The HIGH category spans five visually heterogeneous sub-types, mega-ports, airports, energy infrastructure, mines, and military facilities, across only 240 training images. That is not enough for the visual encoder to learn a reliable shared boundary. Fine-tuning on a narrower HIGH sub-type with a larger image corpus (1k–5k images per class) would close this gap significantly.
+Condition A (nominal, vision + GPS) shows no gain on this dataset. The HIGH category spans five visually heterogeneous sub-types, mega-ports, airports, energy infrastructure, mines, and military facilities, across only 240 training images. That is not enough for the visual encoder to learn a reliable shared boundary. Fine-tuning on a narrower HIGH sub-type with a larger image corpus (1k-5k images per class) would close this gap significantly.
 
 ORION demonstrates that on-board VLM inference on a Pi 5 is technically viable and that fine-tuning measurably improves robustness.
 
@@ -139,10 +139,10 @@ Expected triage distribution on a random LEO track (based on target morphology d
 
 | Verdict             | Expected ratio | Data per orbit           | Action                         |
 | ------------------- | -------------- | ------------------------ | ------------------------------ |
-| LOW                 | ~60–70%        | 0 bytes (discarded)      | Buffer recycled immediately    |
-| MEDIUM              | ~20–30%        | ~1.5–2.3 MB (stored)     | Written to microSD             |
-| HIGH                | ~5–10%         | ~384–768 KB (downlinked) | Transmitted during comm window |
-| **Bandwidth saved** | **~90–95%**    |                          | vs. downlinking every frame    |
+| LOW                 | ~60-70%        | 0 bytes (discarded)      | Buffer recycled immediately    |
+| MEDIUM              | ~20-30%        | ~1.5-2.3 MB (stored)     | Written to microSD             |
+| HIGH                | ~5-10%         | ~384-768 KB (downlinked) | Transmitted during comm window |
+| **Bandwidth saved** | **~90-95%**    |                          | vs. downlinking every frame    |
 
 > **TODO:** replace with actual triage distribution (HIGH / MEDIUM / LOW counts and %) from end-to-end Pi run
 
@@ -311,7 +311,7 @@ ORION uses `clang-format` for C++, `ruff` for Python, and `pre-commit` hooks for
 | Criterion (Weight)                          | How ORION addresses it                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Use of Satellite Imagery (10%)**          | DPhi/SimSat satellite tiles are the core data source, applied to autonomous orbital triage, which is a real operational need for Earth observation missions.                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| **Innovation & Problem-Solution Fit (35%)** | Satellite imagery + LFM2-VL together enable something neither can do alone: the VLM classifies _and explains_ each frame on-board, giving operators actionable reasoning alongside the triage verdict, while eliminating 90–95% of downlink volume. The path to product is concrete as any EO satellite with a standard camera payload can deploy this by fine-tuning on mission-specific targets.                                                                                                                                                                                                                           |
+| **Innovation & Problem-Solution Fit (35%)** | Satellite imagery + LFM2-VL together enable something neither can do alone: the VLM classifies _and explains_ each frame on-board, giving operators actionable reasoning alongside the triage verdict, while eliminating 90-95% of downlink volume. The path to product is concrete as any EO satellite with a standard camera payload can deploy this by fine-tuning on mission-specific targets.                                                                                                                                                                                                                           |
 | **Technical Implementation (35%)**          | LFM2-VL is fine-tuned via QLoRA on 480 domain-specific samples with coordinate dropout augmentation, quantized to Q4_K_M GGUF, and evaluated under a 4-condition ablation protocol. Fine-tuning yields measurable gains: Condition B +5 pp, C +8.3 pp, D coord-trust failure −3.3 pp. [Weights, training code, and evaluation scripts](https://saransh-cpp.github.io/ORION/ground-segment/training/) are all in the repo. The model is integrated into real flight software (6 F-Prime C++ components, FPP state machine, llama.cpp) that can be deployed on a satellite after rigorous testing and mission-specific tweaks. |
 | **Demo & Communication (20%)**              | Full [documentation site](https://saransh-cpp.github.io/ORION/) with architecture diagrams, data flow, model card, mission budgets, and step-by-step guides.                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 

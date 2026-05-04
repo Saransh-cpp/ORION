@@ -35,7 +35,7 @@ orion_lora_weights/
     adapter_config.json
     adapter_model.safetensors
     tokenizer_config.json
-    preprocessor_config.json
+    processor_config.json
     ...
 ```
 
@@ -54,7 +54,7 @@ orion_merged/
     config.json
     model.safetensors
     tokenizer_config.json
-    preprocessor_config.json
+    processor_config.json
     ...
 ```
 

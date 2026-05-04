@@ -151,8 +151,8 @@ def main():
     """Run the 4-condition ablation protocol on the base (untuned) LFM2.5-VL-1.6B.
 
     Loads the base model from Hugging Face, iterates over every sample in the
-    chosen split, and evaluates each sample under all four conditions (A–D).
-    Prints per-class recall/precision tables for Conditions A–C and a
+    chosen split, and evaluates each sample under all four conditions (A-D).
+    Prints per-class recall/precision tables for Conditions A-C and a
     vision-vs-coordinate trust breakdown for Condition D.
     """
     t_start = time.perf_counter()
