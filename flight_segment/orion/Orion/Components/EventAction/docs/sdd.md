@@ -136,7 +136,11 @@ The `GOTO_*` commands are ground operator overrides for forcing a mode entry tha
 | -------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | `ORION_MEDIUM_STORAGE_DIR` | `./media/sd/medium/` | Path to MEDIUM image storage. Must keep total path (dir + filename) under 100 chars for FileDownlink compatibility. |
 
-## 4. Change Log
+## 4. Known Limitations
+
+**MEDIUM `.sent` files can be lost on comm window exit.** When `FLUSH_MEDIUM_STORAGE` is in progress and the satellite leaves the comm window, the flush aborts. Files already renamed to `.sent` and queued into FileDownlink may not have been transmitted yet. In ORION's simulation this is not an issue as the F-Prime GDS link (TCP :50000) stays up over WiFi/LAN regardless of the simulated comm window, so FileDownlink finishes delivering them. In a real mission with an actual UHF radio, the link would drop and those `.sent` files would be orphaned on disk until the next `FLUSH_MEDIUM_STORAGE` deletes them, losing that data. A production system would need a delivery-acknowledgment protocol or a separate ground command to purge `.sent` files only after confirmed receipt.
+
+## 5. Change Log
 
 | Date       | Description                                                                                         |
 | ---------- | --------------------------------------------------------------------------------------------------- |
