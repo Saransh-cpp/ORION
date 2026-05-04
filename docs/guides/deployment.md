@@ -49,7 +49,7 @@ This copies the resulting binary to `build-output/Orion` on the host via a bind 
 
 ### Step 3: Transfer to the Pi
 
-Download the [pre-trained GGUF model files](https://drive.google.com/drive/folders/1h6WGNeNzYHdfisELlJodDCKlkREkIzCN?usp=share_link) (`orion-q4_k_m.gguf` and `orion-mmproj-f16.gguf`), then copy the binary and models to the Pi:
+Download the [pre-trained GGUF model files](https://huggingface.co/saransh-cpp/orion-qlora-lfm2.5-vl-1.6b) (`orion-q4_k_m.gguf` and `orion-mmproj-f16.gguf`), then copy the binary and models to the Pi:
 
 ```bash
 scp build-output/Orion user@<pi-ip>:/home/<user>/ORION/

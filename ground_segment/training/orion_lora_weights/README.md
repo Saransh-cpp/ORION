@@ -105,7 +105,7 @@ The adapter was trained on the **ORION dataset**, 360 curated target locations o
 | **Q4_K_M GGUF**          | **`orion-q4_k_m.gguf`** | **~730 MB** | **Deployed to Pi 5**                 |
 | Vision projector         | `orion-mmproj-f16.gguf` | ~854 MB     | FP16, deployed alongside Q4 model    |
 
-The Q4_K_M GGUF + mmproj pair is the deployed artifact. Pre-built files are available at the [Google Drive release](https://drive.google.com/drive/folders/1h6WGNeNzYHdfisELlJodDCKlkREkIzCN?usp=share_link).
+The Q4_K_M GGUF + mmproj pair is the deployed artifact. Pre-built files are available on [Hugging Face](https://huggingface.co/saransh-cpp/orion-qlora-lfm2.5-vl-1.6b).
 
 ## Evaluation
 

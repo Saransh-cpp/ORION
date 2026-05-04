@@ -154,7 +154,7 @@ The following section goes through the basic usage of this prototype. Refer to t
 ### Prerequisites
 
 - A compiled ORION binary (see [Installation](https://saransh-cpp.github.io/ORION/guides/installation/) and [Deployment](https://saransh-cpp.github.io/ORION/guides/deployment/))
-- The GGUF model files: [`orion-q4_k_m.gguf` and `orion-mmproj-f16.gguf`](https://drive.google.com/drive/folders/1h6WGNeNzYHdfisELlJodDCKlkREkIzCN?usp=share_link)
+- The GGUF model files: [`orion-q4_k_m.gguf` and `orion-mmproj-f16.gguf`](https://huggingface.co/saransh-cpp/orion-qlora-lfm2.5-vl-1.6b)
 - [SimSat](https://github.com/DPhi-Space/SimSat) running and accessible (default `http://localhost:9005`)
 - [Environment variables](https://saransh-cpp.github.io/ORION/guides/environment-variables/) configured
 
