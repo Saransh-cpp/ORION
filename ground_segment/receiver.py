@@ -5,7 +5,7 @@ flight segment's GroundCommsDriver. Each connection carries one frame:
 an 8-byte header (4-byte ``ORIO`` magic + 4-byte big-endian payload length)
 followed by raw pixel data (typically 786,432 bytes for a 512x512 RGB image).
 
-Received frames are saved sequentially to the ``downlinked_XBand/`` directory
+Received frames are saved sequentially to the ``./data/downlinked_XBand/`` directory
 as both ``orion_frame_XXXX.raw`` (original bytes) and ``orion_frame_XXXX.jpg``
 (viewable image).
 
@@ -29,7 +29,7 @@ from PIL import Image
 
 LISTEN_IP = "0.0.0.0"
 LISTEN_PORT = 50050
-OUTPUT_DIR = "./downlinked_XBand"
+OUTPUT_DIR = "./data/downlinked_XBand"
 IMAGE_W, IMAGE_H = 512, 512
 EXPECTED_SIZE = IMAGE_W * IMAGE_H * 3
 

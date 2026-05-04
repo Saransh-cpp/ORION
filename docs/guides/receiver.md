@@ -19,7 +19,7 @@ It runs indefinitely, accepting one connection at a time in a blocking loop. Pre
 
 ## Expected Output
 
-Received frames are saved to the `./downlinked_XBand/` directory (created automatically). Each 512x512 RGB frame is saved as both the original `.raw` bytes and a viewable `.jpg`:
+Received frames are saved to the `ground_segment/data/downlinked_XBand/` directory (created automatically). Each 512x512 RGB frame is saved as both the original `.raw` bytes and a viewable `.jpg`:
 
 ```
 downlinked_XBand/
@@ -35,7 +35,7 @@ The receiver logs each successful frame:
 ```
 [+] Connection established with satellite at 192.168.1.100
 [*] Valid ORIO frame detected. Payload size: 786432 bytes.
-[+] Saved ./downlinked_XBand/orion_frame_0000.raw + ./downlinked_XBand/orion_frame_0000.jpg (512x512 RGB)
+[+] Saved ./data/downlinked_XBand/orion_frame_0000.raw + ./data/downlinked_XBand/orion_frame_0000.jpg (512x512 RGB)
 ```
 
 ## Testing Without a Satellite

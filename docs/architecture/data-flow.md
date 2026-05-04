@@ -178,7 +178,7 @@ During a comm window, the driver reads queued `.raw` files from the disk queue d
 1. Accept an incoming TCP connection.
 2. Read the 8-byte header and validate the `ORIO` magic word.
 3. Read the payload (length specified in the header).
-4. Save the frame to `./downlinked_XBand/orion_frame_XXXX.raw` and convert it to a viewable `.jpg`.
+4. Save the frame to `ground_segment/data/downlinked_XBand/orion_frame_XXXX.raw` and convert it to a viewable `.jpg`.
 
 ## MEDIUM Bulk Download
 
@@ -191,8 +191,8 @@ The workflow:
 3. Files are paced at one per tick (1 Hz) to stay within FileDownlink's 10-entry queue limit.
 4. If the queue is full, the file is renamed back for retry on the next tick.
 5. If the satellite exits DOWNLINK mode mid-flush, the flush is aborted and a `MediumStorageFlushed` event reports the count of files successfully queued.
-6. On the GDS side, reassembled files arrive in the directory set via `--file-storage-directory` when launching GDS (e.g. `./downlinked_UHF/`).
-7. Convert the downloaded `.raw` files to viewable JPGs: `python ground_segment/raw_to_jpg.py ./downlinked_UHF`
+6. On the GDS side, reassembled files arrive in the directory set via `--file-storage-directory` when launching GDS (usually `../../ground_segment/data/downlinked_UHF/`).
+7. Convert the downloaded `.raw` files to viewable JPGs: `python ground_segment/raw_to_jpg.py ./data/downlinked_UHF/fprime-downlink`
 
 ## Buffer Lifecycle
 

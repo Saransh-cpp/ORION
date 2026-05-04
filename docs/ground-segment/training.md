@@ -1,6 +1,6 @@
 # Training Pipeline
 
-The ORION training pipeline fine-tunes the LiquidAI LFM2.5-VL-1.6B vision-language model for orbital image triage classification. The pipeline produces a quantized GGUF model suitable for CPU-only inference on the Raspberry Pi 5.
+The ORION training pipeline fine-tunes the LiquidAI LFM2.5-VL-1.6B vision-language model for orbital image triage classification. The pipeline produces a quantized GGUF model suitable for CPU-only inference on the Raspberry Pi 5. The fine-tuned LoRA adapter weights are available on [Hugging Face](https://huggingface.co/saransh-cpp/orion-qlora-lfm2.5-vl-1.6b).
 
 ## Pipeline Overview
 

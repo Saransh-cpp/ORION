@@ -4,6 +4,7 @@
 
 [![Flight Segment CI](https://github.com/Saransh-cpp/ORION/actions/workflows/fs_ci.yml/badge.svg)](https://github.com/Saransh-cpp/ORION/actions/workflows/fs_ci.yml)
 [![Documentation](https://github.com/Saransh-cpp/ORION/actions/workflows/docs.yml/badge.svg)](https://saransh-cpp.github.io/ORION/)
+[![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-model-28A745?labelColor=24292E)](https://huggingface.co/saransh-cpp/orion-qlora-lfm2.5-vl-1.6b)
 
 Orbital Real-time Inference and Observation Network
 
@@ -175,7 +176,7 @@ If running the binary on Pi, connect GDS from the ground station (your local mac
 ```bash
 # from flight_segment/orion
 # make sure the environment created during installation is active
-fprime-gds -n --ip-address 0.0.0.0 --ip-port 50000 --file-storage-directory ./downlinked_UHF
+fprime-gds -n --ip-address 0.0.0.0 --ip-port 50000 --file-storage-directory ../../ground_segment/data/downlinked_UHF
 ```
 
 If running the whole setup on your local machine, launching the GDS will automatically run the FS binary in background (and wire all the addresses automatically):
@@ -186,7 +187,7 @@ If running the whole setup on your local machine, launching the GDS will automat
 ```bash
 # from flight_segment/orion
 # make sure the environment created during installation is active
-fprime-gds --file-storage-directory ./downlinked_UHF
+fprime-gds --file-storage-directory ../../ground_segment/data/downlinked_UHF
 ```
 
 Open `http://localhost:5000`: you should see `SimSatPositionUpdate` events arriving every 5 seconds. The satellite starts in **IDLE** mode (charging).
@@ -237,7 +238,7 @@ cd ground_segment
 uv run receiver.py
 ```
 
-**HIGH frames** are downlinked automatically via the ORIO protocol (TCP :50050). Each file is **deleted** after successful transmission. The receiver saves them to `ground_segment/downlinked_XBand/` as `orion_frame_XXXX.raw` + `orion_frame_XXXX.jpg`. On a single-machine setup, both directories are on the same machine.
+**HIGH frames** are downlinked automatically via the ORIO protocol (TCP :50050). Each file is **deleted** after successful transmission. The receiver saves them to `ground_segment/data/downlinked_XBand/` as `orion_frame_XXXX.raw` + `orion_frame_XXXX.jpg`. On a single-machine setup, both directories are on the same machine.
 
 **MEDIUM frames** can be bulk-downloaded during the comm window by sending the following command from the `Commanding` tab of GDS:
 
@@ -245,7 +246,7 @@ uv run receiver.py
 FLUSH_MEDIUM_STORAGE
 ```
 
-This queues one file per second to F-Prime's FileDownlink service (TCP :50000). Each file is **renamed** to `.raw.sent` before transmission to avoid re-queuing. Files arrive in `./downlinked_UHF/` (the directory set via `--file-storage-directory` when launching GDS). The command is rejected if the spacecraft is not in DOWNLINK mode. Convert the downloaded `.raw` files to viewable JPGs:
+This queues one file per second to F-Prime's FileDownlink service (TCP :50000). Each file is **renamed** to `.raw.sent` before transmission to avoid re-queuing. Files arrive in `ground_segment/data/downlinked_UHF/` (the directory set via `--file-storage-directory` when launching GDS). The command is rejected if the spacecraft is not in DOWNLINK mode. Convert the downloaded `.raw` files to viewable JPGs:
 
 ```bash
 cd ground_segment
