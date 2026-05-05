@@ -22,7 +22,7 @@ Move the data and the code to the training server using `upload_to_server.sh` (s
 ORION_DATASET_ROOT=<the-dir-used-in-script> uv run fine_tune.py
 ```
 
-Training logs are printed every 5 steps. Checkpoints are saved at the end of each epoch. The final LoRA adapter weights and processor are saved to `orion_lora_weights/`. Pre-trained weights are also available on [Hugging Face](https://huggingface.co/saransh-cpp/orion-qlora-lfm2.5-vl-1.6b).
+Training logs are printed every 5 steps. Checkpoints are saved at the end of each epoch. The final LoRA adapter weights and processor are saved to `orion_lora_weights/`. Pre-trained weights are also available on [Hugging Face](https://huggingface.co/Saransh-cpp/orion-qlora-lfm2.5-vl-1.6b).
 
 Finally, use `download_weights.sh` to transfer the weights from the training server to your local machine in `ground_segment/training` (see [scripts.md](../ground-segment/scripts.md)).
 

@@ -107,13 +107,13 @@ The adapter was trained on the **ORION dataset**, 360 curated target locations o
 
 **Measured on-device:** Total ORION process RSS during inference on the Pi 5 is ~1,753 MB (model + vision encoder + KV cache + F-Prime flight software + buffer pool).
 
-The Q4_K_M GGUF + mmproj pair is the deployed artifact. Pre-built files are available on [Hugging Face](https://huggingface.co/saransh-cpp/orion-qlora-lfm2.5-vl-1.6b).
+The Q4_K_M GGUF + mmproj pair is the deployed artifact. Pre-built files are available on [Hugging Face](https://huggingface.co/Saransh-cpp/orion-qlora-lfm2.5-vl-1.6b).
 
 ## Evaluation
 
 Both studies use the same four conditions run against the same 60-sample held-out test set. The ablation (`ablation.py`) tests the unmodified base model; the evaluation (`evaluate.py`) tests the fine-tuned adapter. Running both against identical inputs isolates the exact lift from fine-tuning.
 
-> Refer to [Training Pipeline](https://saransh-cpp.github.io/ORION/ground-segment/training/#validation-and-ablation-studies) for more details on how to read this result.
+> Refer to [Training Pipeline](https://Saransh-cpp.github.io/ORION/ground-segment/training/#validation-and-ablation-studies) for more details on how to read this result.
 
 | Condition           | Input                              | Purpose                                                |
 | ------------------- | ---------------------------------- | ------------------------------------------------------ |
@@ -232,7 +232,7 @@ Token generation (200 max):  ~40-55 s
 Total per frame:             ~50-80 s  (CPU only, Cortex-A76)
 ```
 
-See the [quantization guide](https://saransh-cpp.github.io/ORION/guides/quantization/) and [deployment guide](https://saransh-cpp.github.io/ORION/guides/deployment/) for full instructions.
+See the [quantization guide](https://Saransh-cpp.github.io/ORION/guides/quantization/) and [deployment guide](https://Saransh-cpp.github.io/ORION/guides/deployment/) for full instructions.
 
 ## Limitations
 

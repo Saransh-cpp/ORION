@@ -1,6 +1,6 @@
 # Training Pipeline
 
-The ORION training pipeline fine-tunes the LiquidAI LFM2.5-VL-1.6B vision-language model for orbital image triage classification. The pipeline produces a quantized GGUF model suitable for CPU-only inference on the Raspberry Pi 5. The fine-tuned LoRA adapter weights are available on [Hugging Face](https://huggingface.co/saransh-cpp/orion-qlora-lfm2.5-vl-1.6b).
+The ORION training pipeline fine-tunes the LiquidAI LFM2.5-VL-1.6B vision-language model for orbital image triage classification. The pipeline produces a quantized GGUF model suitable for CPU-only inference on the Raspberry Pi 5. The fine-tuned LoRA adapter weights are available on [Hugging Face](https://huggingface.co/Saransh-cpp/orion-qlora-lfm2.5-vl-1.6b).
 
 ## Pipeline Overview
 
@@ -61,7 +61,7 @@ After fine-tuning, `fuse.py` merges the LoRA adapter weights permanently into th
 
 ## GGUF Quantization
 
-The merged FP16 model is converted to GGUF format and quantized to Q4_K_M using llama.cpp tools. The multimodal projector (mmproj) is extracted separately and kept at FP16 precision. The two output files (`orion-q4_k_m.gguf` and `orion-mmproj-f16.gguf`) are deployed to the Pi. Pre-trained models are available on [Hugging Face](https://huggingface.co/saransh-cpp/orion-qlora-lfm2.5-vl-1.6b). For artifact sizes at each stage, see [Compute Budgets](budgets.md).
+The merged FP16 model is converted to GGUF format and quantized to Q4_K_M using llama.cpp tools. The multimodal projector (mmproj) is extracted separately and kept at FP16 precision. The two output files (`orion-q4_k_m.gguf` and `orion-mmproj-f16.gguf`) are deployed to the Pi. Pre-trained models are available on [Hugging Face](https://huggingface.co/Saransh-cpp/orion-qlora-lfm2.5-vl-1.6b). For artifact sizes at each stage, see [Compute Budgets](budgets.md).
 
 ## Dependencies
 

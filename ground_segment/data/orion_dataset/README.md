@@ -75,7 +75,7 @@ test_dataset.jsonl
 
 ## Generation Process
 
-[`data_gen.py`](https://saransh-cpp.github.io/ORION/guides/data-gen/) generates the dataset by:
+[`data_gen.py`](https://Saransh-cpp.github.io/ORION/guides/data-gen/) generates the dataset by:
 
 1. **Proximity filter**: removes targets closer than 2 km to each other (Haversine distance) to avoid duplicate imagery
 2. **Shuffle and split**: deterministic 3-way IID split (`random.seed(42)`): 240 train / 60 val / 60 test
@@ -132,7 +132,7 @@ reasoning, you must output the "reason" key FIRST, followed by the "category" ke
 
 ## Related
 
-- [Fine-tuned model](https://huggingface.co/saransh-cpp/orion-qlora-lfm2.5-vl-1.6b)
-- [Training guide](https://saransh-cpp.github.io/ORION/guides/training/)
-- [Training pipeline](https://saransh-cpp.github.io/ORION/ground-segment/training/)
-- [Data flow architecture](https://saransh-cpp.github.io/ORION/architecture/data-flow/)
+- [Fine-tuned model](https://huggingface.co/Saransh-cpp/orion-qlora-lfm2.5-vl-1.6b)
+- [Training guide](https://Saransh-cpp.github.io/ORION/guides/training/)
+- [Training pipeline](https://Saransh-cpp.github.io/ORION/ground-segment/training/)
+- [Data flow architecture](https://Saransh-cpp.github.io/ORION/architecture/data-flow/)
