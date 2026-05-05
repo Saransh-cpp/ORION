@@ -69,10 +69,10 @@ The `NavState` struct returned by `navStateGet` contains:
 
 ### 3.5 Port Diagram
 
-| Port          | Direction     | Type           | Description                                                    |
-| ------------- | ------------- | -------------- | -------------------------------------------------------------- |
-| `navStateGet` | guarded input | `NavStatePort` | Synchronous getter returning cached NavState (mutex-protected) |
-| `schedIn`     | async input   | `Svc.Sched`    | 1 Hz rate group tick; drives SimSat polling at 5s intervals    |
+| Port          | Direction          | Type           | Description                                                    |
+| ------------- | ------------------ | -------------- | -------------------------------------------------------------- |
+| `navStateGet` | guarded input      | `NavStatePort` | Synchronous getter returning cached NavState (mutex-protected) |
+| `schedIn`     | async input (drop) | `Svc.Sched`    | 1 Hz rate group tick; drives SimSat polling at 5s intervals    |
 
 ### 3.6 Events
 
@@ -103,7 +103,7 @@ The `NavState` struct returned by `navStateGet` contains:
 
 1. **Comm window latency:** The comm window state only updates every 5 seconds (poll interval). EventAction checks at 1 Hz but sees stale data between polls. For LEO at ~7.5 km/s, this is a ~37 km position uncertainty, which is negligible relative to the 2000 km range.
 
-2. **Blocking HTTP in rate group:** `SimSatClient::fetchPosition()` uses libcurl synchronously. If SimSat is slow or unreachable, this blocks the NavTelemetry thread. Since `schedIn` is async, the rate group isn't blocked, but subsequent NavTelemetry port calls queue up.
+2. **Blocking HTTP in rate group:** `SimSatClient::fetchPosition()` uses libcurl synchronously. If SimSat is slow or unreachable, this blocks the NavTelemetry thread. The `schedIn` port uses `drop` policy so excess rate group ticks are silently discarded instead of asserting on queue overflow. Without `drop`, sustained blocking would fill the queue and trigger a fatal `FW_ASSERT` (observed in the 2026-05-05 run when CameraManager hit this first at ~56°S, crashing with `Os::Queue::Status::QUEUE_FULL` on `CameraManagerComponentAc.cpp:953`).
 
 ## 5. Change Log
 
@@ -112,3 +112,4 @@ The `NavState` struct returned by `navStateGet` contains:
 | 2026-04-17 | Initial implementation: SimSat polling, Haversine distance, comm window              |
 | 2026-04-18 | Added gsDistanceKm to NavState, cached distance, added comm window hysteresis        |
 | 2026-05-03 | Fixed SDD cross-reference links for mkdocs; corrected GS default coordinates to EPFL |
+| 2026-05-05 | Added `drop` policy to `schedIn` port to prevent fatal assert on queue overflow      |

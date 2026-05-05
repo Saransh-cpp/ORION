@@ -73,7 +73,7 @@ module Orion {
     # --------------------------------------------------------------------------
 
     @ Rate group schedule input: evaluates mode transitions at 1 Hz.
-    async input port schedIn: Svc.Sched
+    async input port schedIn: Svc.Sched drop
 
     # --------------------------------------------------------------------------
     # Output ports

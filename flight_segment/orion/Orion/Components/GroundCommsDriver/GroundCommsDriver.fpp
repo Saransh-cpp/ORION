@@ -15,7 +15,7 @@ module Orion {
 
     @ Rate group schedule input: periodically flushes the disk queue
     @ when in DOWNLINK mode.
-    async input port schedIn: Svc.Sched
+    async input port schedIn: Svc.Sched drop
 
     @ Receives mode changes from EventAction.
     @ Only transmits in DOWNLINK mode; queues to disk otherwise.

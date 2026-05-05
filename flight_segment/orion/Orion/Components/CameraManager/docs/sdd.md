@@ -72,14 +72,14 @@ The 65-second minimum exceeds worst-case VLM inference time (~60s on the Pi 5), 
 
 ### 3.5 Port Diagram
 
-| Port                  | Direction     | Type                   | Description                                  |
-| --------------------- | ------------- | ---------------------- | -------------------------------------------- |
-| `schedIn`             | async input   | `Svc.Sched`            | 1 Hz rate group tick for auto-capture timing |
-| `modeChangeIn`        | async input   | `ModeChangePort`       | Receives mode broadcasts from EventAction    |
-| `bufferGetOut`        | output (sync) | `Fw.BufferGet`         | Checks out a 786KB buffer from BufferManager |
-| `navStateOut`         | output (sync) | `NavStatePort`         | Queries NavTelemetry for GPS at capture time |
-| `inferenceRequestOut` | output        | `InferenceRequestPort` | Dispatches image + GPS to VlmInferenceEngine |
-| `bufferReturnOut`     | output        | `Fw.BufferSend`        | Returns buffer on capture failure            |
+| Port                  | Direction          | Type                   | Description                                  |
+| --------------------- | ------------------ | ---------------------- | -------------------------------------------- |
+| `schedIn`             | async input (drop) | `Svc.Sched`            | 1 Hz rate group tick for auto-capture timing |
+| `modeChangeIn`        | async input        | `ModeChangePort`       | Receives mode broadcasts from EventAction    |
+| `bufferGetOut`        | output (sync)      | `Fw.BufferGet`         | Checks out a 786KB buffer from BufferManager |
+| `navStateOut`         | output (sync)      | `NavStatePort`         | Queries NavTelemetry for GPS at capture time |
+| `inferenceRequestOut` | output             | `InferenceRequestPort` | Dispatches image + GPS to VlmInferenceEngine |
+| `bufferReturnOut`     | output             | `Fw.BufferSend`        | Returns buffer on capture failure            |
 
 ### 3.6 Commands
 
@@ -124,7 +124,16 @@ The 65-second minimum exceeds worst-case VLM inference time (~60s on the Pi 5), 
 
 ## 4. Known Issues
 
-1. **Blocking HTTP in capture:** `SimSatClient::fetchMapboxImage()` blocks the CameraManager thread for up to 30s (libcurl timeout). During this time, commands and mode changes queue up. Since all ports are async, the rate group isn't affected.
+1. **Blocking HTTP in capture:** `SimSatClient::fetchMapboxImage()` blocks the CameraManager thread for up to 30s (libcurl timeout). During this time, commands and mode changes queue up. The `schedIn` port uses `drop` policy so excess rate group ticks are silently discarded instead of asserting on queue overflow. Without `drop`, sustained blocking (e.g., slow Mapbox at polar latitudes) fills the queue and triggers a fatal `FW_ASSERT`. This was observed in the 2026-05-05 simulation run when the satellite reached ~56°S and Mapbox responses slowed down:
+
+   ```
+   EVENT: (268521472) ACTIVITY_LO: (navTelemetry) SimSatPositionUpdate : NavTelemetry: SimSat position Lat=-56.513170, Lon=-7.202748, Alt=810.766838km
+   Assert: ".../CameraManager/CameraManagerComponentAc.cpp:953" 8
+   FATAL 16797697 handled.
+   Exiting with abort signal and core dump file.
+   ```
+
+   The assert value `8` corresponds to `Os::Queue::Status::QUEUE_FULL`.
 
 ## 5. Change Log
 
@@ -136,3 +145,4 @@ The 65-second minimum exceeds worst-case VLM inference time (~60s on the Pi 5), 
 | 2026-04-20 | Added mode gating on commands; added CommandRejectedWrongMode event             |
 | 2026-04-24 | Added CaptureIntervalClamped event; interval clamping with warning              |
 | 2026-05-03 | Fixed SDD cross-reference links for mkdocs; corrected auto-capture defaults     |
+| 2026-05-05 | Added `drop` policy to `schedIn` port to prevent fatal assert on queue overflow |

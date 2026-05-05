@@ -89,12 +89,12 @@ The state machine signal names are abstract internal identifiers. The physical m
 
 ### 3.3 Port Diagram
 
-| Port               | Direction     | Type                  | Description                                                            |
-| ------------------ | ------------- | --------------------- | ---------------------------------------------------------------------- |
-| `schedIn`          | async input   | `Svc.Sched`           | 1 Hz rate group tick; polls NavTelemetry and detects comm window edges |
-| `navStateIn`       | output (sync) | `NavStatePort`        | Queries NavTelemetry for lat/lon/alt and comm window flag              |
-| `modeChangeOut[4]` | output        | `ModeChangePort`      | Broadcasts `MissionMode` enum to pipeline components                   |
-| `sendFileOut`      | output (sync) | `Svc.SendFileRequest` | Queues files to F-Prime FileDownlink for MEDIUM bulk download          |
+| Port               | Direction          | Type                  | Description                                                            |
+| ------------------ | ------------------ | --------------------- | ---------------------------------------------------------------------- |
+| `schedIn`          | async input (drop) | `Svc.Sched`           | 1 Hz rate group tick; polls NavTelemetry and detects comm window edges |
+| `navStateIn`       | output (sync)      | `NavStatePort`        | Queries NavTelemetry for lat/lon/alt and comm window flag              |
+| `modeChangeOut[4]` | output             | `ModeChangePort`      | Broadcasts `MissionMode` enum to pipeline components                   |
+| `sendFileOut`      | output (sync)      | `Svc.SendFileRequest` | Queues files to F-Prime FileDownlink for MEDIUM bulk download          |
 
 ### 3.4 Commands
 
@@ -138,7 +138,15 @@ The `GOTO_*` commands are ground operator overrides for forcing a mode entry tha
 
 ## 4. Known Limitations
 
-**MEDIUM `.sent` files can be lost on comm window exit.** When `FLUSH_MEDIUM_STORAGE` is in progress and the satellite leaves the comm window, the flush aborts. Files already renamed to `.sent` and queued into FileDownlink may not have been transmitted yet. In ORION's simulation this is not an issue as the F-Prime GDS link (TCP :50000) stays up over WiFi/LAN regardless of the simulated comm window, so FileDownlink finishes delivering them. In a real mission with an actual UHF radio, the link would drop and those `.sent` files would be orphaned on disk until the next `FLUSH_MEDIUM_STORAGE` deletes them, losing that data. A production system would need a delivery-acknowledgment protocol or a separate ground command to purge `.sent` files only after confirmed receipt.
+1. **MEDIUM `.sent` files can be lost on comm window exit.** When `FLUSH_MEDIUM_STORAGE` is in progress and the satellite leaves the comm window, the flush aborts. Files already renamed to `.sent` and queued into FileDownlink may not have been transmitted yet. In ORION's simulation this is not an issue as the F-Prime GDS link (TCP :50000) stays up over WiFi/LAN regardless of the simulated comm window, so FileDownlink finishes delivering them. In a real mission with an actual UHF radio, the link would drop and those `.sent` files would be orphaned on disk until the next `FLUSH_MEDIUM_STORAGE` deletes them, losing that data. A production system would need a delivery-acknowledgment protocol or a separate ground command to purge `.sent` files only after confirmed receipt.
+
+2. **Queue overflow on shared rate group.** EventAction shares the 1 Hz rate group with CameraManager, NavTelemetry, and GroundCommsDriver. If any component's thread blocks (e.g., CameraManager on a slow Mapbox fetch), the shared rate group continues dispatching ticks. The `schedIn` port uses `drop` policy so excess ticks are silently discarded instead of asserting. Without `drop`, the 2026-05-05 simulation crashed at ~56°S when CameraManager's Mapbox call blocked and its `schedIn` queue overflowed:
+
+   ```
+   Assert: ".../CameraManager/CameraManagerComponentAc.cpp:953" 8
+   FATAL 16797697 handled.
+   Exiting with abort signal and core dump file.
+   ```
 
 ## 5. Change Log
 
@@ -152,3 +160,4 @@ The `GOTO_*` commands are ground operator overrides for forcing a mode entry tha
 | 2026-04-26 | Fixed MEDIUM storage default path to use relative `./media/sd/medium/`                              |
 | 2026-05-03 | Fixed SDD cross-reference links for mkdocs                                                          |
 | 2026-05-03 | Fixed `.sent` cleanup: deferred to next `FLUSH_MEDIUM_STORAGE` command; reject if flush in progress |
+| 2026-05-05 | Added `drop` policy to `schedIn` port to prevent fatal assert on queue overflow                     |

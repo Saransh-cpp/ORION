@@ -15,7 +15,7 @@ module Orion {
     guarded input port navStateGet: NavStatePort
 
     @ Rate group schedule input: drives periodic SimSat polling.
-    async input port schedIn: Svc.Sched
+    async input port schedIn: Svc.Sched drop
 
     # --------------------------------------------------------------------------
     # Telemetry

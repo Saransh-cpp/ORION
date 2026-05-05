@@ -17,9 +17,9 @@ F-Prime deployment for the ORION on-board triage system. Runs on Raspberry Pi 5 
 
 ## Documentation
 
-- [System architecture](https://saransh-cpp.github.io/ORION/architecture/overview/) — component inventory, rate groups, data flow
-- [State machine](https://saransh-cpp.github.io/ORION/architecture/state-machine/) — IDLE / MEASURE / DOWNLINK / SAFE transitions
-- [Mission budgets](https://saransh-cpp.github.io/ORION/architecture/budgets/) — timing, data, link, storage, power, memory
-- [Component SDDs](https://saransh-cpp.github.io/ORION/components/) — per-component design documents
-- [Installation](https://saransh-cpp.github.io/ORION/guides/installation/) — build from source
-- [Deployment](https://saransh-cpp.github.io/ORION/guides/deployment/) — Docker cross-compile for Pi 5
+- [System architecture](https://saransh-cpp.github.io/ORION/architecture/overview/): component inventory, rate groups, data flow
+- [State machine](https://saransh-cpp.github.io/ORION/architecture/state-machine/): IDLE / MEASURE / DOWNLINK / SAFE transitions
+- [Mission budgets](https://saransh-cpp.github.io/ORION/architecture/budgets/): timing, data, link, storage, power, memory
+- [Component SDDs](https://saransh-cpp.github.io/ORION/components/): per-component design documents
+- [Installation](https://saransh-cpp.github.io/ORION/guides/installation/): build from source
+- [Deployment](https://saransh-cpp.github.io/ORION/guides/deployment/): Docker cross-compile for Pi 5

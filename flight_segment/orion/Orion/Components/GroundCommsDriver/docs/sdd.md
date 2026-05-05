@@ -73,12 +73,12 @@ Each `transmitRaw` call opens a new TCP connection, sends the header + payload, 
 
 ### 3.6 Port Diagram
 
-| Port              | Direction   | Type               | Description                                                        |
-| ----------------- | ----------- | ------------------ | ------------------------------------------------------------------ |
-| `fileDownlinkIn`  | async input | `FileDownlinkPort` | Receives HIGH-priority frames from TriageRouter with reason string |
-| `schedIn`         | async input | `Svc.Sched`        | 1 Hz rate group tick for periodic queue flush during DOWNLINK      |
-| `modeChangeIn`    | async input | `ModeChangePort`   | Receives mode broadcasts from EventAction                          |
-| `bufferReturnOut` | output      | `Fw.BufferSend`    | Returns image buffers to BufferManager pool                        |
+| Port              | Direction          | Type               | Description                                                        |
+| ----------------- | ------------------ | ------------------ | ------------------------------------------------------------------ |
+| `fileDownlinkIn`  | async input        | `FileDownlinkPort` | Receives HIGH-priority frames from TriageRouter with reason string |
+| `schedIn`         | async input (drop) | `Svc.Sched`        | 1 Hz rate group tick for periodic queue flush during DOWNLINK      |
+| `modeChangeIn`    | async input        | `ModeChangePort`   | Receives mode broadcasts from EventAction                          |
+| `bufferReturnOut` | output             | `Fw.BufferSend`    | Returns image buffers to BufferManager pool                        |
 
 ### 3.7 Events
 
@@ -109,7 +109,7 @@ Each `transmitRaw` call opens a new TCP connection, sends the header + payload, 
 
 ## 4. Known Issues
 
-1. **Blocking TCP connect:** If the receiver is unreachable, `connect()` blocks for the OS default TCP timeout (typically 75s on Linux, 30s on macOS). During `flushQueue`, this blocks the GroundCommsDriver thread entirely, stalling all port handlers. A non-blocking connect with a short timeout would prevent this.
+1. **Blocking TCP connect:** If the receiver is unreachable, `connect()` blocks for the OS default TCP timeout (typically 75s on Linux, 30s on macOS). During `flushQueue`, this blocks the GroundCommsDriver thread entirely, stalling all port handlers. The `schedIn` port uses `drop` policy so excess rate group ticks are silently discarded instead of asserting on queue overflow. Without `drop`, sustained blocking would fill the queue and trigger a fatal `FW_ASSERT` (observed in the 2026-05-05 run when CameraManager hit this first at ~56°S, crashing with `Os::Queue::Status::QUEUE_FULL`). A non-blocking connect with a short timeout would further prevent thread stalls.
 
 2. **Heap allocation in flush loop:** `flushQueue` allocates a heap buffer per file (`new U8[fileSize]`). On the Pi's constrained memory, flushing many large files could fragment the heap. Using a fixed-size stack buffer (786KB matches the image size) would avoid this.
 
@@ -123,3 +123,4 @@ Each `transmitRaw` call opens a new TCP connection, sends the header + payload, 
 | 2026-04-26 | Added recursive `ensureDirExists` for queue directory creation                        |
 | 2026-05-03 | Fixed SDD cross-reference links for mkdocs                                            |
 | 2026-05-03 | Renamed queue directory from `downlink_queue` to `downlink_XBand_queue`               |
+| 2026-05-05 | Added `drop` policy to `schedIn` port to prevent fatal assert on queue overflow       |
