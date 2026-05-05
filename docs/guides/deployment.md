@@ -37,7 +37,7 @@ docker compose build pi-build
 These must be run sequentially. `docker compose build` builds all services in parallel and will fail because `pi-build` depends on the `orion-base` image produced by `base`.
 
 - `base`: ARM64 Ubuntu 22.04 with build tools, CMake, F-Prime Python dependencies, and a static llama.cpp build
-- `pi-build`: compiles the F-Prime flight segment on top of the base image and copies the binary out via a bind mount (this can be re-run frequently for debugging on the Pi as it compiles only the flight software and not the dependencies)
+- `pi-build`: compiles the F-Prime flight segment on top of the base image and copies the binary out via a bind mount (this can be re-run frequently, with `--no-cache`, for debugging on the Pi as it compiles only the flight software and not the dependencies)
 
 ### Step 2: Run the Build
 

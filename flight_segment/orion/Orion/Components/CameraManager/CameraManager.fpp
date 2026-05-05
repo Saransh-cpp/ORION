@@ -15,7 +15,7 @@ module Orion {
 
     @ Enables autonomous periodic capture at the given interval in seconds.
     async command ENABLE_AUTO_CAPTURE(
-      interval: U32 @< Seconds between captures (default 45)
+      interval: U32 @< Seconds between captures (default and minimum 85)
     ) opcode 0x01
 
     @ Disables autonomous periodic capture.
