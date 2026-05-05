@@ -98,7 +98,7 @@ Each class includes deliberately hard sub-types (e.g., coastlines that mimic art
 | Token generation (200 tokens max, greedy) | ~40-55 s                                                     |
 | **Total per frame**                       | **50-80 s**                                                  |
 | Self-watchdog ceiling                     | 120 s (frame dropped, model stays loaded)                    |
-| Frames captured per 35-min eclipse        | ~32 (65 s capture interval)                                  |
+| Frames captured per 35-min eclipse        | ~24 (85 s capture interval)                                  |
 | Frames inferred per eclipse               | ~32 (all captured; 5-frame queue absorbs inference overflow) |
 | VLM duty cycle per orbit                  | ~32%                                                         |
 
@@ -206,13 +206,13 @@ IDLE transitions to MEASURE (eclipse = imaging on battery). In the `Events` tab 
 
 - `ModeChanged: IDLE -> MEASURE`
 - `ModelLoaded`: VLM loads into RAM (~15s on Pi)
-- `AutoCaptureEnabled every 65 seconds`
+- `AutoCaptureEnabled every 85 seconds`
 
 These events are sent by the satellite (Pi or your local terminal instance running the flight software binary, whether explicitly or in a background process by `fprime-gds`) to the GDS machine (your local machine or the terminal instance running GDS) over TCP.
 
 ### Observe autonomous capture and inference
 
-Every 65 seconds, CameraManager fetches a Mapbox satellite tile, fuses GPS, and dispatches to the VLM. Watch for the following in `Events` tab (or in `flight_segment/orion/logs/<latest-one>/event.log`):
+Every 85 seconds, CameraManager fetches a Mapbox satellite tile, fuses GPS, and dispatches to the VLM. Watch for the following in `Events` tab (or in `flight_segment/orion/logs/<latest-one>/event.log`):
 
 - `ImageDispatched`: image captured at Lat/Lon
 - `InferenceComplete`: VLM result: `HIGH`, `MEDIUM`, or `LOW` with reasoning and inference time

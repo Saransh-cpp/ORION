@@ -63,12 +63,12 @@ If SimSat is unreachable or reports no image available (over ocean, cloud cover)
 
 Auto-capture is driven by the 1 Hz `schedIn` tick with an internal counter:
 
-- **Interval:** configurable via `ENABLE_AUTO_CAPTURE` command (default 65 seconds, minimum 65 seconds)
+- **Interval:** configurable via `ENABLE_AUTO_CAPTURE` command (default 85 seconds, minimum 85 seconds)
 - **Enable:** automatically on MEASURE entry, or manually via command
 - **Disable:** automatically on any mode exit from MEASURE, or manually via command
 - **Guard:** `schedIn_handler` checks both `m_autoCaptureEnabled` AND `m_currentMode == MEASURE`
 
-The 65-second minimum exceeds worst-case VLM inference time (~60s on the Pi 5), preventing queue buildup.
+The 85-second minimum exceeds worst-case VLM inference time (~80s on the Pi 5), preventing queue buildup.
 
 ### 3.5 Port Diagram
 
@@ -100,7 +100,7 @@ The 65-second minimum exceeds worst-case VLM inference time (~60s on the Pi 5), 
 | `AutoCaptureDisabled`      | ACTIVITY_HI | Auto-capture stopped (manual or mode change)             |
 | `SimSatImageUnavailable`   | ACTIVITY_LO | SimSat returned no image (over ocean, cloud cover, etc.) |
 | `CommandRejectedWrongMode` | WARNING_LO  | Command rejected as not in MEASURE                       |
-| `CaptureIntervalClamped`   | WARNING_LO  | Requested interval below 65s minimum, clamped to 65s     |
+| `CaptureIntervalClamped`   | WARNING_LO  | Requested interval below 85s minimum, clamped to 85s     |
 
 ### 3.8 Telemetry
 
@@ -137,12 +137,13 @@ The 65-second minimum exceeds worst-case VLM inference time (~60s on the Pi 5), 
 
 ## 5. Change Log
 
-| Date       | Description                                                                     |
-| ---------- | ------------------------------------------------------------------------------- |
-| 2026-04-17 | Initial implementation: SimSat Mapbox image fetch, auto-capture                 |
-| 2026-04-18 | Added mode-aware auto-capture lifecycle, AutoCaptureDisabled event on mode exit |
-| 2026-04-18 | Removed test image fallback; SimSat is sole image source                        |
-| 2026-04-20 | Added mode gating on commands; added CommandRejectedWrongMode event             |
-| 2026-04-24 | Added CaptureIntervalClamped event; interval clamping with warning              |
-| 2026-05-03 | Fixed SDD cross-reference links for mkdocs; corrected auto-capture defaults     |
-| 2026-05-05 | Added `drop` policy to `schedIn` port to prevent fatal assert on queue overflow |
+| Date       | Description                                                                                                                                                           |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-04-17 | Initial implementation: SimSat Mapbox image fetch, auto-capture                                                                                                       |
+| 2026-04-18 | Added mode-aware auto-capture lifecycle, AutoCaptureDisabled event on mode exit                                                                                       |
+| 2026-04-18 | Removed test image fallback; SimSat is sole image source                                                                                                              |
+| 2026-04-20 | Added mode gating on commands; added CommandRejectedWrongMode event                                                                                                   |
+| 2026-04-24 | Added CaptureIntervalClamped event; interval clamping with warning                                                                                                    |
+| 2026-05-03 | Fixed SDD cross-reference links for mkdocs; corrected auto-capture defaults                                                                                           |
+| 2026-05-05 | Added `drop` policy to `schedIn` port to prevent fatal assert on queue overflow                                                                                       |
+| 2026-05-05 | Updated minimum capture interval to 85s as the queue fills up quick (otherwise can `drop` but will have to handle buffer leak / drop wisely, and now is not the time) |

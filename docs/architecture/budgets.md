@@ -29,15 +29,15 @@ Inference timeout is set at 120 seconds.
 
 ## Data Budget (Per Orbit)
 
-| Metric                       | Value                  | Derivation                                                                                       |
-| ---------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------ |
-| MEASURE window               | ~35 min (eclipse)      | Orbital parameters                                                                               |
-| Capture interval             | 65 s (minimum)         | `MIN_CAPTURE_INTERVAL` in CameraManager                                                          |
-| Frames captured per orbit    | ~32 frames             | 35 min / 65 s                                                                                    |
-| Frames inferred per orbit    | ~32 frames             | All captured frames; inference (~60 s) ≈ capture interval (65 s), 5-frame queue absorbs overflow |
-| Frames dropped per orbit     | ~0                     | 5-frame queue depth means no frames are lost under normal inference timing                       |
-| Raw data per frame           | 786,432 bytes (768 KB) | 512 x 512 x 3 RGB                                                                                |
-| Raw data generated per orbit | ~24 MB                 | 32 frames × 768 KB                                                                               |
+| Metric                       | Value                  | Derivation                                                                                     |
+| ---------------------------- | ---------------------- | ---------------------------------------------------------------------------------------------- |
+| MEASURE window               | ~35 min (eclipse)      | Orbital parameters                                                                             |
+| Capture interval             | 85 s (minimum)         | `MIN_CAPTURE_INTERVAL` in CameraManager                                                        |
+| Frames captured per orbit    | ~24 frames             | 35 min / 85 s                                                                                  |
+| Frames inferred per orbit    | ~24 frames             | All captured frames; inference (~74 s avg) < capture interval (85 s), queue stays at depth 0-1 |
+| Frames dropped per orbit     | ~0                     | 5-frame queue depth means no frames are lost under normal inference timing                     |
+| Raw data per frame           | 786,432 bytes (768 KB) | 512 x 512 x 3 RGB                                                                              |
+| Raw data generated per orbit | ~24 MB                 | 32 frames × 768 KB                                                                             |
 
 ### Triage Distribution (Expected)
 
