@@ -9,7 +9,7 @@ ORION runs as a split system:
 - **Raspberry Pi 5**: runs the flight segment binary (`Orion`) with the GGUF model
 - **Development machine (Mac/Linux)**: runs the F-Prime GDS (Ground Data System) and `receiver.py`
 
-The Pi connects to the GDS over TCP port 50000 and to the ground receiver over TCP port 50050. The Pi requires 4 GB+ RAM; see [Mission Budgets](../architecture/budgets.md) for detailed memory and compute requirements.
+The Pi connects to the GDS over TCP port 50000 and to the ground receiver over TCP port 50050. The Pi requires 8 GB RAM (measured RSS in MEASURE mode: ~1.75 GB); see [Mission Budgets](../architecture/budgets.md) for detailed memory and compute requirements.
 
 ## Cross-Compile for Raspberry Pi 5
 

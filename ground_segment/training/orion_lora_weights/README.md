@@ -19,7 +19,7 @@ language:
 
 QLoRA fine-tune of [LiquidAI/LFM2.5-VL-1.6B](https://huggingface.co/LiquidAI/LFM2.5-VL-1.6B) for autonomous satellite image triage. Classifies 512×512 RGB frames captured at LEO as **HIGH** (strategic anomaly, downlink immediately), **MEDIUM** (human infrastructure, store for bulk transfer), or **LOW** (featureless terrain, discard).
 
-Developed for [ORION](https://github.com/Saransh-cpp/ORION), an autonomous LEO satellite triage system running on a Raspberry Pi 5 via [NASA F-Prime](https://github.com/nasa/fprime). The Q4_K_M GGUF quantization of this adapter is deployed on-board and runs inference at 50-70 s/frame entirely on CPU.
+Developed for [ORION](https://github.com/Saransh-cpp/ORION), an autonomous LEO satellite triage system running on a Raspberry Pi 5 via [NASA F-Prime](https://github.com/nasa/fprime). The Q4_K_M GGUF quantization of this adapter is deployed on-board and runs inference at 50-80 s/frame entirely on CPU.
 
 ## Uses
 
@@ -102,8 +102,10 @@ The adapter was trained on the **ORION dataset**, 360 curated target locations o
 | LoRA adapter (this repo) | `orion_lora_weights/`   | ~50 MB      | r=16, 4 attention projection modules |
 | Merged FP16 checkpoint   | `orion_merged/`         | ~3.2 GB     | `merge_and_unload()` output          |
 | FP16 GGUF                | `orion-f16.gguf`        | ~3.2 GB     | Intermediate conversion step         |
-| **Q4_K_M GGUF**          | **`orion-q4_k_m.gguf`** | **~730 MB** | **Deployed to Pi 5**                 |
+| **Q4_K_M GGUF**          | **`orion-q4_k_m.gguf`** | **~730 MB** | **Deployed to Pi 5 (8 GB RAM)**      |
 | Vision projector         | `orion-mmproj-f16.gguf` | ~854 MB     | FP16, deployed alongside Q4 model    |
+
+**Measured on-device:** Total ORION process RSS during inference on the Pi 5 is ~1,753 MB (model + vision encoder + KV cache + F-Prime flight software + buffer pool).
 
 The Q4_K_M GGUF + mmproj pair is the deployed artifact. Pre-built files are available on [Hugging Face](https://huggingface.co/saransh-cpp/orion-qlora-lfm2.5-vl-1.6b).
 
@@ -227,7 +229,7 @@ The adapter is converted to Q4_K_M GGUF via `llama-quantize` and runs on the Pi 
 ```
 Vision encoding (mtmd):      ~10-15 s
 Token generation (200 max):  ~40-55 s
-Total per frame:             ~50-70 s  (CPU only, Cortex-A76)
+Total per frame:             ~50-80 s  (CPU only, Cortex-A76)
 ```
 
 See the [quantization guide](https://saransh-cpp.github.io/ORION/guides/quantization/) and [deployment guide](https://saransh-cpp.github.io/ORION/guides/deployment/) for full instructions.
@@ -237,5 +239,5 @@ See the [quantization guide](https://saransh-cpp.github.io/ORION/guides/quantiza
 - Trained on Mapbox RGB tiles only; hence, no multispectral, SAR, or thermal data.
 - 512×512 pixel resolution matches the Pi 5 inference pipeline; different resolutions require re-cropping.
 - Three-class taxonomy (HIGH / MEDIUM / LOW) is fixed at training time. Mission-specific priorities require fine-tuning on a new labeled dataset.
-- Inference at 50-70 s/frame is too slow for real-time video or burst imaging modes.
+- Inference at 50-80 s/frame is too slow for real-time video or burst imaging modes.
 - Coordinate dropout improves GPS robustness but does not eliminate coord-biased errors on hard edge cases.

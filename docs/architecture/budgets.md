@@ -23,7 +23,7 @@ Measured on Raspberry Pi 5 (Cortex-A76 quad-core, CPU-only):
 | Vision encoding (mtmd)      | ~10-15 s    | Included in inference total     |
 | Token generation (200 max)  | ~40-55 s    | Greedy sampling, 4 threads      |
 | JSON parse + triage routing | < 1 ms      | Negligible                      |
-| **Total per frame**         | **50-70 s** | Measured from Pi telemetry logs |
+| **Total per frame**         | **50-80 s** | Measured from Pi telemetry logs |
 
 Inference timeout is set at 120 seconds.
 
@@ -83,7 +83,7 @@ This section documents the compute duty cycle.
 | Phase              | Duration per orbit        | Activity                                                      |
 | ------------------ | ------------------------- | ------------------------------------------------------------- |
 | IDLE (sunlit)      | ~66 min                   | NavTelemetry polling only. Model unloaded. Charging.          |
-| MEASURE (eclipse)  | ~35 min                   | VLM loaded (~730 MB RAM). Captures + inference.               |
+| MEASURE (eclipse)  | ~35 min                   | VLM loaded (~1.75 GB RSS measured). Captures + inference.     |
 | VLM active time    | ~32 min of MEASURE        | 32 frames × ~60 s inference; nearly continuous during eclipse |
 | VLM idle time      | ~3 min of MEASURE         | ~5 s gap per capture cycle × 32 cycles                        |
 | DOWNLINK           | ~3-6 min (if pass occurs) | Queue flush. Model stays loaded.                              |
@@ -92,7 +92,7 @@ This section documents the compute duty cycle.
 ## Memory Budget
 
 ```
-Total Pi 5 RAM:      4,096 MB
+Total Pi 5 RAM:      8,192 MB
 GGUF text model:      ~730 MB (Q4_K_M, loaded in MEASURE)
 mmproj vision enc:    ~854 MB (F16, loaded with model)
 KV cache (4096 ctx):   ~64 MB (allocated per inference, cleared after)
@@ -100,9 +100,10 @@ Image buffer pool:     ~16 MB (20 x 786 KB, pre-allocated at startup)
 F-Prime framework:     ~20 MB (all components, rate groups, queues)
 Linux + overhead:     ~200 MB
 ---------------------------------
-Total in MEASURE:   ~1,884 MB
+Total in MEASURE:   ~1,884 MB (estimate)
+                    ~1,753 MB (measured RSS on Pi 5)
 Total in IDLE:       ~236 MB (model unloaded)
-Available headroom: ~2,212 MB (MEASURE) / ~3,860 MB (IDLE)
+Available headroom: ~6,439 MB (MEASURE) / ~7,956 MB (IDLE)
 ```
 
 No runtime dynamic allocation is used in the ORION pipeline. The buffer pool is pre-allocated at startup, and the model weights are loaded once into RAM when entering MEASURE mode.

@@ -73,4 +73,4 @@ After quantization, you should have two files ready for deployment:
 
 **Quantized model produces degraded output**: Try Q5_K_M for higher quality at the cost of larger file size. Compare outputs against the FP16 GGUF to isolate whether the issue is from quantization or the fine-tuning itself.
 
-**Out of memory on Pi 5**: Ensure no other large processes are running. The Q4_K_M model should fit within 4 GB RAM alongside the inference runtime. If memory is tight, consider Q4_K_S for a slightly smaller footprint.
+**Out of memory on Pi 5**: Ensure no other large processes are running. The Q4_K_M model uses ~1.75 GB RSS (measured) on the 8 GB Pi 5, leaving ample headroom. If memory is tight, consider Q4_K_S for a slightly smaller footprint.

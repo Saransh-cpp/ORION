@@ -4,7 +4,7 @@
 
 The `Orion::VlmInferenceEngine` component runs the LFM2.5-VL-1.6B vision-language model on the satellite's CPU. It receives raw 512x512 RGB image frames from [CameraManager](../camera-manager/), constructs a ChatML-formatted prompt with fused GPS coordinates, executes the llama.cpp forward pass, parses the JSON output into a triage verdict (HIGH/MEDIUM/LOW), and emits the result to [TriageRouter](../triage-router/).
 
-The model is a ~730 MB Q4_K_M GGUF file loaded into RAM on demand. Inference takes 50-70 seconds per frame on the Pi 5's Cortex-A76 cores (CPU-only, no GPU). The component runs on a dedicated low-priority thread to avoid blocking other flight software.
+The model is a ~730 MB Q4_K_M GGUF file loaded into RAM on demand (total process RSS measured at ~1,753 MB on the 8 GB Pi 5). Inference takes 50-80 seconds per frame on the Pi 5's Cortex-A76 cores (CPU-only, no GPU). The component runs on a dedicated low-priority thread to avoid blocking other flight software.
 
 ## 2. Requirements
 
