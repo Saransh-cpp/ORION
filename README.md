@@ -92,15 +92,15 @@ Each class includes deliberately hard sub-types (e.g., coastlines that mimic art
 
 ### On-board inference (Raspberry Pi 5, Cortex-A76, no NPU/GPU)
 
-| Metric                                    | Value                                                        |
-| ----------------------------------------- | ------------------------------------------------------------ |
-| Vision encoding (mtmd)                    | ~10-15 s                                                     |
-| Token generation (200 tokens max, greedy) | ~40-55 s                                                     |
-| **Total per frame**                       | **50-80 s**                                                  |
-| Self-watchdog ceiling                     | 120 s (frame dropped, model stays loaded)                    |
-| Frames captured per 35-min eclipse        | ~24 (85 s capture interval)                                  |
-| Frames inferred per eclipse               | ~32 (all captured; 5-frame queue absorbs inference overflow) |
-| VLM duty cycle per orbit                  | ~32%                                                         |
+| Metric                                    | Value                                                             |
+| ----------------------------------------- | ----------------------------------------------------------------- |
+| Vision encoding (mtmd)                    | ~10-15 s                                                          |
+| Token generation (200 tokens max, greedy) | ~40-55 s                                                          |
+| **Total per frame**                       | **50-80 s**                                                       |
+| Self-watchdog ceiling                     | 120 s (frame dropped, model stays loaded)                         |
+| Frames captured per 35-min eclipse        | ~24 (85 s capture interval)                                       |
+| Frames inferred per eclipse               | ~24 (all captured; inference < capture interval, queue depth 0-1) |
+| VLM duty cycle per orbit                  | ~26%                                                              |
 
 **Memory in MEASURE mode (Pi 5, 8 GB RAM):**
 
@@ -143,8 +143,8 @@ Expected triage distribution on a random LEO track (based on target morphology d
 | Verdict             | Expected ratio | Data per orbit           | Action                         |
 | ------------------- | -------------- | ------------------------ | ------------------------------ |
 | LOW                 | ~60-70%        | 0 bytes (discarded)      | Buffer recycled immediately    |
-| MEDIUM              | ~20-30%        | ~1.5-2.3 MB (stored)     | Written to microSD             |
-| HIGH                | ~5-10%         | ~384-768 KB (downlinked) | Transmitted during comm window |
+| MEDIUM              | ~20-30%        | ~3.8-5.4 MB (stored)     | Written to microSD             |
+| HIGH                | ~5-10%         | ~0.8-1.5 MB (downlinked) | Transmitted during comm window |
 | **Bandwidth saved** | **~90-95%**    |                          | vs. downlinking every frame    |
 
 > **TODO:** replace with actual triage distribution (HIGH / MEDIUM / LOW counts and %) from end-to-end Pi run
@@ -248,12 +248,12 @@ uv run receiver.py
 FLUSH_MEDIUM_STORAGE
 ```
 
-This queues one file per second to F-Prime's FileDownlink service (TCP :50000). Each file is **renamed** to `.raw.sent` before transmission to avoid re-queuing. Files arrive in `ground_segment/data/downlinked_UHF/` (the directory set via `--file-storage-directory` when launching GDS). The command is rejected if the spacecraft is not in DOWNLINK mode. Convert the downloaded `.raw` files to viewable JPGs:
+This queues one file per second to F-Prime's FileDownlink service (TCP :50000). Each file is **renamed** to `.raw.sent` before transmission to avoid re-queuing. `.sent` files from a previous flush are cleaned up when the next `FLUSH_MEDIUM_STORAGE` is issued. If the comm window closes mid-flush, files already renamed to `.sent` but not yet delivered are lost on a real spacecraft (in this simulation the GDS link stays up over WiFi, so they arrive regardless). Files arrive in `ground_segment/data/downlinked_UHF/` (the directory set via `--file-storage-directory` when launching GDS). The command is rejected if the spacecraft is not in DOWNLINK mode. Convert the downloaded `.raw` files to viewable JPGs:
 
 ```bash
 cd ground_segment
 # in the ground segment venv
-uv run raw_to_jpg.py ../flight_segment/orion/downlinked_UHF/fprime-downlink
+uv run raw_to_jpg.py ./data/downlinked_UHF/fprime-downlink
 ```
 
 ### Return to IDLE

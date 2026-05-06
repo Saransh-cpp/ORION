@@ -11,7 +11,7 @@ Usage:
 ```bash
 cd ground_segment
 # in the ground segment venv
-uv run raw_to_jpg.py ../flight_segment/orion/downlinked_UHF/fprime-downlink
+uv run raw_to_jpg.py ./data/downlinked_UHF/fprime-downlink
 ```
 
 **Arguments:**

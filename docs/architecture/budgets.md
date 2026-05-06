@@ -34,10 +34,10 @@ Inference timeout is set at 120 seconds.
 | MEASURE window               | ~35 min (eclipse)      | Orbital parameters                                                                             |
 | Capture interval             | 85 s (minimum)         | `MIN_CAPTURE_INTERVAL` in CameraManager                                                        |
 | Frames captured per orbit    | ~24 frames             | 35 min / 85 s                                                                                  |
-| Frames inferred per orbit    | ~24 frames             | All captured frames; inference (~74 s avg) < capture interval (85 s), queue stays at depth 0-1 |
+| Frames inferred per orbit    | ~24 frames             | All captured frames; inference (~65 s avg) < capture interval (85 s), queue stays at depth 0-1 |
 | Frames dropped per orbit     | ~0                     | 5-frame queue depth means no frames are lost under normal inference timing                     |
 | Raw data per frame           | 786,432 bytes (768 KB) | 512 x 512 x 3 RGB                                                                              |
-| Raw data generated per orbit | ~24 MB                 | 32 frames × 768 KB                                                                             |
+| Raw data generated per orbit | ~18 MB                 | 24 frames × 768 KB                                                                             |
 
 ### Triage Distribution (Expected)
 
@@ -46,8 +46,8 @@ Based on target morphology distribution (71% of Earth is ocean):
 | Verdict             | Expected ratio | Data per orbit           | Action                         |
 | ------------------- | -------------- | ------------------------ | ------------------------------ |
 | LOW                 | ~60-70%        | 0 bytes (discarded)      | Buffer recycled                |
-| MEDIUM              | ~20-30%        | ~1.5-2.3 MB (stored)     | Written to disk                |
-| HIGH                | ~5-10%         | ~384-768 KB (downlinked) | Transmitted during comm window |
+| MEDIUM              | ~20-30%        | ~3.8-5.4 MB (stored)     | Written to disk                |
+| HIGH                | ~5-10%         | ~0.8-1.5 MB (downlinked) | Transmitted during comm window |
 | **Bandwidth saved** | **~90-95%**    |                          | vs. downlinking all frames     |
 
 ## Link Budget (Per Comm Window)
@@ -71,9 +71,9 @@ In practice, the comm window is far wider than needed for HIGH frame downlink. T
 
 | Storage             | Rate                  | Retention                                |
 | ------------------- | --------------------- | ---------------------------------------- |
-| HIGH queue (disk)   | ~384-768 KB per orbit | Flushed each comm window                 |
-| MEDIUM storage      | ~1.5-2.3 MB per orbit | Accumulates until `FLUSH_MEDIUM_STORAGE` |
-| MEDIUM per day      | ~12-28 MB             | 8-12 orbits with eclipses                |
+| HIGH queue (disk)   | ~0.8-1.5 MB per orbit | Flushed each comm window                 |
+| MEDIUM storage      | ~3.8-5.4 MB per orbit | Accumulates until `FLUSH_MEDIUM_STORAGE` |
+| MEDIUM per day      | ~30-65 MB             | 8-12 orbits with eclipses                |
 | Pi microSD capacity | 32-128 GB typical     | Months of MEDIUM storage                 |
 
 ## Power Budget (Timing)
@@ -84,10 +84,10 @@ This section documents the compute duty cycle.
 | ------------------ | ------------------------- | ------------------------------------------------------------- |
 | IDLE (sunlit)      | ~66 min                   | NavTelemetry polling only. Model unloaded. Charging.          |
 | MEASURE (eclipse)  | ~35 min                   | VLM loaded (~1.75 GB RSS measured). Captures + inference.     |
-| VLM active time    | ~32 min of MEASURE        | 32 frames × ~60 s inference; nearly continuous during eclipse |
-| VLM idle time      | ~3 min of MEASURE         | ~5 s gap per capture cycle × 32 cycles                        |
+| VLM active time    | ~26 min of MEASURE        | 24 frames × ~65 s inference; nearly continuous during eclipse |
+| VLM idle time      | ~8 min of MEASURE         | ~20 s gap per capture cycle × 24 cycles                       |
 | DOWNLINK           | ~3-6 min (if pass occurs) | Queue flush. Model stays loaded.                              |
-| **VLM duty cycle** | **~32%** of orbit         | 32 min inference / ~101 min orbit                             |
+| **VLM duty cycle** | **~26%** of orbit         | 26 min inference / ~101 min orbit                             |
 
 ## Memory Budget
 

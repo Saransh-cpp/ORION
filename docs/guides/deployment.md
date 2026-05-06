@@ -70,6 +70,9 @@ Set the required environment variables on the Pi before launching the binary. Ad
 ```bash
 # Point to the development machine running SimSat
 export ORION_SIMSAT_URL=http://<machine-ip>:9005
+
+# Point the X-band downlink to the machine running receiver.py
+export ORION_GDS_HOST=<machine-ip>
 ```
 
 See [Environment Variables](environment-variables.md) for the full list of configurable variables.

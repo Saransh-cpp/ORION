@@ -98,7 +98,7 @@ ORION/
 
 ## Building Documentation
 
-The documentation site is built with [MkDocs Material](https://squidfun.github.io/mkdocs-material/), [mkdocstrings](https://mkdocstrings.github.io/) (Python API docs), and [mkdoxy](https://mkdoxy.kubaandrysek.cz/) (C++ API docs via Doxygen).
+The documentation site is built with [MkDocs Material](https://squidfunk.github.io/mkdocs-material/), [mkdocstrings](https://mkdocstrings.github.io/) (Python API docs), and [mkdoxy](https://mkdoxy.kubaandrysek.cz/) (C++ API docs via Doxygen).
 
 ### Prerequisites
 

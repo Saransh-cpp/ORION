@@ -11,7 +11,7 @@ namespace Orion {
 static constexpr FwSizeType IMAGE_BUFFER_SIZE = 512 * 512 * 3;  // 786,432 bytes
 static constexpr U32 IMAGE_WIDTH = 512;
 static constexpr U32 IMAGE_HEIGHT = 512;
-static constexpr U32 MIN_CAPTURE_INTERVAL = 85;  // Must exceed worst-case inference time (~82s)
+static constexpr U32 MIN_CAPTURE_INTERVAL = 85;  // Must exceed worst-case inference time (~80s)
 
 static const char* modeStr(MissionMode mode) {
     switch (mode.e) {

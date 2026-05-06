@@ -224,7 +224,7 @@ This is a prototype demonstrating that on-board VLM inference on a Pi 5 is techn
 
 ## Deployment
 
-The adapter is converted to Q4_K_M GGUF via `llama-quantize` and runs on the Pi 5 via [llama.cpp](https://github.com/ggerganov/llama.cpp)'s multimodal (`mtmd`) API:
+The adapter is converted to Q4_K_M GGUF via `llama-quantize` and runs on the Pi 5 via [llama.cpp](https://github.com/ggml-org/llama.cpp)'s multimodal (`mtmd`) API:
 
 ```
 Vision encoding (mtmd):      ~10-15 s

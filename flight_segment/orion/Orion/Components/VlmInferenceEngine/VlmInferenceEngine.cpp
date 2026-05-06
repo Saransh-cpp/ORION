@@ -43,7 +43,7 @@ static const char* getGgufPath() {
 }
 static const char* getMmprojPath() {
     const char* p = ::getenv("ORION_MMPROJ_PATH");
-    return p ? p : "orion-mmproj-f16.gguf";
+    return p ? p : "./orion-mmproj-f16.gguf";
 }
 
 // ---------------------------------------------------------------------------

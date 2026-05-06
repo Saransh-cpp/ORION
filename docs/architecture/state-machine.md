@@ -55,17 +55,17 @@ When a comm window closes, the state machine enters the `POST_DOWNLINK` choice p
 
 ## Commands
 
-| Command           | Opcode | Description                                                                                                            | Allowed From            |
-| ----------------- | ------ | ---------------------------------------------------------------------------------------------------------------------- | ----------------------- |
-| `SET_ECLIPSE`     | 0x00   | Sets the eclipse flag. `true` (eclipse) triggers transition to MEASURE; `false` (sun visible) triggers return to IDLE. | Any (signal-based)      |
-| `ENTER_SAFE_MODE` | 0x01   | Forces immediate transition to SAFE from any operational state.                                                        | IDLE, MEASURE, DOWNLINK |
-| `EXIT_SAFE_MODE`  | 0x02   | Returns from SAFE to IDLE. Re-syncs with current comm window and eclipse state.                                        | SAFE                    |
-| `GOTO_IDLE`       | 0x10   | Manual transition to IDLE.                                                                                             | MEASURE, DOWNLINK       |
-| `GOTO_MEASURE`    | 0x11   | Manual transition to MEASURE.                                                                                          | IDLE                    |
-| `GOTO_DOWNLINK`   | 0x12   | Manual transition to DOWNLINK.                                                                                         | IDLE                    |
+| Command                | Opcode | Description                                                                                                                                   | Allowed From            |
+| ---------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| `SET_ECLIPSE`          | 0x00   | Sets the eclipse flag. `true` (eclipse) triggers transition to MEASURE; `false` (sun visible) triggers return to IDLE.                        | Any (signal-based)      |
+| `ENTER_SAFE_MODE`      | 0x01   | Forces immediate transition to SAFE from any operational state.                                                                               | IDLE, MEASURE, DOWNLINK |
+| `EXIT_SAFE_MODE`       | 0x02   | Returns from SAFE to IDLE. Re-syncs with current comm window and eclipse state.                                                               | SAFE                    |
+| `GOTO_IDLE`            | 0x10   | Manual transition to IDLE.                                                                                                                    | MEASURE, DOWNLINK       |
+| `GOTO_MEASURE`         | 0x11   | Manual transition to MEASURE.                                                                                                                 | IDLE                    |
+| `GOTO_DOWNLINK`        | 0x12   | Manual transition to DOWNLINK.                                                                                                                | IDLE                    |
+| `FLUSH_MEDIUM_STORAGE` | 0x03   | Queues all MEDIUM images for bulk download via F-Prime FileDownlink. Paced at one file per tick to avoid overwhelming the FileDownlink queue. | DOWNLINK                |
 
 The `GOTO_*` commands are ground operator overrides for forcing a mode entry that the autonomous logic would not trigger on its own (e.g. entering DOWNLINK outside a comm window, or MEASURE without an eclipse signal). Once in the target state, autonomous transitions still apply normally; for instance, `GOTO_IDLE` during a comm window will be followed by an automatic transition to DOWNLINK on the next `commWindowOpened` edge.
-| `FLUSH_MEDIUM_STORAGE` | 0x03 | Queues all MEDIUM images for bulk download via F-Prime FileDownlink. Paced at one file per tick to avoid overwhelming the FileDownlink queue. | DOWNLINK |
 
 ## Comm Window Detection
 

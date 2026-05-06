@@ -170,10 +170,10 @@ The `InferenceComplete` event carries the VLM's reason string (up to 400 charact
 
 ### 3.13 Environment Variables
 
-| Variable            | Default                 | Description                                |
-| ------------------- | ----------------------- | ------------------------------------------ |
-| `ORION_GGUF_PATH`   | `./orion-q4_k_m.gguf`   | Path to the Q4_K_M quantized text model    |
-| `ORION_MMPROJ_PATH` | `orion-mmproj-f16.gguf` | Path to the FP16 vision encoder projection |
+| Variable            | Default                   | Description                                |
+| ------------------- | ------------------------- | ------------------------------------------ |
+| `ORION_GGUF_PATH`   | `./orion-q4_k_m.gguf`     | Path to the Q4_K_M quantized text model    |
+| `ORION_MMPROJ_PATH` | `./orion-mmproj-f16.gguf` | Path to the FP16 vision encoder projection |
 
 ## 4. Change Log
 
