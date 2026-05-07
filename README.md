@@ -29,6 +29,8 @@ This project was born from a real problem flagged on a real mission. Being the F
 
 > _"From experience I recommend thinking about pre-loading software that allows you to check that a picture is worth downloading before you do it."_
 
+<!-- <img src="https://raw.githubusercontent.com/Saransh-cpp/ORION/main/docs/assets/rid.png" alt="ORION" width="300"> -->
+
 for our [NovoViz](https://novoviz.com) Single-photon avalanche diode (camera) payload.
 
 Earth observation satellites generate far more data than their limited comm windows can downlink, and most of it is open ocean, empty desert, cloud cover, which is scientifically worthless. Our mission's approach was to downlink everything and sort on the ground, which would have wasted precious bandwidth and pass time.
