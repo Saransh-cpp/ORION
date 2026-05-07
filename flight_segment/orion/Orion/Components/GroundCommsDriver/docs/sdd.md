@@ -113,6 +113,8 @@ Each `transmitRaw` call opens a new TCP connection, sends the header + payload, 
 
 2. **Heap allocation in flush loop:** `flushQueue` allocates a heap buffer per file (`new U8[fileSize]`). On the Pi's constrained memory, flushing many large files could fragment the heap. Using a fixed-size stack buffer (786KB matches the image size) would avoid this.
 
+3. **GDS status indicator flicker during MEDIUM flush:** FileDownlink sends 786 KB files every ~3 seconds through the shared TCP :50000 link. The file data saturates the ComQueue, starving regular telemetry packets. The GDS interprets the telemetry gap as a connection loss (red indicator), then recovers when the next telemetry packet gets through (green indicator). This is cosmetic as no data is lost. Observed during the 2026-05-07 overnight run (23 MEDIUM files flushed successfully despite repeated red/green flicker).
+
 ## 5. Change Log
 
 | Date       | Description                                                                           |

@@ -194,6 +194,8 @@ The workflow:
 6. On the GDS side, reassembled files arrive in the directory set via `--file-storage-directory` when launching GDS (usually `../../ground_segment/data/downlinked_UHF/`).
 7. Convert the downloaded `.raw` files to viewable JPGs: `python ground_segment/raw_to_jpg.py ./data/downlinked_UHF/fprime-downlink`
 
+**GDS status indicator flicker:** During a MEDIUM flush, FileDownlink sends 786 KB files every ~3 seconds through the same TCP :50000 link used for telemetry and events. The file data saturates the ComQueue, starving regular telemetry packets. The GDS interprets the gap in telemetry as a connection loss (red cross), then recovers when the next telemetry packet gets through (green light). This is cosmetic as no data is lost and all file transfers complete successfully.
+
 ## Buffer Lifecycle
 
 Every buffer in the system follows a strict ownership chain. At any point, exactly one component owns each buffer:

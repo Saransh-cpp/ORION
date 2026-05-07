@@ -93,7 +93,6 @@ cover/
 *.pot
 
 # Django stuff:
-*.log
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
@@ -218,7 +217,8 @@ ground_segment/training/orion_lora_weights/checkpoint-*/
 *.gguf
 
 # fprime items
-flight_segment/orion/logs/
+flight_segment/orion/logs/**/channel.log
+flight_segment/orion/logs/**/*.bin
 flight_segment/orion/cmake-build-*
 flight_segment/orion/build-artifacts/
 flight_segment/orion/build-fprime-*

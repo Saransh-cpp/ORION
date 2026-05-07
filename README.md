@@ -248,7 +248,11 @@ uv run receiver.py
 FLUSH_MEDIUM_STORAGE
 ```
 
-This queues one file per second to F-Prime's FileDownlink service (TCP :50000). Each file is **renamed** to `.raw.sent` before transmission to avoid re-queuing. `.sent` files from a previous flush are cleaned up when the next `FLUSH_MEDIUM_STORAGE` is issued. If the comm window closes mid-flush, files already renamed to `.sent` but not yet delivered are lost on a real spacecraft (in this simulation the GDS link stays up over WiFi, so they arrive regardless). Files arrive in `ground_segment/data/downlinked_UHF/` (the directory set via `--file-storage-directory` when launching GDS). The command is rejected if the spacecraft is not in DOWNLINK mode. Convert the downloaded `.raw` files to viewable JPGs:
+This queues one file per second to F-Prime's FileDownlink service (TCP :50000). Each file is **renamed** to `.raw.sent` before transmission to avoid re-queuing. `.sent` files from a previous flush are cleaned up when the next `FLUSH_MEDIUM_STORAGE` is issued.
+
+If the comm window closes mid-flush, files already renamed to `.sent` but not yet delivered are lost on a real spacecraft (in this simulation the GDS link stays up over WiFi, so they arrive regardless). The GDS status indicator may flicker red/green during the flush but this is cosmetic; the file transfers saturate the shared TCP link, briefly starving telemetry packets.
+
+Files arrive in `ground_segment/data/downlinked_UHF/` (the directory set via `--file-storage-directory` when launching GDS). The command is rejected if the spacecraft is not in DOWNLINK mode. Convert the downloaded `.raw` files to viewable JPGs:
 
 ```bash
 cd ground_segment
