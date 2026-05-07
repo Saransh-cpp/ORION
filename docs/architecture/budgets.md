@@ -17,13 +17,13 @@ Quantitative characterization of ORION's resource usage per orbit. Based on meas
 
 Measured on Raspberry Pi 5 (Cortex-A76 quad-core, CPU-only):
 
-| Stage                       | Duration    | Source                          |
-| --------------------------- | ----------- | ------------------------------- |
-| SimSat HTTP image fetch     | ~100-500 ms | Network dependent (LAN)         |
-| Vision encoding (mtmd)      | ~10-15 s    | Included in inference total     |
-| Token generation (200 max)  | ~40-55 s    | Greedy sampling, 4 threads      |
-| JSON parse + triage routing | < 1 ms      | Negligible                      |
-| **Total per frame**         | **50-80 s** | Measured from Pi telemetry logs |
+| Stage                       | Duration    | Source                                       |
+| --------------------------- | ----------- | -------------------------------------------- |
+| SimSat HTTP image fetch     | ~100-500 ms | Network dependent (LAN)                      |
+| Vision encoding (mtmd)      | ~10-15 s    | Included in inference total                  |
+| Token generation (200 max)  | ~40-55 s    | Greedy sampling, 4 threads                   |
+| JSON parse + triage routing | < 1 ms      | Negligible                                   |
+| **Total per frame**         | **53-82 s** | Measured from Pi telemetry logs (mean ~72 s) |
 
 Inference timeout is set at 120 seconds.
 
@@ -34,7 +34,7 @@ Inference timeout is set at 120 seconds.
 | MEASURE window               | ~35 min (eclipse)      | Orbital parameters                                                                             |
 | Capture interval             | 85 s (minimum)         | `MIN_CAPTURE_INTERVAL` in CameraManager                                                        |
 | Frames captured per orbit    | ~24 frames             | 35 min / 85 s                                                                                  |
-| Frames inferred per orbit    | ~24 frames             | All captured frames; inference (~65 s avg) < capture interval (85 s), queue stays at depth 0-1 |
+| Frames inferred per orbit    | ~24 frames             | All captured frames; inference (~72 s avg) < capture interval (85 s), queue stays at depth 0-1 |
 | Frames dropped per orbit     | ~0                     | 5-frame queue depth means no frames are lost under normal inference timing                     |
 | Raw data per frame           | 786,432 bytes (768 KB) | 512 x 512 x 3 RGB                                                                              |
 | Raw data generated per orbit | ~18 MB                 | 24 frames × 768 KB                                                                             |
@@ -84,10 +84,10 @@ This section documents the compute duty cycle.
 | ------------------ | ------------------------- | ------------------------------------------------------------- |
 | IDLE (sunlit)      | ~66 min                   | NavTelemetry polling only. Model unloaded. Charging.          |
 | MEASURE (eclipse)  | ~35 min                   | VLM loaded (~1.75 GB RSS measured). Captures + inference.     |
-| VLM active time    | ~26 min of MEASURE        | 24 frames × ~65 s inference; nearly continuous during eclipse |
-| VLM idle time      | ~8 min of MEASURE         | ~20 s gap per capture cycle × 24 cycles                       |
+| VLM active time    | ~29 min of MEASURE        | 24 frames × ~72 s inference; nearly continuous during eclipse |
+| VLM idle time      | ~5 min of MEASURE         | ~13 s gap per capture cycle × 24 cycles                       |
 | DOWNLINK           | ~3-6 min (if pass occurs) | Queue flush. Model stays loaded.                              |
-| **VLM duty cycle** | **~26%** of orbit         | 26 min inference / ~101 min orbit                             |
+| **VLM duty cycle** | **~29%** of orbit         | 29 min inference / ~101 min orbit                             |
 
 ## Memory Budget
 
@@ -107,3 +107,48 @@ Available headroom: ~6,439 MB (MEASURE) / ~7,956 MB (IDLE)
 ```
 
 No runtime dynamic allocation is used in the ORION pipeline. The buffer pool is pre-allocated at startup, and the model weights are loaded once into RAM when entering MEASURE mode.
+
+## Measured Results: Run 1 (10h 23m Pi 5 Run, 2026-05-07)
+
+Single continuous MEASURE session on Raspberry Pi 5 (no eclipse cycling — `SET_ECLIPSE` issued once at start). The satellite was not in range of the ground station (EPFL) for ~11 hours; one comm window occurred near the end of the run. Raw event log: [`flight_segment/orion/logs/2026_05_06-23_28_57/event.log`](../../flight_segment/orion/logs/2026_05_06-23_28_57/event.log).
+
+### Run Parameters
+
+| Parameter          | Value                              |
+| ------------------ | ---------------------------------- |
+| Run duration       | 10h 23m (23:28 – 09:52 UTC+2)      |
+| MEASURE duration   | ~11h 50m (continuous)              |
+| Comm windows       | 1 (10m 15s, distance 1982 km open) |
+| Model load time    | ~21 s                              |
+| Inference failures | 0                                  |
+| Inference timeouts | 0                                  |
+| Frames dropped     | 0                                  |
+| Capture failures   | 0                                  |
+
+### Inference Timing (501 frames)
+
+| Metric | Value            |
+| ------ | ---------------- |
+| Min    | 52.9 s           |
+| Max    | 81.6 s           |
+| Mean   | 71.7 s           |
+| Total  | 598 min (9h 58m) |
+
+### Triage Distribution (501 frames, 384 MB total)
+
+| Verdict             | Count | Ratio     | Data                | Action                                 |
+| ------------------- | ----- | --------- | ------------------- | -------------------------------------- |
+| LOW                 | 476   | 95.0%     | 0 bytes             | Buffer recycled                        |
+| MEDIUM              | 23    | 4.6%      | 17.3 MB (stored)    | Written to microSD                     |
+| HIGH                | 2     | 0.4%      | 1.5 MB (downlinked) | Queued to disk, flushed on comm window |
+| **Bandwidth saved** |       | **95.0%** |                     | vs. downlinking every frame            |
+
+HIGH + MEDIUM combined: 25 frames (5.0% of total). 99.6% of data was discarded or deferred vs. blind downlink.
+
+### Downlink
+
+- 2 HIGH frames queued to disk (outside comm window), flushed automatically on comm window open.
+- 23 MEDIUM files bulk-downloaded via `FLUSH_MEDIUM_STORAGE` during comm window.
+- Comm window duration (10m 15s) was more than sufficient for all queued data.
+
+Raw event logs are in [`flight_segment/orion/logs/`](../../flight_segment/orion/logs/) (channel telemetry logs excluded from the repository due to size — 50+ MB of 5-second NavTelemetry position polls — but available on request).

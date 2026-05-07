@@ -23,7 +23,7 @@ sequenceDiagram
     NT-->>CM: NavState {lat, lon, alt, inCommWindow}
     CM->>VLM: inferenceRequestOut (buffer, lat, lon)
 
-    Note over VLM: ChatML prompt + image<br/>llama.cpp forward pass<br/>50-80 seconds
+    Note over VLM: ChatML prompt + image<br/>llama.cpp forward pass<br/>53-82 seconds (mean ~72s)
 
     VLM->>TR: triageDecisionOut (verdict, reason, buffer)
 
@@ -49,7 +49,7 @@ sequenceDiagram
 4. On success, `CameraManager` makes a synchronous call to `NavTelemetry` via the `NavStatePort` to obtain the GPS coordinates (lat, lon) at the exact moment of capture.
 5. The buffer and coordinates are dispatched asynchronously to `VlmInferenceEngine` via the `InferenceRequestPort`. CameraManager then returns to sleep: it does not wait for inference to complete.
 
-**Auto-capture timing:** In MEASURE mode, auto-capture fires every 85 seconds (configurable, minimum 85s). This interval must exceed the worst-case inference time (~80s) to avoid saturating the 5-entry VLM queue.
+**Auto-capture timing:** In MEASURE mode, auto-capture fires every 85 seconds (configurable, minimum 85s). This interval must exceed the worst-case inference time (~82s measured) to avoid saturating the 5-entry VLM queue.
 
 ## Stage 2: VLM Inference
 

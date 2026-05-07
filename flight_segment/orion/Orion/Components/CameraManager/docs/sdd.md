@@ -68,7 +68,7 @@ Auto-capture is driven by the 1 Hz `schedIn` tick with an internal counter:
 - **Disable:** automatically on any mode exit from MEASURE, or manually via command
 - **Guard:** `schedIn_handler` checks both `m_autoCaptureEnabled` AND `m_currentMode == MEASURE`
 
-The 85-second minimum exceeds worst-case VLM inference time (~80s on the Pi 5), preventing queue buildup.
+The 85-second minimum exceeds worst-case VLM inference time (~82s measured on the Pi 5), preventing queue buildup.
 
 ### 3.5 Port Diagram
 

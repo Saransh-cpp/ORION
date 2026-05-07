@@ -18,6 +18,8 @@ An autonomous LEO satellite triage system built using:
 
 ORION solves the orbital bandwidth bottleneck: roughly 71% of Earth's surface is featureless ocean, yet a traditional satellite downlinks every captured frame. By running a fine-tuned (on a custom dataset collected using SimSat) Q4-quantized VLM on-board, ORION classifies each image as HIGH, MEDIUM, or LOW priority and only transmits the most strategically valuable observations in real time. The model runs directly on raw 512×512 RGB pixels and is connected to a real flight software (not a Python wrapper), making it deployable on satellite's On-Board Computer (after rigorous testing and mission-specific tweaks) for any standard camera payload.
 
+In a [10h 23m end-to-end run on a Pi 5](#results), ORION classified 501 frames with **95% bandwidth savings** (476 LOW discarded, 23 MEDIUM stored, 2 HIGH downlinked), averaging 71.7s per inference with zero failures or timeouts.
+
 ## Motivation
 
 This project was born from a real problem flagged on a real mission. Being the Flight Software subsystems lead on [EPFL Spacecraft Team's](https://www.epflspacecraftteam.ch) [CHESS](https://www.epflspacecraftteam.ch/project#chess) mission (part of [ESA's Fly Your Satellite! Design Booster programme](https://www.esa.int/Education/Educational_Satellites/About_Design_Booster)), I received a Review Item Discrepancy during our Final Design Review from an ESA expert:
@@ -96,11 +98,11 @@ Each class includes deliberately hard sub-types (e.g., coastlines that mimic art
 | ----------------------------------------- | ----------------------------------------------------------------- |
 | Vision encoding (mtmd)                    | ~10-15 s                                                          |
 | Token generation (200 tokens max, greedy) | ~40-55 s                                                          |
-| **Total per frame**                       | **50-80 s**                                                       |
+| **Total per frame**                       | **53-82 s** (mean ~72 s)                                          |
 | Self-watchdog ceiling                     | 120 s (frame dropped, model stays loaded)                         |
 | Frames captured per 35-min eclipse        | ~24 (85 s capture interval)                                       |
 | Frames inferred per eclipse               | ~24 (all captured; inference < capture interval, queue depth 0-1) |
-| VLM duty cycle per orbit                  | ~26%                                                              |
+| VLM duty cycle per orbit                  | ~29%                                                              |
 
 **Memory in MEASURE mode (Pi 5, 8 GB RAM):**
 
@@ -138,6 +140,8 @@ ORION demonstrates that on-board VLM inference on a Pi 5 is technically viable a
 
 Each frame is 786 KB (512×512 RGB). The triage doctrine, HIGH downlinked immediately, MEDIUM stored for bulk transfer, LOW discarded, eliminates transmission of all LOW frames.
 
+### Expected savings
+
 Expected triage distribution on a random LEO track (based on target morphology distribution across the training dataset):
 
 | Verdict             | Expected ratio | Data per orbit           | Action                         |
@@ -147,7 +151,23 @@ Expected triage distribution on a random LEO track (based on target morphology d
 | HIGH                | ~5-10%         | ~0.8-1.5 MB (downlinked) | Transmitted during comm window |
 | **Bandwidth saved** | **~90-95%**    |                          | vs. downlinking every frame    |
 
-> **TODO:** replace with actual triage distribution (HIGH / MEDIUM / LOW counts and %) from end-to-end Pi run
+### Measured savings (Run 1)
+
+Measured triage distribution from a [10h 23m continuous Pi 5 run](flight_segment/orion/logs/2026_05_06-23_28_57/event.log) (501 frames, 384 MB captured), with a single continuous MEASURE session (no eclipse cycling as `SET_ECLIPSE` issued once at start) and one comm window near the end of the run:
+
+| Verdict             | Count | Ratio     | Data                | Action                                 |
+| ------------------- | ----- | --------- | ------------------- | -------------------------------------- |
+| LOW                 | 476   | 95.0%     | 0 bytes             | Buffer recycled                        |
+| MEDIUM              | 23    | 4.6%      | 17.3 MB (stored)    | Written to microSD                     |
+| HIGH                | 2     | 0.4%      | 1.5 MB (downlinked) | Queued to disk, flushed on comm window |
+| **Bandwidth saved** |       | **95.0%** |                     | vs. downlinking every frame            |
+
+- HIGH + MEDIUM combined: 25 frames (5.0% of total). 99.6% of data was discarded or deferred vs. blind downlink.
+- 2 HIGH frames queued to disk (outside comm window), flushed automatically on comm window open.
+- 23 MEDIUM files bulk-downloaded via `FLUSH_MEDIUM_STORAGE` during comm window.
+- Comm window duration (10m 15s) was more than sufficient for all queued data.
+
+Inference averaged 71.7s per frame (min 52.9s, max 81.6s) with zero failures, timeouts, or dropped frames across the entire run. Raw event logs are in [`flight_segment/orion/logs/`](flight_segment/orion/logs/) (channel telemetry logs excluded due to size but available on request).
 
 ## Usage
 
@@ -205,7 +225,7 @@ SET_ECLIPSE true
 IDLE transitions to MEASURE (eclipse = imaging on battery). In the `Events` tab (or in `flight_segment/orion/logs/<latest-one>/event.log`), you will see:
 
 - `ModeChanged: IDLE -> MEASURE`
-- `ModelLoaded`: VLM loads into RAM (~15s on Pi)
+- `ModelLoaded`: VLM loads into RAM (~21s on Pi)
 - `AutoCaptureEnabled every 85 seconds`
 
 These events are sent by the satellite (Pi or your local terminal instance running the flight software binary, whether explicitly or in a background process by `fprime-gds`) to the GDS machine (your local machine or the terminal instance running GDS) over TCP.
