@@ -85,6 +85,8 @@ The system is split into a [flight segment](https://Saransh-cpp.github.io/ORION/
 
 > Full quantitative breakdown: [Mission Budgets](https://Saransh-cpp.github.io/ORION/architecture/budgets/) · [Ground Segment Budgets](https://Saransh-cpp.github.io/ORION/ground-segment/budgets/) · [Dataset & target definitions](https://Saransh-cpp.github.io/ORION/ground-segment/data/)
 
+Unless noted otherwise, all compute numbers below (inference time, duty cycle, frames per eclipse) are derived from the pooled average across 2 end-to-end Pi 5 simulation runs (897 frames, ~20 hours total). Per-run breakdowns are in the [measured savings](#measured-savings) section and the [mission budgets](https://Saransh-cpp.github.io/ORION/architecture/budgets/#cross-run-comparison).
+
 ### Target definitions
 
 The [custom dataset](https://Saransh-cpp.github.io/ORION/ground-segment/data/) contains 360 satellite images (120 per class) fetched from SimSat's Mapbox API, split into 240 train / 60 val / 60 test. Each class is defined by visual morphology:
@@ -103,7 +105,7 @@ Each class includes deliberately hard sub-types (e.g., coastlines that mimic art
 | ----------------------------------------- | ----------------------------------------------------------------- |
 | Vision encoding (mtmd)                    | ~10-15 s                                                          |
 | Token generation (200 tokens max, greedy) | ~40-55 s                                                          |
-| **Total per frame**                       | **53-82 s** (mean ~72 s)                                          |
+| **Total per frame**                       | **53-82 s** (mean ~71 s across 897 frames from 2 end-to-end runs) |
 | Self-watchdog ceiling                     | 120 s (frame dropped, model stays loaded)                         |
 | Frames captured per 35-min eclipse        | ~24 (85 s capture interval)                                       |
 | Frames inferred per eclipse               | ~24 (all captured; inference < capture interval, queue depth 0-1) |
@@ -158,7 +160,7 @@ Expected triage distribution on a random LEO track (based on target morphology d
 
 ### Measured savings
 
-Measured triage distribution from continuous Pi 5 runs (no eclipse cycling; `SET_ECLIPSE` issued once at start). Raw event logs: [Run 1](flight_segment/orion/logs/2026_05_06-23_28_57/event.log) (10h 23m, 501 frames), [Run 2](flight_segment/orion/logs/2026_05_07-12_10_33/event.log) (9h 39m, 396 frames).
+Measured triage distribution from continuous Pi 5 runs (no eclipse cycling; `SET_ECLIPSE` issued once at start). The "Pooled average" column treats all frames across runs as a single dataset (weighted by frame count, not arithmetic mean of percentages). Raw event logs: [Run 1](flight_segment/orion/logs/2026_05_06-23_28_57/event.log) (10h 23m, 501 frames), [Run 2](flight_segment/orion/logs/2026_05_07-12_10_33/event.log) (9h 39m, 396 frames).
 
 | Verdict             | Run 1       | Run 2       | Run 3 | Pooled average |
 | ------------------- | ----------- | ----------- | ----- | -------------- |

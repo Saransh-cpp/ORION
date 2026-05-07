@@ -2,6 +2,8 @@
 
 Quantitative characterization of ORION's resource usage per orbit. Based on measured telemetry from Pi 5 deployment at ~800 km SSO.
 
+Unless noted otherwise, all compute numbers in the budget tables below (inference time, duty cycle, frames per orbit) are derived from the pooled average across 2 end-to-end Pi 5 simulation runs (897 frames, ~20 hours total). Per-run breakdowns and methodology are in the [Cross-Run Comparison](#cross-run-comparison) section.
+
 ## Orbital Parameters
 
 | Parameter             | Value                 | Source                              |
@@ -17,13 +19,13 @@ Quantitative characterization of ORION's resource usage per orbit. Based on meas
 
 Measured on Raspberry Pi 5 (Cortex-A76 quad-core, CPU-only):
 
-| Stage                       | Duration    | Source                                       |
-| --------------------------- | ----------- | -------------------------------------------- |
-| SimSat HTTP image fetch     | ~100-500 ms | Network dependent (LAN)                      |
-| Vision encoding (mtmd)      | ~10-15 s    | Included in inference total                  |
-| Token generation (200 max)  | ~40-55 s    | Greedy sampling, 4 threads                   |
-| JSON parse + triage routing | < 1 ms      | Negligible                                   |
-| **Total per frame**         | **53-82 s** | Measured from Pi telemetry logs (mean ~72 s) |
+| Stage                       | Duration    | Source                                                                                |
+| --------------------------- | ----------- | ------------------------------------------------------------------------------------- |
+| SimSat HTTP image fetch     | ~100-500 ms | Network dependent (LAN)                                                               |
+| Vision encoding (mtmd)      | ~10-15 s    | Included in inference total                                                           |
+| Token generation (200 max)  | ~40-55 s    | Greedy sampling, 4 threads                                                            |
+| JSON parse + triage routing | < 1 ms      | Negligible                                                                            |
+| **Total per frame**         | **53-82 s** | Measured from Pi telemetry logs (mean ~71 s across 897 frames from 2 end-to-end runs) |
 
 Inference timeout is set at 120 seconds.
 
@@ -34,7 +36,7 @@ Inference timeout is set at 120 seconds.
 | MEASURE window               | ~35 min (eclipse)      | Orbital parameters                                                                             |
 | Capture interval             | 85 s (minimum)         | `MIN_CAPTURE_INTERVAL` in CameraManager                                                        |
 | Frames captured per orbit    | ~24 frames             | 35 min / 85 s                                                                                  |
-| Frames inferred per orbit    | ~24 frames             | All captured frames; inference (~72 s avg) < capture interval (85 s), queue stays at depth 0-1 |
+| Frames inferred per orbit    | ~24 frames             | All captured frames; inference (~71 s avg) < capture interval (85 s), queue stays at depth 0-1 |
 | Frames dropped per orbit     | ~0                     | 5-frame queue depth means no frames are lost under normal inference timing                     |
 | Raw data per frame           | 786,432 bytes (768 KB) | 512 x 512 x 3 RGB                                                                              |
 | Raw data generated per orbit | ~18 MB                 | 24 frames × 768 KB                                                                             |
@@ -84,8 +86,8 @@ This section documents the compute duty cycle.
 | ------------------ | ------------------------- | ------------------------------------------------------------- |
 | IDLE (sunlit)      | ~66 min                   | NavTelemetry polling only. Model unloaded. Charging.          |
 | MEASURE (eclipse)  | ~35 min                   | VLM loaded (~1.75 GB RSS measured). Captures + inference.     |
-| VLM active time    | ~29 min of MEASURE        | 24 frames × ~72 s inference; nearly continuous during eclipse |
-| VLM idle time      | ~5 min of MEASURE         | ~13 s gap per capture cycle × 24 cycles                       |
+| VLM active time    | ~29 min of MEASURE        | 24 frames × ~71 s inference; nearly continuous during eclipse |
+| VLM idle time      | ~6 min of MEASURE         | ~14 s gap per capture cycle × 24 cycles                       |
 | DOWNLINK           | ~3-6 min (if pass occurs) | Queue flush. Model stays loaded.                              |
 | **VLM duty cycle** | **~29%** of orbit         | 29 min inference / ~101 min orbit                             |
 
@@ -201,7 +203,7 @@ Downlinked images: [HIGH Run 2 (X-band)](../../ground_segment/data/downlinked_XB
 
 ## Cross-Run Comparison
 
-All runs are continuous MEASURE sessions on the same Raspberry Pi 5 hardware (Cortex-A76, CPU-only, 8 GB RAM). Triage percentages are computed per-run; the average column pools all frames across runs (weighted by frame count, not arithmetic mean of percentages).
+All runs are continuous MEASURE sessions on the same Raspberry Pi 5 hardware (Cortex-A76, CPU-only, 8 GB RAM). The "Average (pooled)" column treats all frames across runs as a single dataset: triage counts are summed and percentages recomputed from the total, mean inference time is weighted by frame count, and min/max are the extremes across all runs. This avoids giving equal weight to runs of different lengths.
 
 ### Inference Timing
 
