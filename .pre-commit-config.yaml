@@ -21,10 +21,12 @@ repos:
         args: ["--unsafe"]
       - id: debug-statements
       - id: end-of-file-fixer
-        exclude: ^ground_segment/training/orion_lora_weights/
+        exclude: ^ground_segment/training/orion_lora_weights/|^ground_segment/data/
       - id: mixed-line-ending
+        exclude: ^ground_segment/training/orion_lora_weights/|^ground_segment/data/
       - id: requirements-txt-fixer
       - id: trailing-whitespace
+        exclude: ^ground_segment/training/orion_lora_weights/|^ground_segment/data/
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: "v0.15.12"
@@ -38,7 +40,7 @@ repos:
     hooks:
       - id: codespell
         args: ["-Lacount,numer,coefficents"]
-        exclude: ^ground_segment/training/orion_lora_weights/
+        exclude: ^ground_segment/training/orion_lora_weights/|^ground_segment/data/
 
   - repo: https://github.com/rbubley/mirrors-prettier
     rev: "v3.8.3"

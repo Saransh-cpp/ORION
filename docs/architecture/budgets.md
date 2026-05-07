@@ -151,4 +151,84 @@ HIGH + MEDIUM combined: 25 frames (5.0% of total). 99.6% of data was discarded o
 - 23 MEDIUM files bulk-downloaded via `FLUSH_MEDIUM_STORAGE` during comm window.
 - Comm window duration (10m 15s) was more than sufficient for all queued data.
 
-Raw event logs are in [`flight_segment/orion/logs/`](../../flight_segment/orion/logs/) (channel telemetry logs excluded from the repository due to size — 50+ MB of 5-second NavTelemetry position polls — but available on request).
+Raw event logs are in [`flight_segment/orion/logs/`](../../flight_segment/orion/logs/) (channel telemetry logs excluded from the repository due to size, 50+ MB of 5-second NavTelemetry position polls, but available on request). Downlinked images: [HIGH Run 1 (X-band)](../../ground_segment/data/downlinked_XBand_run_1/), [MEDIUM Run 1 (UHF)](../../ground_segment/data/downlinked_UHF_run_1/fprime-downlink/).
+
+## Measured Results: Run 2 (9h 39m Pi 5 Run, 2026-05-07)
+
+Single continuous MEASURE session on Raspberry Pi 5 (no eclipse cycling). Two comm windows occurred during the run. Raw event log: [`flight_segment/orion/logs/2026_05_07-12_10_33/event.log`](../../flight_segment/orion/logs/2026_05_07-12_10_33/event.log).
+
+### Run Parameters
+
+| Parameter          | Value                                    |
+| ------------------ | ---------------------------------------- |
+| Run duration       | 9h 39m (12:10 – 21:49 UTC+2)             |
+| MEASURE duration   | ~9h 39m (continuous)                     |
+| Comm windows       | 2 (7m 50s at 1984 km; 6m 50s at 1981 km) |
+| Model load time    | ~0.5 s (page cache; cold load is ~21 s)  |
+| Inference failures | 0                                        |
+| Inference timeouts | 0                                        |
+| Frames dropped     | 0                                        |
+| Capture failures   | 0                                        |
+
+### Inference Timing (396 frames)
+
+| Metric | Value            |
+| ------ | ---------------- |
+| Min    | 53.2 s           |
+| Max    | 77.5 s           |
+| Mean   | 69.4 s           |
+| Total  | 458 min (7h 38m) |
+
+### Triage Distribution (396 frames, 297 MB total)
+
+| Verdict             | Count | Ratio     | Data                | Action                                 |
+| ------------------- | ----- | --------- | ------------------- | -------------------------------------- |
+| LOW                 | 379   | 95.7%     | 0 bytes             | Buffer recycled                        |
+| MEDIUM              | 15    | 3.8%      | 11.2 MB (stored)    | Written to microSD                     |
+| HIGH                | 2     | 0.5%      | 1.5 MB (downlinked) | Queued to disk, flushed on comm window |
+| **Bandwidth saved** |       | **95.7%** |                     | vs. downlinking every frame            |
+
+HIGH + MEDIUM combined: 17 frames (4.3% of total). 99.5% of data was discarded or deferred vs. blind downlink.
+
+### Downlink
+
+- 2 HIGH frames queued to disk (outside comm window), flushed automatically when comm window 2 opened.
+- 15 MEDIUM files bulk-downloaded via `FLUSH_MEDIUM_STORAGE` during comm window 2.
+- 2 comm windows totaling ~14m 40s, more than sufficient for all queued data.
+- 1 MEDIUM file (`orion_medium_00006.raw` in run 2) arrived truncated at 785,955 bytes (477 bytes short of expected 786,432). Cause: partial F-Prime FileDownlink transfer, likely due to ComQueue contention on the shared TCP :50000 link during the MEDIUM flush. Transport-layer issue, not a triage pipeline fault. File transfer success rate across Run 2: 14/15 (93.3%).
+
+Downlinked images: [HIGH Run 2 (X-band)](../../ground_segment/data/downlinked_XBand_run_2/), [MEDIUM Run 2 (UHF)](../../ground_segment/data/downlinked_UHF_run_2/fprime-downlink/).
+
+## Cross-Run Comparison
+
+All runs are continuous MEASURE sessions on the same Raspberry Pi 5 hardware (Cortex-A76, CPU-only, 8 GB RAM). Triage percentages are computed per-run; the average column pools all frames across runs (weighted by frame count, not arithmetic mean of percentages).
+
+### Inference Timing
+
+| Metric         | Run 1 (10h 23m) | Run 2 (9h 39m) | Run 3 | Average (pooled) |
+| -------------- | --------------- | -------------- | ----- | ---------------- |
+| Frames         | 501             | 396            | TBD   | 897              |
+| Min            | 52.9 s          | 53.2 s         | TBD   | 52.9 s           |
+| Max            | 81.6 s          | 77.5 s         | TBD   | 81.6 s           |
+| Mean           | 71.7 s          | 69.4 s         | TBD   | 70.7 s           |
+| Total run time | 10h 23m         | 9h 39m         | TBD   | 20h 02m          |
+
+### Triage Distribution
+
+| Verdict             | Run 1       | Run 2       | Run 3 | Average (pooled) |
+| ------------------- | ----------- | ----------- | ----- | ---------------- |
+| LOW                 | 476 (95.0%) | 379 (95.7%) | TBD   | 855 (95.3%)      |
+| MEDIUM              | 23 (4.6%)   | 15 (3.8%)   | TBD   | 38 (4.2%)        |
+| HIGH                | 2 (0.4%)    | 2 (0.5%)    | TBD   | 4 (0.4%)         |
+| **Bandwidth saved** | **95.0%**   | **95.7%**   | TBD   | **95.3%**        |
+
+### Reliability
+
+| Metric             | Run 1 | Run 2 | Run 3 | Total |
+| ------------------ | ----- | ----- | ----- | ----- |
+| Inference failures | 0     | 0     | TBD   | 0     |
+| Inference timeouts | 0     | 0     | TBD   | 0     |
+| Frames dropped     | 0     | 0     | TBD   | 0     |
+| Capture failures   | 0     | 0     | TBD   | 0     |
+| Files truncated    | 0     | 1     | TBD   | 1     |
+| Comm windows       | 1     | 2     | TBD   | 3     |

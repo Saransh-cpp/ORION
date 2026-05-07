@@ -44,3 +44,14 @@ The receiver uses hardcoded values:
 | Chunk size  | 4096 bytes                | TCP read chunk size for payload reception       |
 
 For instructions on running the receiver, see the [Receiver guide](../guides/receiver.md).
+
+## Received Data
+
+Images downlinked during the Pi 5 simulation runs are committed to the repository:
+
+| Run   | HIGH (X-band, `receiver.py`)                                  | MEDIUM (UHF, F-Prime FileDownlink)                                                         |
+| ----- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Run 1 | [2 frames](../../ground_segment/data/downlinked_XBand_run_1/) | [23 frames](../../ground_segment/data/downlinked_UHF_run_1/fprime-downlink/)               |
+| Run 2 | [2 frames](../../ground_segment/data/downlinked_XBand_run_2/) | [15 frames](../../ground_segment/data/downlinked_UHF_run_2/fprime-downlink/) (1 truncated) |
+
+See [mission budgets](../architecture/budgets.md#cross-run-comparison) for full run details.

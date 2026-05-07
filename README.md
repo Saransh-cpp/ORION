@@ -18,13 +18,18 @@ An autonomous LEO satellite triage system built using:
 
 ORION solves the orbital bandwidth bottleneck: roughly 71% of Earth's surface is featureless ocean, yet a traditional satellite downlinks every captured frame. By running a fine-tuned (on a custom dataset collected using SimSat) Q4-quantized VLM on-board, ORION classifies each image as HIGH, MEDIUM, or LOW priority and only transmits the most strategically valuable observations in real time. The model runs directly on raw 512×512 RGB pixels and is connected to a real flight software (not a Python wrapper), making it deployable on satellite's On-Board Computer (after rigorous testing and mission-specific tweaks) for any standard camera payload.
 
-In a [10h 23m end-to-end run on a Pi 5](#results), ORION classified 501 frames with **95% bandwidth savings** (476 LOW discarded, 23 MEDIUM stored, 2 HIGH downlinked), averaging 71.7s per inference with zero failures or timeouts.
+End-to-end Pi 5 simulation results ([details below](#results)):
+
+- **Run 1** (10h 23m): 501 frames, **95.0% bandwidth saved**, mean inference 71.7s, zero failures
+- **Run 2** (9h 39m): 396 frames, **95.7% bandwidth saved**, mean inference 69.4s, zero failures
 
 ## Motivation
 
 This project was born from a real problem flagged on a real mission. Being the Flight Software subsystems lead on [EPFL Spacecraft Team's](https://www.epflspacecraftteam.ch) [CHESS](https://www.epflspacecraftteam.ch/project#chess) mission (part of [ESA's Fly Your Satellite! Design Booster programme](https://www.esa.int/Education/Educational_Satellites/About_Design_Booster)), I received a Review Item Discrepancy during our Final Design Review from an ESA expert:
 
 > _"From experience I recommend thinking about pre-loading software that allows you to check that a picture is worth downloading before you do it."_
+
+for our [NovoViz](https://novoviz.com) Single-photon avalanche diode (camera) payload.
 
 Earth observation satellites generate far more data than their limited comm windows can downlink, and most of it is open ocean, empty desert, cloud cover, which is scientifically worthless. Our mission's approach was to downlink everything and sort on the ground, which would have wasted precious bandwidth and pass time.
 
@@ -151,23 +156,27 @@ Expected triage distribution on a random LEO track (based on target morphology d
 | HIGH                | ~5-10%         | ~0.8-1.5 MB (downlinked) | Transmitted during comm window |
 | **Bandwidth saved** | **~90-95%**    |                          | vs. downlinking every frame    |
 
-### Measured savings (Run 1)
+### Measured savings
 
-Measured triage distribution from a [10h 23m continuous Pi 5 run](flight_segment/orion/logs/2026_05_06-23_28_57/event.log) (501 frames, 384 MB captured), with a single continuous MEASURE session (no eclipse cycling as `SET_ECLIPSE` issued once at start) and one comm window near the end of the run:
+Measured triage distribution from continuous Pi 5 runs (no eclipse cycling; `SET_ECLIPSE` issued once at start). Raw event logs: [Run 1](flight_segment/orion/logs/2026_05_06-23_28_57/event.log) (10h 23m, 501 frames), [Run 2](flight_segment/orion/logs/2026_05_07-12_10_33/event.log) (9h 39m, 396 frames).
 
-| Verdict             | Count | Ratio     | Data                | Action                                 |
-| ------------------- | ----- | --------- | ------------------- | -------------------------------------- |
-| LOW                 | 476   | 95.0%     | 0 bytes             | Buffer recycled                        |
-| MEDIUM              | 23    | 4.6%      | 17.3 MB (stored)    | Written to microSD                     |
-| HIGH                | 2     | 0.4%      | 1.5 MB (downlinked) | Queued to disk, flushed on comm window |
-| **Bandwidth saved** |       | **95.0%** |                     | vs. downlinking every frame            |
+| Verdict             | Run 1       | Run 2       | Run 3 | Pooled average |
+| ------------------- | ----------- | ----------- | ----- | -------------- |
+| LOW                 | 476 (95.0%) | 379 (95.7%) | TBD   | 855 (95.3%)    |
+| MEDIUM              | 23 (4.6%)   | 15 (3.8%)   | TBD   | 38 (4.2%)      |
+| HIGH                | 2 (0.4%)    | 2 (0.5%)    | TBD   | 4 (0.4%)       |
+| **Bandwidth saved** | **95.0%**   | **95.7%**   | TBD   | **95.3%**      |
 
-- HIGH + MEDIUM combined: 25 frames (5.0% of total). 99.6% of data was discarded or deferred vs. blind downlink.
-- 2 HIGH frames queued to disk (outside comm window), flushed automatically on comm window open.
-- 23 MEDIUM files bulk-downloaded via `FLUSH_MEDIUM_STORAGE` during comm window.
-- Comm window duration (10m 15s) was more than sufficient for all queued data.
+| Metric         | Run 1         | Run 2         | Run 3 | Pooled average |
+| -------------- | ------------- | ------------- | ----- | -------------- |
+| Mean inference | 71.7 s        | 69.4 s        | TBD   | 70.7 s         |
+| Min / Max      | 52.9 / 81.6 s | 53.2 / 77.5 s | TBD   | 52.9 / 81.6 s  |
+| Failures       | 0             | 0             | TBD   | 0              |
+| Comm windows   | 1             | 2             | TBD   | 3              |
 
-Inference averaged 71.7s per frame (min 52.9s, max 81.6s) with zero failures, timeouts, or dropped frames across the entire run. Raw event logs are in [`flight_segment/orion/logs/`](flight_segment/orion/logs/) (channel telemetry logs excluded due to size but available on request).
+Across both runs: HIGH + MEDIUM combined is ~4.6% of all frames; hence over 95% of captured data was discarded on-board. All HIGH frames were queued to disk outside comm windows and flushed automatically on comm window open. MEDIUM files were bulk-downloaded via `FLUSH_MEDIUM_STORAGE` during comm windows. Total comm window time used (~25 min across 3 windows) was more than sufficient for all queued data. One MEDIUM file (in run 2) out of 40 total (across both runs) arrived truncated (785,955 bytes vs. expected 786,432) due to a partial F-Prime FileDownlink transfer, which is a transport-layer issue, not a triage pipeline fault. File transfer success rate: 97.5%.
+
+Full per-run breakdowns (inference timing, downlink, run parameters) in the [mission budgets measured results](https://Saransh-cpp.github.io/ORION/architecture/budgets/#measured-results-run-1-10h-23m-pi-5-run-2026-05-07). Raw event logs are in [`flight_segment/orion/logs/`](https://github.com/Saransh-cpp/ORION/tree/main/flight_segment/orion/logs) (channel telemetry logs excluded due to size but available on request). Downlinked images received by the ground segment: [HIGH Run 1 (X-band)](https://github.com/Saransh-cpp/ORION/tree/main/ground_segment/data/downlinked_XBand_run_1), [HIGH Run 2 (X-band)](https://github.com/Saransh-cpp/ORION/tree/main/ground_segment/data/downlinked_XBand_run_2), [MEDIUM Run 1 (UHF)](https://github.com/Saransh-cpp/ORION/tree/main/ground_segment/data/downlinked_UHF_run_1/fprime-downlink), [MEDIUM Run 2 (UHF)](https://github.com/Saransh-cpp/ORION/tree/main/ground_segment/data/downlinked_UHF_run_2/fprime-downlink).
 
 ## Usage
 
@@ -350,6 +359,12 @@ ORION uses `clang-format` for C++, `ruff` for Python, and `pre-commit` hooks for
 | **Innovation & Problem-Solution Fit (25%)** | The problem is real as it originates from an [ESA Review Item Discrepancy](#motivation) on the CHESS mission. On-board VLM triage is a unique way to cut downlink volume in real time; ground-based sorting requires downlinking everything first, which defeats the purpose.                                                                                                                                                                                                                                                                                                                                                                          |
 | **Technical Implementation (35%)**          | The app runs end-to-end: 6 custom F-Prime C++ components, an FPP state machine, llama.cpp VLM integration, autonomous mode management, pre-allocated buffer pool, Docker ARM64 cross-compilation, and a custom [ORIO frame protocol](https://Saransh-cpp.github.io/ORION/ground-segment/receiver/#orio-frame-protocol) for selective downlink. This is real flight software deployable on a satellite after rigorous testing and mission-specific tweaks. QLoRA fine-tuning, quantization, and a 4-condition evaluation protocol are documented with [publicly shared weights and code](https://Saransh-cpp.github.io/ORION/ground-segment/training/). |
 | **Demo & Communication (20%)**              | Full [documentation site](https://Saransh-cpp.github.io/ORION/) with architecture diagrams, data flow, model card, mission budgets, and step-by-step guides.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+
+## Will CHESS use this solution?
+
+ORION is novel and it works (both technically and mathematically, as shown by my experiments above). We have the CPU compute to run this exact configuration on CHESS, but we will not do so, as we do not want to make such a big compute change to the mission in our testing phase.
+
+ORION will not fly on our upcoming launch, but maybe someday in the future (for our second and third launches, when I would have moved on from EPFL), new members will go through the design and debate if they should use it.
 
 ## Why "ORION"?
 
