@@ -187,7 +187,15 @@ Full per-run breakdowns (inference timing, downlink, run parameters) in the [mis
 
 ### Faults observed
 
-One MEDIUM file (in Run 2) out of 56 total (across all runs) arrived truncated (785,955 bytes vs. expected 786,432) due to a partial F-Prime FileDownlink transfer, which is a transport-layer issue, not a triage pipeline fault. File transfer success rate: 98.2%.
+**Transport:** One MEDIUM file (in Run 2) out of 56 total (across all runs) arrived truncated (785,955 bytes vs. expected 786,432) due to a partial F-Prime FileDownlink transfer, which is a transport-layer issue, not a triage pipeline fault. File transfer success rate: 98.2%.
+
+**VLM false positives in HIGH classification:** Of 8 HIGH frames across all runs, manual inspection shows:
+
+- 3 frames (Run 3) are **blank white Mapbox tiles** from polar latitudes (|lat| > 75°) where no satellite imagery exists. The model hallucinated strategic significance (e.g., "massive cargo or industrial facility") onto featureless white images.
+- 2–3 frames are **natural features misclassified** as artificial, such as coastlines interpreted as "massive artificial formations," clouds over terrain interpreted as "volcanic eruption," and a lake interpreted as an "artificial anomaly."
+- 2 frames are plausible HIGHs (urban area near Virginia Beach, small town with airstrip).
+
+These false positives do not affect bandwidth savings (HIGH is the rarest category at 0.6%, so false positives waste minimal downlink capacity), but they reveal two model limitations: (1) blank/missing Mapbox tiles at polar latitudes are visually distinct from the ocean and ice sheet tiles in the training set, and (2) natural edge cases (coastlines, cloud cover, geological formations) that resemble trained HIGH morphologies. See the [model card](ground_segment/training/orion_lora_weights/README.md) for mitigation strategies.
 
 ## Usage
 
