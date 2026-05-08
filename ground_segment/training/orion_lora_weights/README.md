@@ -25,6 +25,31 @@ Developed for [ORION](https://github.com/Saransh-cpp/ORION), an autonomous LEO s
 
 **Intended use:** on-board orbital triage on a satellite OBC. The model receives a 512×512 RGB satellite tile (optionally with GPS coordinates in the prompt) and returns a JSON object with a triage verdict and visual reasoning.
 
+**Triage prompt** (ChatML format, used identically for training, evaluation, and on-board inference):
+
+```
+<|im_start|>user
+<image>
+You are an autonomous orbital triage assistant. Analyze this
+high-resolution RGB satellite image captured at Longitude: {lon},
+Latitude: {lat}.
+Strictly use one of these categories based on visual morphology:
+- HIGH: Extreme-scale strategic anomalies, dense geometric cargo/vessel
+  infrastructure, massive cooling towers, sprawling runways, or distinct
+  geological/artificial chokepoints.
+- MEDIUM: Standard human civilization. Ordinary urban grids, low-density
+  suburban sprawl, regular checkerboard agriculture, or localized
+  infrastructure.
+- LOW: Complete absence of human infrastructure. Featureless deep oceans,
+  unbroken canopy, barren deserts, or purely natural geological formations.
+You MUST output your response as a valid JSON object. To ensure accurate
+visual reasoning, you must output the "reason" key FIRST, followed by
+the "category" key.<|im_end|>
+<|im_start|>assistant
+```
+
+The model responds with `{"reason": "...", "category": "HIGH|MEDIUM|LOW"}`. Reason-first ordering forces the model to commit to visual evidence before selecting a label. During training, half the samples omit the `Longitude`/`Latitude` line (coordinate dropout augmentation).
+
 **Out of scope:** multispectral analysis, change detection, object detection with bounding boxes, real-time video, or any use case requiring sub-60-second latency without CUDA acceleration.
 
 ## Dataset

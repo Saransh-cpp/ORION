@@ -6,6 +6,8 @@
 [![Documentation](https://github.com/Saransh-cpp/ORION/actions/workflows/docs.yml/badge.svg)](https://Saransh-cpp.github.io/ORION/)
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-model-28A745?labelColor=24292E)](https://huggingface.co/Saransh-cpp/orion-qlora-lfm2.5-vl-1.6b)
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-dataset-28A745?labelColor=24292E)](https://huggingface.co/datasets/saransh-cpp/orion-dataset)
+[![YouTube](https://img.shields.io/badge/%E2%96%B6%20YouTube-presentation-FF0000?labelColor=24292E)](https://youtu.be/yWB59Yz5928)
+[![YouTube](https://img.shields.io/badge/%E2%96%B6%20YouTube-demo-FF0000?labelColor=24292E)](https://youtu.be/haWxV7mRE4Y)
 
 Orbital Real-time Inference and Observation Network
 
@@ -101,6 +103,33 @@ The [custom dataset](https://Saransh-cpp.github.io/ORION/architecture/ground_seg
 | LOW    | Featureless natural terrain: oceans, deserts, ice sheets, dense canopy         | Open ocean, Sahara, Antarctic ice, Amazon canopy       |
 
 Each class includes deliberately hard sub-types (e.g., coastlines that mimic artificial structures for LOW, or isolated towns for MEDIUM) to stress-test the classifier. See the full [morphology breakdown](https://Saransh-cpp.github.io/ORION/architecture/ground_segment/data/#target-definitions) for details.
+
+### Triage prompt
+
+Each captured frame is paired with GPS coordinates and fed to the VLM using this [ChatML](https://github.com/openai/openai-python/blob/main/chatml.md) prompt:
+
+```
+<|im_start|>user
+<image>
+You are an autonomous orbital triage assistant. Analyze this
+high-resolution RGB satellite image captured at Longitude: {lon},
+Latitude: {lat}.
+Strictly use one of these categories based on visual morphology:
+- HIGH: Extreme-scale strategic anomalies, dense geometric cargo/vessel
+  infrastructure, massive cooling towers, sprawling runways, or distinct
+  geological/artificial chokepoints.
+- MEDIUM: Standard human civilization. Ordinary urban grids, low-density
+  suburban sprawl, regular checkerboard agriculture, or localized
+  infrastructure.
+- LOW: Complete absence of human infrastructure. Featureless deep oceans,
+  unbroken canopy, barren deserts, or purely natural geological formations.
+You MUST output your response as a valid JSON object. To ensure accurate
+visual reasoning, you must output the "reason" key FIRST, followed by
+the "category" key.<|im_end|>
+<|im_start|>assistant
+```
+
+The model outputs a JSON object with a `reason` (free-text visual description) and a `category` (`HIGH`, `MEDIUM`, or `LOW`). Reason-first ordering forces the model to commit to visual evidence before selecting a label. The same prompt template is used for [training](https://Saransh-cpp.github.io/ORION/guides/data-gen/), [evaluation](https://Saransh-cpp.github.io/ORION/guides/studies/), and [on-board inference](https://Saransh-cpp.github.io/ORION/architecture/flight_segment/data-flow/#stage-2-vlm-inference).
 
 ### On-board inference (Raspberry Pi 5, Cortex-A76, no NPU/GPU)
 
