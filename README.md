@@ -140,7 +140,7 @@ The table below compares the base LFM2.5-VL-1.6B model, the ORION fine-tuned mod
 | B: Vision only (no coords)             | 60.0%      | 65.0%             | 63.3%       | +5.0 pp       | −1.7 pp          |
 | C: Blind LLM (Gaussian noise + coords) | 35.0%      | 43.3%             | 28.3%       | +8.3 pp       | −15.0 pp         |
 
-**Condition D: Sensor conflict (real image, spoofed GPS coords):** coordinate-trust failure drops from 20.0% (base) to 16.7% (fine-tuned FP16) to 15.0% (Q4*K_M GGUF). Quantization does not degrade GPS robustness; the deployed model is actually slightly \_more* resistant to spoofed telemetry than the FP16 version.
+**Condition D: Sensor conflict (real image, spoofed GPS coords):** coordinate-trust failure drops from 20.0% (base) to 16.7% (fine-tuned FP16) to 15.0% (Q4_K_M GGUF). Quantization does not degrade GPS robustness; the deployed model is actually slightly more resistant to spoofed telemetry than the FP16 version.
 
 Accuracy loss from Q4_K_M quantization on operational conditions (A: −3.3 pp, B: −1.7 pp) is modest, confirming that the deployed GGUF retains most of the fine-tuned model's capability. The large Condition C drop (−15.0 pp) is expected and benign: it tests coordinate memorization using noise images, a scenario that never occurs in deployment.
 

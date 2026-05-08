@@ -11,7 +11,7 @@
 
 ```bash
 cd ground_segment
-uv venv
+uv venv --python 314
 . .venv/bin/activate
 uv sync
 cd data

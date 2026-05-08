@@ -6,7 +6,7 @@
 
 ```bash
 cd ground_segment
-python receiver.py
+uv run receiver.py
 ```
 
 The receiver starts listening on `0.0.0.0:50050` and prints:

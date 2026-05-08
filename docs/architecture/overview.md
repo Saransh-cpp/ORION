@@ -99,4 +99,4 @@ The standard F-Prime Ground Data System connects to the flight segment over TCP 
 An external service (default port 9005) that provides:
 
 - **Orbital propagator**: Returns current latitude, longitude, and altitude via HTTP
-- **Mapbox satellite tiles**: Returns 512x512 RGB imagery for the satellite's current ground track position
+- **Mapbox satellite tiles**: Returns 1280x1280@2x PNG tiles for the satellite's current ground track position (resized to 512x512 RGB by CameraManager)
