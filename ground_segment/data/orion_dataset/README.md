@@ -135,4 +135,4 @@ reasoning, you must output the "reason" key FIRST, followed by the "category" ke
 - [Fine-tuned model](https://huggingface.co/Saransh-cpp/orion-qlora-lfm2.5-vl-1.6b)
 - [Training guide](https://Saransh-cpp.github.io/ORION/guides/training/)
 - [Training pipeline](https://Saransh-cpp.github.io/ORION/architecture/ground_segment/training/)
-- [Data flow architecture](https://Saransh-cpp.github.io/ORION/architecture/ground_segment/data-flow/)
+- [Data flow architecture](https://Saransh-cpp.github.io/ORION/architecture/flight_segment/data-flow/)
