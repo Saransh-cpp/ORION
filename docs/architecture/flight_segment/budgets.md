@@ -43,6 +43,8 @@ Inference timeout is set at 120 seconds.
 
 ### Triage Distribution (Expected)
 
+> Check Measured Results per run at the end of this page for real numbers.
+
 Based on target morphology distribution (71% of Earth is ocean):
 
 | Verdict             | Expected ratio | Data per orbit           | Action                         |
@@ -112,7 +114,7 @@ No runtime dynamic allocation is used in the ORION pipeline. The buffer pool is 
 
 ## Measured Results: Run 1 (10h 23m Pi 5 Run, 2026-05-07)
 
-Single continuous MEASURE session on Raspberry Pi 5 (no eclipse cycling — `SET_ECLIPSE` issued once at start). The satellite was not in range of the ground station (EPFL) for ~11 hours; one comm window occurred near the end of the run. Raw event log: [`flight_segment/orion/logs/2026_05_06-23_28_57/event.log`](../../flight_segment/orion/logs/2026_05_06-23_28_57/event.log).
+Single continuous MEASURE session on Raspberry Pi 5 (no eclipse cycling — `SET_ECLIPSE` issued once at start). The satellite was not in range of the ground station (EPFL) for ~11 hours; one comm window occurred near the end of the run. Raw event log: [`flight_segment/orion/logs/2026_05_06-23_28_57/event.log`](https://github.com/Saransh-cpp/ORION/tree/main/flight_segment/orion/logs/run_1_2026_05_06-23_28_57/event.log).
 
 ### Run Parameters
 
@@ -153,11 +155,11 @@ HIGH + MEDIUM combined: 25 frames (5.0% of total). 99.6% of data was discarded o
 - 23 MEDIUM files bulk-downloaded via `FLUSH_MEDIUM_STORAGE` during comm window.
 - Comm window duration (10m 15s) was more than sufficient for all queued data.
 
-Raw event logs are in [`flight_segment/orion/logs/`](../../flight_segment/orion/logs/) (channel telemetry logs excluded from the repository due to size, 50+ MB of 5-second NavTelemetry position polls, but available on request). Downlinked images: [HIGH Run 1 (X-band)](../../ground_segment/data/downlinked_XBand_run_1/), [MEDIUM Run 1 (UHF)](../../ground_segment/data/downlinked_UHF_run_1/fprime-downlink/).
+Downlinked images: [HIGH Run 1 (X-band)](https://github.com/Saransh-cpp/ORION/tree/main/ground_segment/data/downlinked_XBand_run_1/), [MEDIUM Run 1 (UHF)](https://github.com/Saransh-cpp/ORION/tree/main/ground_segment/data/downlinked_UHF_run_1/fprime-downlink/).
 
 ## Measured Results: Run 2 (9h 39m Pi 5 Run, 2026-05-07)
 
-Single continuous MEASURE session on Raspberry Pi 5 (no eclipse cycling). Two comm windows occurred during the run. Raw event log: [`flight_segment/orion/logs/2026_05_07-12_10_33/event.log`](../../flight_segment/orion/logs/2026_05_07-12_10_33/event.log).
+Single continuous MEASURE session on Raspberry Pi 5 (no eclipse cycling). Two comm windows occurred during the run. Raw event log: [`flight_segment/orion/logs/2026_05_07-12_10_33/event.log`](https://github.com/Saransh-cpp/ORION/tree/main/flight_segment/orion/logs/run_2_2026_05_07-12_10_33/event.log).
 
 ### Run Parameters
 
@@ -199,11 +201,11 @@ HIGH + MEDIUM combined: 17 frames (4.3% of total). 99.5% of data was discarded o
 - 2 comm windows totaling ~14m 40s, more than sufficient for all queued data.
 - 1 MEDIUM file (`orion_medium_00006.raw` in run 2) arrived truncated at 785,955 bytes (477 bytes short of expected 786,432). Cause: partial F-Prime FileDownlink transfer, likely due to ComQueue contention on the shared TCP :50000 link during the MEDIUM flush. Transport-layer issue, not a triage pipeline fault. File transfer success rate across Run 2: 14/15 (93.3%).
 
-Downlinked images: [HIGH Run 2 (X-band)](../../ground_segment/data/downlinked_XBand_run_2/), [MEDIUM Run 2 (UHF)](../../ground_segment/data/downlinked_UHF_run_2/fprime-downlink/).
+Downlinked images: [HIGH Run 2 (X-band)](https://github.com/Saransh-cpp/ORION/tree/main/ground_segment/data/downlinked_XBand_run_2/), [MEDIUM Run 2 (UHF)](https://github.com/Saransh-cpp/ORION/tree/main/ground_segment/data/downlinked_UHF_run_2/fprime-downlink/).
 
 ## Measured Results: Run 3 (13h 17m Pi 5 Run, 2026-05-07/08)
 
-Single continuous MEASURE session on Raspberry Pi 5 (no eclipse cycling). Two comm windows occurred during the run. Raw event log: [`flight_segment/orion/logs/run_3_2026_05_07-22_47_57/event.log`](../../flight_segment/orion/logs/run_3_2026_05_07-22_47_57/event.log).
+Single continuous MEASURE session on Raspberry Pi 5 (no eclipse cycling). Two comm windows occurred during the run. Raw event log: [`flight_segment/orion/logs/run_3_2026_05_07-22_47_57/event.log`](https://github.com/Saransh-cpp/ORION/tree/main/flight_segment/orion/logs/run_3_2026_05_07-22_47_57/event.log).
 
 ### Run Parameters
 
@@ -244,7 +246,7 @@ HIGH + MEDIUM combined: 14 frames (2.6% of total). 97.4% of data was discarded o
 - 10 MEDIUM files bulk-downloaded via `FLUSH_MEDIUM_STORAGE` during comm window 2.
 - 2 comm windows totaling ~19m 45s — more than sufficient for all queued data.
 
-Downlinked images: [HIGH Run 3 (X-band)](../../ground_segment/data/downlinked_XBand_run_3/), [MEDIUM Run 3 (UHF)](../../ground_segment/data/downlinked_UHF_run_3/fprime-downlink/).
+Downlinked images: [HIGH Run 3 (X-band)](https://github.com/Saransh-cpp/ORION/tree/main/ground_segment/data/downlinked_XBand_run_3/), [MEDIUM Run 3 (UHF)](https://github.com/Saransh-cpp/ORION/tree/main/ground_segment/data/downlinked_UHF_run_3/fprime-downlink/).
 
 ## Cross-Run Comparison
 

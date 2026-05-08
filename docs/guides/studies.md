@@ -1,6 +1,6 @@
 # Evaluation and Ablation Studies
 
-> For design details, evaluation conditions, mismatch logic, Gaussian noise methodology, and configuration parameters, see the [Training Pipeline architecture](../ground-segment/training.md) page.
+> For design details, evaluation conditions, mismatch logic, Gaussian noise methodology, and configuration parameters, see the [Training Pipeline architecture](../architecture/ground_segment/training.md) page.
 
 ## Evaluating the Fine-Tuned Model
 
@@ -13,6 +13,25 @@ uv run evaluate.py
 ```
 
 This loads the base model with the LoRA adapters grafted on, sets the model to eval mode, and runs inference under all four evaluation conditions (A, B, C, D) for each test sample.
+
+## Evaluating the Quantized GGUF Model
+
+Start the llama.cpp HTTP server with the quantized model, then run `evaluate.py` with `--quantized-model`:
+
+```bash
+# Terminal 1: start llama-server
+cd ground_segment
+../llama.cpp/build/bin/llama-server \
+  -m training/orion-q4_k_m.gguf \
+  --mmproj training/orion-mmproj-f16.gguf \
+  -c 4096 -ngl 0
+
+# Terminal 2: run evaluation against the server
+cd ground_segment/training
+uv run evaluate.py --quantized-model http://localhost:8080
+```
+
+This uses the same 4-condition protocol over llama-server's OpenAI-compatible API (`/v1/chat/completions`) instead of PyTorch+PEFT. It measures accuracy degradation from Q4_K_M quantization using the exact same test set. Use `--file val` to evaluate the validation split instead.
 
 ## Running the Ablation Study (Base Model)
 

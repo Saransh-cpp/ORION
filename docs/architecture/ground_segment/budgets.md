@@ -55,13 +55,11 @@ Resource requirements for training, quantization, and dataset generation.
 
 `ablation.py` (base model) and `evaluate.py` (fine-tuned) are **device-agnostic**; hence, they run on CUDA, MPS (Apple Silicon), or CPU at FP16. CPU-only inference is functional but will be 50-100x slower than GPU.
 
-| Resource              | Requirement                                | Notes                                    |
-| --------------------- | ------------------------------------------ | ---------------------------------------- |
-| GPU VRAM              | ~4 GB (FP16, no quantization in eval)      | Or run on CPU/MPS without VRAM budget    |
-| Test samples          | 60 (deterministic IID carve from 360 pool) | 4 conditions x 60 = 240 inferences total |
-| Val samples           | 60 (deterministic IID carve from 360 pool) | Same shape as test, used during training |
-| Time per inference    | TBD                                        | ~1s on 4070 Ti, ~20-30s on Mac CPU       |
-| Total validation time | TBD                                        | 240 inferences per script                |
+| Resource     | Requirement                                | Notes                                    |
+| ------------ | ------------------------------------------ | ---------------------------------------- |
+| GPU VRAM     | ~4 GB (FP16, no quantization in eval)      | Or run on CPU/MPS without VRAM budget    |
+| Test samples | 60 (deterministic IID carve from 360 pool) | 4 conditions x 60 = 240 inferences total |
+| Val samples  | 60 (deterministic IID carve from 360 pool) | Same shape as test, used during training |
 
 ## Dataset
 

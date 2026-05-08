@@ -113,5 +113,5 @@ This installs PyTorch, Transformers, PEFT, and other ML dependencies defined in 
 ## Next Steps
 
 - [Deployment](deployment.md): cross-compile for Raspberry Pi 5 and deploy
-- [Usage](../index.md): run a demo session with SimSat and GDS
+- [Usage](../index.md#usage): run a demo session with SimSat and GDS
 - [Environment Variables](environment-variables.md): configure paths and endpoints

@@ -80,24 +80,24 @@ nav:
   - Architecture:
       - Overview: architecture/overview.md
       - Flight Segment:
-          - Overview: components/index.md
-          - State Machine: architecture/state-machine.md
-          - Data Flow: architecture/data-flow.md
-          - Mission Budgets: architecture/budgets.md
-          - EventAction: components/event-action.md
-          - NavTelemetry: components/nav-telemetry.md
-          - CameraManager: components/camera-manager.md
-          - VlmInferenceEngine: components/vlm-inference-engine.md
-          - TriageRouter: components/triage-router.md
-          - GroundCommsDriver: components/ground-comms-driver.md
+          - Overview: architecture/flight_segment/components/index.md
+          - State Machine: architecture/flight_segment/state-machine.md
+          - Data Flow: architecture/flight_segment/data-flow.md
+          - Mission Budgets: architecture/flight_segment/budgets.md
+          - EventAction: architecture/flight_segment/components/event-action.md
+          - NavTelemetry: architecture/flight_segment/components/nav-telemetry.md
+          - CameraManager: architecture/flight_segment/components/camera-manager.md
+          - VlmInferenceEngine: architecture/flight_segment/components/vlm-inference-engine.md
+          - TriageRouter: architecture/flight_segment/components/triage-router.md
+          - GroundCommsDriver: architecture/flight_segment/components/ground-comms-driver.md
       - Ground Segment:
-          - Overview: ground-segment/index.md
-          - Receiver: ground-segment/receiver.md
-          - Training Pipeline: ground-segment/training.md
-          - Dataset: ground-segment/data.md
-          - Model Card: ground-segment/model-card.md
-          - Utility Scripts: ground-segment/scripts.md
-          - Compute Budgets: ground-segment/budgets.md
+          - Overview: architecture/ground_segment/index.md
+          - Receiver: architecture/ground_segment/receiver.md
+          - Training Pipeline: architecture/ground_segment/training.md
+          - Dataset: architecture/ground_segment/data.md
+          - Model Card: architecture/ground_segment/model-card.md
+          - Utility Scripts: architecture/ground_segment/scripts.md
+          - Compute Budgets: architecture/ground_segment/budgets.md
   - Guides:
       - Flight Segment:
           - Development: guides/installation.md
@@ -111,7 +111,7 @@ nav:
           - Studies: guides/studies.md
           - Environment Variables: guides/environment-variables-gs.md
   - API Reference:
-      - Overview: api/cpp.md
+      - Overview: api/overview.md
       - C++ (Flight Segment):
           - Classes:
               - Class List: flight-segment/annotated.md
@@ -124,7 +124,7 @@ nav:
               - File List: flight-segment/files.md
       - Python (Ground Segment):
           - Receiver: api/python/receiver.md
-          - raw_to_jpg: api/python/raw_to_jpg.md
+          - Visualization: api/python/raw_to_jpg.md
           - Training:
               - fine_tune: api/python/training/fine_tune.md
               - evaluate: api/python/training/evaluate.md

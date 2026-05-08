@@ -33,7 +33,7 @@ Files that are not exactly 786,432 bytes (512x512x3) are skipped. Each `.raw` fi
 3. Unpacks on the server, removing any previous dataset
 4. Clones or pulls the ORION repository on the server
 
-**Requires:** `SERVER`, `ORION_SERVER_HDD_PATH`, `ORION_LOCAL_DATA_DIR`, `ORION_ARCHIVE_NAME`, `ORION_REPO_DIR` - see [environment-variables-gs.md](../guides/environment-variables-gs.md).
+**Requires:** `SERVER`, `ORION_SERVER_HDD_PATH`, `ORION_LOCAL_DATA_DIR`, `ORION_ARCHIVE_NAME`, `ORION_REPO_DIR` - see [environment-variables-gs.md](../../guides/environment-variables-gs.md).
 
 ```bash
 chmod +x ./upload_to_server.sh
@@ -56,7 +56,7 @@ ORION_REPO_DIR=/home/schopra/code/extras \
 3. Downloads `orion_lora_weights/` via `rsync`
 4. On success, deletes the repository and dataset from the server (scorched earth)
 
-**Requires:** `SERVER`, `ORION_SERVER_WEIGHTS_PATH`, `ORION_SERVER_REPO_PATH`, `ORION_SERVER_DATA_PATH` - see [environment-variables-gs.md](../guides/environment-variables-gs.md).
+**Requires:** `SERVER`, `ORION_SERVER_WEIGHTS_PATH`, `ORION_SERVER_REPO_PATH`, `ORION_SERVER_DATA_PATH` - see [environment-variables-gs.md](../../guides/environment-variables-gs.md).
 
 ```bash
 chmod +x ./download_weights.sh

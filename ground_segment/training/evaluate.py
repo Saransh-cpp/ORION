@@ -19,12 +19,25 @@ loads the base LFM2.5-VL-1.6B, then grafts the QLoRA adapter from
 ``device_map`` explicitly (CUDA / MPS / CPU) to avoid an ``accelerate``
 crash with LFM2's config.
 
+Optionally, pass ``--quantized-model`` to evaluate the Q4_K_M GGUF model
+via llama.cpp's built-in HTTP server (OpenAI-compatible API) instead of
+PyTorch+PEFT. This measures accuracy degradation from quantization using
+the exact same test protocol.
+
 Usage:
 
 ```bash
+# make sure LoRA weights are placed in ``./orion_lora_weights/`` and the
+# dataset is in ``../data/orion_dataset/``
 cd ground_segment/training
+
+# PyTorch + PEFT (default)
 uv run evaluate.py              # test split (default)
 uv run evaluate.py --file val   # validation split
+
+# Quantized GGUF via llama-server (start server first):
+#   ../llama.cpp/build/bin/llama-server -m ./orion-q4_k_m.gguf --mmproj ./orion-mmproj-f16.gguf -c 4096 -ngl 0
+uv run evaluate.py --quantized-model http://localhost:8080
 ```
 
 See the [validation and ablation studies guide](../../../../guides/studies/) for
@@ -34,13 +47,10 @@ how to interpret each condition and compare against the base-model results.
 import argparse
 import json
 import time
-import torch
 import re
 import random
 import numpy as np
 from PIL import Image
-from transformers import AutoProcessor, AutoModelForImageTextToText
-from peft import PeftModel
 
 BASE_MODEL_ID = "LiquidAI/LFM2.5-VL-1.6B"
 LORA_WEIGHTS_PATH = "./orion_lora_weights"
@@ -95,6 +105,8 @@ def run_inference(model, processor, image, prompt):
         A ``(parsed, raw)`` tuple where *parsed* is the dict from `extract_json`
         and *raw* is the full decoded generation string.
     """
+    import torch
+
     messages = [{"role": "user", "content": f"<image>\n{prompt}"}]
     text_input = processor.apply_chat_template(
         messages, tokenize=False, add_generation_prompt=True
@@ -114,6 +126,39 @@ def run_inference(model, processor, image, prompt):
     )
 
     # Return both the parsed dictionary and the raw string for debugging
+    return extract_json(generated_text), generated_text
+
+
+def run_inference_gguf(server_url, image, prompt):
+    """Run a single image+prompt through the quantized GGUF model via llama-server's OpenAI-compatible API."""
+    import base64
+    from io import BytesIO
+    import requests
+
+    buf = BytesIO()
+    image.save(buf, format="PNG")
+    data_uri = f"data:image/png;base64,{base64.b64encode(buf.getvalue()).decode()}"
+
+    response = requests.post(
+        f"{server_url}/v1/chat/completions",
+        json={
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "image_url", "image_url": {"url": data_uri}},
+                        {"type": "text", "text": prompt},
+                    ],
+                }
+            ],
+            "max_tokens": 200,
+            "temperature": 0,
+        },
+        timeout=300,
+    )
+    response.raise_for_status()
+
+    generated_text = response.json()["choices"][0]["message"]["content"]
     return extract_json(generated_text), generated_text
 
 
@@ -178,39 +223,67 @@ def main():
         help="Which split to evaluate: 'test' (60 IID held-out, judge-facing) "
         "or 'val' (60 IID validation set used during training).",
     )
+    parser.add_argument(
+        "--quantized-model",
+        type=str,
+        default=None,
+        help="URL of a running llama-server instance (e.g., http://localhost:8080). "
+        "Evaluates via the OpenAI-compatible API instead of PyTorch+PEFT.",
+    )
     args = parser.parse_args()
 
+    use_gguf = args.quantized_model is not None
+
     eval_file = TEST_FILE if args.file == "test" else VAL_FILE
-    print(f" Initializing Fine-Tuned ORION Ablation Protocol on '{args.file}' split")
+    mode_label = "Quantized GGUF" if use_gguf else "Fine-Tuned PyTorch+PEFT"
+    print(f" Initializing {mode_label} ORION Ablation Protocol on '{args.file}' split")
     print(f"   File: {eval_file}\n")
 
-    # 1. Load Processor
-    processor = AutoProcessor.from_pretrained(BASE_MODEL_ID, trust_remote_code=True)
+    if use_gguf:
+        import requests as _req
 
-    # 2. Load Base Model: pick MPS (Apple Silicon) or CPU explicitly.
-    # device_map="auto" triggers accelerate's get_balanced_memory which crashes
-    # when the model config stores no_split_module_classes as a set (unhashable).
-    if torch.cuda.is_available():
-        device = "cuda"
-    elif torch.backends.mps.is_available():
-        device = "mps"
+        server_url = args.quantized_model.rstrip("/")
+        print(f" Using llama-server at: {server_url}")
+        try:
+            health = _req.get(f"{server_url}/health", timeout=5)
+            health.raise_for_status()
+            print(f" Server health: {health.json()}")
+        except Exception as e:
+            parser.error(
+                f"Cannot reach llama-server at {server_url}: {e}\n"
+                "Start it first:\n"
+                "  ../llama.cpp/build/bin/llama-server "
+                "-m ./orion-q4_k_m.gguf --mmproj ./orion-mmproj-f16.gguf -c 4096 -ngl 0"
+            )
+        infer = lambda image, prompt: run_inference_gguf(server_url, image, prompt)  # noqa: E731
     else:
-        device = "cpu"
-    print(f" Loading Base Model on {device}...")
-    base_model = AutoModelForImageTextToText.from_pretrained(
-        BASE_MODEL_ID,
-        device_map=device,
-        torch_dtype=torch.float16,
-        trust_remote_code=True,
-    )
+        import torch
+        from transformers import AutoProcessor, AutoModelForImageTextToText
+        from peft import PeftModel
 
-    # 3. Inject LoRA Weights
-    print(" Grafting Custom LoRA Adapters...")
-    model = PeftModel.from_pretrained(base_model, LORA_WEIGHTS_PATH)
-    model.eval()
+        processor = AutoProcessor.from_pretrained(BASE_MODEL_ID, trust_remote_code=True)
+
+        if torch.cuda.is_available():
+            device = "cuda"
+        elif torch.backends.mps.is_available():
+            device = "mps"
+        else:
+            device = "cpu"
+        print(f" Loading Base Model on {device}...")
+        base_model = AutoModelForImageTextToText.from_pretrained(
+            BASE_MODEL_ID,
+            device_map=device,
+            torch_dtype=torch.float16,
+            trust_remote_code=True,
+        )
+
+        print(" Grafting Custom LoRA Adapters...")
+        model = PeftModel.from_pretrained(base_model, LORA_WEIGHTS_PATH)
+        model.eval()
+        infer = lambda image, prompt: run_inference(model, processor, image, prompt)  # noqa: E731
 
     t_model_loaded = time.perf_counter()
-    print(f" Model + LoRA loaded in {t_model_loaded - t_start:.2f}s.")
+    print(f" Model loaded in {t_model_loaded - t_start:.2f}s.")
 
     # Load Data
     test_data = []
@@ -268,10 +341,10 @@ def main():
         mismatched_gt = target_mismatch
 
         # Execute Inferences (Now unpacking the tuple: dict, raw_text)
-        res_a, raw_text_a = run_inference(model, processor, real_image, full_prompt)
-        res_b, _ = run_inference(model, processor, real_image, vision_only_prompt)
-        res_c, _ = run_inference(model, processor, noise_image, full_prompt)
-        res_d, _ = run_inference(model, processor, real_image, mismatched_prompt)
+        res_a, raw_text_a = infer(real_image, full_prompt)
+        res_b, _ = infer(real_image, vision_only_prompt)
+        res_c, _ = infer(noise_image, full_prompt)
+        res_d, _ = infer(real_image, mismatched_prompt)
 
         # --- DEBUG OUTPUT ---
         print(f"  Image Path: {image_path}")
@@ -301,7 +374,10 @@ def main():
 
     # Final Output Matrix
     print("\n" + "=" * 55)
-    print("🏆 POST-LORA ABLATION STUDY RESULTS 🏆")
+    header = (
+        "QUANTIZED GGUF RESULTS" if use_gguf else "POST-LORA ABLATION STUDY RESULTS"
+    )
+    print(f" {header} ")
     print("=" * 55)
 
     print_confusion_matrix(

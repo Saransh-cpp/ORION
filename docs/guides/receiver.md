@@ -1,6 +1,6 @@
 # Ground Receiver
 
-> For design details - ORIO frame protocol, frame structure, field descriptions, and network configuration - see the [Receiver architecture](../ground-segment/receiver.md) page.
+> For design details, ORIO frame protocol, frame structure, field descriptions, and network configuration, see the [Receiver architecture](../architecture/ground_segment/receiver.md) page.
 
 ## Running the Receiver
 

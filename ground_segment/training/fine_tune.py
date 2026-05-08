@@ -20,7 +20,7 @@ uv run fine_tune.py
 ```
 
 See the [training guide](../../../../guides/training/) for the full walkthrough
-and the [ground segment budgets](../../../../ground-segment/budgets/) for compute
+and the [ground segment budgets](../../../../architecture/ground_segment/budgets/) for compute
 requirements.
 """
 

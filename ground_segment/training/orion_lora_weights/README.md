@@ -113,7 +113,7 @@ The Q4_K_M GGUF + mmproj pair is the deployed artifact. Pre-built files are avai
 
 Both studies use the same four conditions run against the same 60-sample held-out test set. The ablation (`ablation.py`) tests the unmodified base model; the evaluation (`evaluate.py`) tests the fine-tuned adapter. Running both against identical inputs isolates the exact lift from fine-tuning.
 
-> Refer to [Training Pipeline](https://Saransh-cpp.github.io/ORION/ground-segment/training/#validation-and-ablation-studies) for more details on how to read this result.
+> Refer to [Training Pipeline](https://Saransh-cpp.github.io/ORION/architecture/ground_segment/training/#validation-and-ablation-studies) for more details on how to read this result.
 
 | Condition           | Input                              | Purpose                                                |
 | ------------------- | ---------------------------------- | ------------------------------------------------------ |
@@ -202,15 +202,55 @@ Model trusted Coords (Failure) : 10/60 (16.7%)
 Model got Confused   (Neither) : 13/60 (21.7%)
 ```
 
-### Fine-tuning impact
+### Quantized GGUF evaluation (`evaluate.py --quantized-model`)
 
-| Condition                   | Base model | Fine-tuned | Δ            |
-| --------------------------- | ---------- | ---------- | ------------ |
-| A: Vision + GPS coords     | 58.3%      | 58.3%      | 0 pp         |
-| B: Vision only (no coords) | 60.0%      | 65.0%      | **+5.0 pp**  |
-| C: Blind LLM (noise+coords)| 35.0%      | 43.3%      | **+8.3 pp**  |
+The same 4-condition protocol run against the Q4_K_M GGUF deployed on-device via llama.cpp's HTTP server. This measures accuracy degradation from quantization using the exact same test set.
 
-**Sensor conflict (Condition D):** coordinate-trust failure drops from 20.0% to 16.7% after fine-tuning. The improvement is modest compared to earlier experiments on a smaller dataset - see discussion below.
+| Condition                               | Overall accuracy | Notes |
+| --------------------------------------- | ---------------- | ----- |
+| A: Vision + GPS coords                 | 55.0%            | −3.3 pp from FP16 fine-tuned |
+| B: Vision only (no coords)             | 63.3%            | −1.7 pp from FP16 fine-tuned |
+| C: Blind LLM (Gaussian noise + coords) | 28.3%            | Predicts HIGH for most noise inputs |
+| D: Sensor conflict                     | -                | Trusts incorrect coords 15.0% of the time (down from 16.7%) |
+
+**Full log:**
+
+```
+--- Condition A: Full System (Vision + Coords) ---
+HIGH  :  7/14 (50.0% Recall) | Precision:  7/16 (43.8%)
+MEDIUM:  8/25 (32.0% Recall) | Precision:  8/13 (61.5%)
+LOW   : 18/21 (85.7% Recall) | Precision: 18/31 (58.1%)
+TOTAL : 33/60 (55.0% Overall Accuracy)
+
+--- Condition B: Vision Only (No Coords) ---
+HIGH  :  8/14 (57.1% Recall) | Precision:  8/13 (61.5%)
+MEDIUM: 10/25 (40.0% Recall) | Precision: 10/12 (83.3%)
+LOW   : 20/21 (95.2% Recall) | Precision: 20/35 (57.1%)
+TOTAL : 38/60 (63.3% Overall Accuracy)
+
+--- Condition C: Blind LLM (Gaussian Noise + Coords) ---
+HIGH  :  8/14 (57.1% Recall) | Precision:  8/41 (19.5%)
+MEDIUM:  2/25 ( 8.0% Recall) | Precision:  2/ 4 (50.0%)
+LOW   :  7/21 (33.3% Recall) | Precision:  7/15 (46.7%)
+TOTAL : 17/60 (28.3% Overall Accuracy)
+
+--- Condition D: Sensor Conflict (Real Vision + Fake Coords) ---
+Model trusted Vision (Correct) : 37/60 (61.7%)
+Model trusted Coords (Failure) :  9/60 (15.0%)
+Model got Confused   (Neither) : 14/60 (23.3%)
+```
+
+### Fine-tuning and quantization impact
+
+| Condition                   | Base model | Fine-tuned (FP16) | Q4_K_M GGUF | Δ (fine-tune) | Δ (quantization) |
+| --------------------------- | ---------- | ------------------ | ------------ | ------------- | ---------------- |
+| A: Vision + GPS coords     | 58.3%      | 58.3%              | 55.0%        | 0 pp          | −3.3 pp          |
+| B: Vision only (no coords) | 60.0%      | 65.0%              | 63.3%        | **+5.0 pp**   | −1.7 pp          |
+| C: Blind LLM (noise+coords)| 35.0%      | 43.3%              | 28.3%        | **+8.3 pp**   | −15.0 pp         |
+
+**Sensor conflict (Condition D):** coordinate-trust failure drops from 20.0% (base) to 16.7% (fine-tuned FP16) to 15.0% (Q4_K_M GGUF). Quantization does not degrade GPS robustness.
+
+**Quantization impact on operational conditions (A and B):** accuracy loss from Q4_K_M quantization is modest (−3.3 pp and −1.7 pp respectively), confirming that the deployed GGUF retains most of the fine-tuned model's capability. The large drop on Condition C (noise inputs) is not operationally relevant since the model never receives noise images in deployment.
 
 ### Discussion
 
@@ -239,7 +279,7 @@ See the [quantization guide](https://Saransh-cpp.github.io/ORION/guides/quantiza
 - Trained on Mapbox RGB tiles only; hence, no multispectral, SAR, or thermal data.
 - 512×512 pixel resolution matches the Pi 5 inference pipeline; different resolutions require re-cropping.
 - Three-class taxonomy (HIGH / MEDIUM / LOW) is fixed at training time. Mission-specific priorities require fine-tuning on a new labeled dataset.
-- Inference at 51-82 s/frame is too slow for real-time video or burst imaging modes.
+- Inference at 51-82 s/frame (mean ~69s across 1,443 frames from 3 end-to-end runs) sets a hard floor on capture interval: the auto-capture timer is 85s to avoid saturating the VLM queue, limiting throughput to ~24 frames per 35-min eclipse. Burst imaging, real-time video, or sub-minute revisit rates are not feasible without faster hardware (GPU/NPU) or a smaller model.
 - Coordinate dropout improves GPS robustness but does not eliminate coord-biased errors on hard edge cases.
 - **Blank/missing tile hallucination:** Mapbox returns blank white tiles at extreme latitudes (|lat| > 75°) where no satellite imagery exists. The model hallucinates strategic significance onto these featureless images (3 out of 8 HIGH classifications across 1,443 frames were blank tiles). These blank tiles are visually distinct from the ocean and ice sheet tiles in the training set. Mitigation: add blank/white tile detection before inference, or include polar blank tiles as explicit LOW training examples.
 - **Natural feature false positives:** Coastlines, cloud cover, and geological formations (e.g., river deltas, glacial terrain) can be misclassified as HIGH due to visual similarity to trained HIGH morphologies (e.g., coastlines as "artificial formations," clouds as "volcanic eruptions"). The hard-negative training set mitigates some of this, but edge cases remain.

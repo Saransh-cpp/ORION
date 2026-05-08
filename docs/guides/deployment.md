@@ -9,7 +9,7 @@ ORION runs as a split system:
 - **Raspberry Pi 5**: runs the flight segment binary (`Orion`) with the GGUF model
 - **Development machine (Mac/Linux)**: runs the F-Prime GDS (Ground Data System) and `receiver.py`
 
-The Pi connects to the GDS over TCP port 50000 and to the ground receiver over TCP port 50050. The Pi requires 8 GB RAM (measured RSS in MEASURE mode: ~1.75 GB); see [Mission Budgets](../architecture/budgets.md) for detailed memory and compute requirements.
+The Pi connects to the GDS over TCP port 50000 and to the ground receiver over TCP port 50050. The Pi requires 8 GB RAM (measured RSS in MEASURE mode: ~1.75 GB); see [Mission Budgets](../architecture/flight_segment/budgets.md) for detailed memory and compute requirements.
 
 ## Cross-Compile for Raspberry Pi 5
 
@@ -119,7 +119,7 @@ uv sync
 uv run receiver.py
 ```
 
-The receiver listens on TCP port 50050 and saves incoming frames as `.raw` files in `ground_segment/data/downlinked_XBand/`. See [Receiver](../ground-segment/receiver.md) for protocol details.
+The receiver listens on TCP port 50050 and saves incoming frames as `.raw` files in `ground_segment/data/downlinked_XBand/`. See [Receiver](../architecture/ground_segment/receiver.md) for protocol details.
 
 ## Verify the System
 
@@ -131,5 +131,5 @@ The receiver listens on TCP port 50050 and saves incoming frames as `.raw` files
 
 ## Next Steps
 
-- [Usage](../index.md): full demo walkthrough
+- [Usage](../index.md#usage): full demo walkthrough
 - [Environment Variables](environment-variables.md): complete configuration reference

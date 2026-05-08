@@ -1,12 +1,12 @@
 # Quantization
 
-> For design details - quantization scheme tradeoffs and why Q4_K_M is used - see the [Training Pipeline architecture](../ground-segment/training.md) page.
+> For design details, quantization scheme tradeoffs and why Q4_K_M is used, see the [Training Pipeline architecture](../architecture/ground_segment/training.md) page.
 
 ## Prerequisites
 
 - The merged model from the fuse step (see the [Training](training.md) guide) at `ground_segment/training/orion_merged/`.
 - llama.cpp built from source (for the `llama-quantize` binary).
-- ~11 GB free disk space for all intermediate artifacts. See [Compute Budgets](../ground-segment/budgets.md) for details.
+- ~11 GB free disk space for all intermediate artifacts. See [Compute Budgets](../architecture/ground_segment/budgets.md) for details.
 
 ## Step 1: Build llama.cpp (if not built already)
 

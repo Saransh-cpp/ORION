@@ -15,5 +15,7 @@ Generated from the ORION flight segment source at `flight_segment/orion/Orion/` 
 Generated from the ORION ground segment source at `ground_segment/` using mkdocstrings.
 
 - [Receiver](python/receiver.md): TCP ground receiver for image downlink
+- [Downlink visualization](python/raw_to_jpg.md): Manual downlink visualization for bulk flushed medium images
 - [Training](python/training/fine_tune.md): Fine-tuning, validation, and model fusion
+- [Experiments](python/experiments/ablation.md): Ablation studies
 - [Data](python/data/data.md): Dataset definitions and generation

@@ -13,7 +13,7 @@ The six ORION-specific components form a linear pipeline from sensor input to gr
 | [TriageRouter](triage-router.md)              | Routes frames by verdict: downlink, store, or discard      | `triageDecisionIn`, `modeChangeIn`, `fileDownlinkOut`           |
 | [GroundCommsDriver](ground-comms-driver.md)   | Simulated X-band TCP downlink with disk queue              | `fileDownlinkIn`, `schedIn`, `modeChangeIn`                     |
 
-In addition, the `Orion/Utils/` directory contains `SimSatClient`, a plain C++ libcurl wrapper used by NavTelemetry and CameraManager to fetch position and imagery from SimSat. It is not an F-Prime component. See the [architecture overview](../architecture/overview.md#shared-utilities-orionutils) for details.
+In addition, the `Orion/Utils/` directory contains `SimSatClient`, a plain C++ libcurl wrapper used by NavTelemetry and CameraManager to fetch position and imagery from SimSat. It is not an F-Prime component. See the [architecture overview](../../overview.md#shared-utilities-orionutils) for details.
 
 ## Communication Model
 
@@ -23,4 +23,4 @@ All inter-component communication flows through F-Prime's port system. Ports are
 - **Position queries:** NavTelemetry exposes a guarded (mutex-protected) synchronous input port. EventAction and CameraManager call it to read cached GPS state without blocking NavTelemetry's own polling.
 - **Pipeline forwarding:** The image pipeline flows CameraManager -> VlmInferenceEngine -> TriageRouter -> GroundCommsDriver, with buffer ownership transferring at each stage. Buffers are returned to the shared BufferManager pool after use.
 
-For detailed data, link, storage, power, and timing budgets per orbit, see [Mission Budgets](../architecture/budgets.md).
+For detailed data, link, storage, power, and timing budgets per orbit, see [Mission Budgets](../budgets.md).

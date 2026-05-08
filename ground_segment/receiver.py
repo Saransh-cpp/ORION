@@ -16,7 +16,7 @@ cd ground_segment
 uv run receiver.py
 ```
 
-See the [ORIO frame protocol](../../../ground-segment/receiver/) documentation
+See the [ORIO frame protocol](../../../architecture/ground_segment/receiver/) documentation
 for the full wire format specification.
 """
 

@@ -106,7 +106,21 @@ The noise image is a deterministic 512x512 random RGB array seeded with `np.rand
 
 For conditions A, B, and C: per-class recall and precision for HIGH, MEDIUM, and LOW, plus overall accuracy. For condition D: ratio of visual-trust (correct) versus coordinate-trust (failure).
 
-For step-by-step instructions, see the guides for [training](../guides/training.md), [quantization](../guides/quantization.md), and [validation/ablation studies](../guides/studies.md).
+### Post-quantization evaluation (Q4_K_M GGUF)
+
+The same 4-condition protocol can be run against the quantized GGUF model via llama.cpp's HTTP server (`evaluate.py --quantized-model`). This isolates accuracy loss from quantization.
+
+| Condition                   | Fine-tuned (FP16) | Q4_K_M GGUF | Δ (quantization) |
+| --------------------------- | ----------------- | ----------- | ---------------- |
+| A: Vision + GPS coords      | 58.3%             | 55.0%       | −3.3 pp          |
+| B: Vision only (no coords)  | 65.0%             | 63.3%       | −1.7 pp          |
+| C: Blind LLM (noise+coords) | 43.3%             | 28.3%       | −15.0 pp         |
+
+**Sensor conflict (Condition D):** coordinate-trust failure improves slightly from 16.7% (FP16) to 15.0% (Q4_K_M). Quantization does not degrade GPS robustness.
+
+Accuracy loss on operational conditions (A: −3.3 pp, B: −1.7 pp) is modest, confirming that Q4_K_M quantization retains most of the fine-tuned model's capability. Full per-class logs are in the [Model Card](model-card.md#quantized-gguf-evaluation-evaluatepy---quantized-model).
+
+For step-by-step instructions, see the guides for [training](../../guides/training.md), [quantization](../../guides/quantization.md), and [validation/ablation studies](../../guides/studies.md).
 
 ## Data and Weight Transfer Scripts
 
@@ -115,4 +129,4 @@ Two shell scripts handle moving data and weights between the local machine and t
 - `ground_segment/data/upload_to_server.sh`: compresses the local dataset, uploads it via `rsync`, and clones/pulls the ORION repo on the server. Run this before training.
 - `ground_segment/training/download_weights.sh`: pulls `orion_lora_weights/` from the server after training completes and deletes the server's repo and dataset (scorched earth).
 
-See [Utility Scripts](scripts.md) for invocation details and [Ground Segment Environment Variables](../guides/environment-variables-gs.md) for the required env vars.
+See [Utility Scripts](scripts.md) for invocation details and [Ground Segment Environment Variables](../../guides/environment-variables-gs.md) for the required env vars.

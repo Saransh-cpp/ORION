@@ -23,7 +23,7 @@ On the training server this typically matches `ORION_SERVER_HDD_PATH`. On a loca
 
 ## Receiver
 
-`receiver.py` uses hardcoded values and does not read environment variables. See the [receiver configuration](../ground-segment/receiver.md#configuration) for details.
+`receiver.py` uses hardcoded values and does not read environment variables. See the [receiver configuration](../architecture/ground_segment/receiver.md#configuration) for details.
 
 ## Example: Training Workflow
 

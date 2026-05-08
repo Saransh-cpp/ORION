@@ -134,7 +134,7 @@ The buffer is returned to the pool immediately. No data is saved. A `LowTargetDi
 
 ### ORIO Frame Protocol
 
-> Full field-level specification: [Ground Receiver - ORIO Frame Protocol](../ground-segment/receiver.md#orio-frame-protocol)
+> Full field-level specification: [Ground Receiver - ORIO Frame Protocol](../ground_segment/receiver.md#orio-frame-protocol)
 
 Every image transmitted over the custom TCP link uses a simple framing protocol:
 
@@ -248,7 +248,7 @@ graph TB
 
 ## Environment Variables
 
-The variables that configure this data pipeline are documented in full (defaults, descriptions, and example workflow) in the [Flight Segment Environment Variables](../guides/environment-variables.md) guide. The table below shows where each variable is consumed in the pipeline.
+The variables that configure this data pipeline are documented in full (defaults, descriptions, and example workflow) in the [Flight Segment Environment Variables](../../guides/environment-variables.md) guide. The table below shows where each variable is consumed in the pipeline.
 
 | Variable                   | Default                            | Description                                          |
 | -------------------------- | ---------------------------------- | ---------------------------------------------------- |

@@ -1,6 +1,6 @@
 # Data Generation
 
-> For design details - target definitions, triage categories, and morphology sub-types - see the [Dataset architecture](../ground-segment/data.md) page.
+> For design details, target definitions, triage categories, and morphology sub-types, see the [Dataset architecture](../architecture/ground_segment/data.md) page.
 
 ## Prerequisites
 
