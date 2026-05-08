@@ -32,7 +32,7 @@ Resource requirements for training, quantization, and dataset generation.
 | Merged FP16 model    | `orion_merged/`           | ~3.2 GB | Full standalone checkpoint   |
 | FP16 GGUF            | `orion-f16.gguf`          | ~3.2 GB | Intermediate conversion      |
 | Q4_K_M GGUF          | `orion-q4_k_m.gguf`       | ~730 MB | Deployed to Pi               |
-| Vision projector     | `orion-mmproj-f16.gguf`   | ~854 MB | FP16, deployed to Pi         |
+| Vision projector     | `orion-mmproj-f16.gguf`   | ~814 MB | FP16, deployed to Pi         |
 
 ## Quantization Compute
 

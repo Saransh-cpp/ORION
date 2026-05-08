@@ -23,7 +23,7 @@ sequenceDiagram
     NT-->>CM: NavState {lat, lon, alt, inCommWindow}
     CM->>VLM: inferenceRequestOut (buffer, lat, lon)
 
-    Note over VLM: ChatML prompt + image<br/>llama.cpp forward pass<br/>53-82 seconds (mean ~71s, 897 frames from 2 end-to-end runs)
+    Note over VLM: ChatML prompt + image<br/>llama.cpp forward pass<br/>51-82 seconds (mean ~69s, 1,443 frames from 3 end-to-end runs)
 
     VLM->>TR: triageDecisionOut (verdict, reason, buffer)
 

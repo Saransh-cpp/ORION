@@ -53,5 +53,6 @@ Images downlinked during the Pi 5 simulation runs are committed to the repositor
 | ----- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | Run 1 | [2 frames](../../ground_segment/data/downlinked_XBand_run_1/) | [23 frames](../../ground_segment/data/downlinked_UHF_run_1/fprime-downlink/)               |
 | Run 2 | [2 frames](../../ground_segment/data/downlinked_XBand_run_2/) | [15 frames](../../ground_segment/data/downlinked_UHF_run_2/fprime-downlink/) (1 truncated) |
+| Run 3 | [4 frames](../../ground_segment/data/downlinked_XBand_run_3/) | [10 frames](../../ground_segment/data/downlinked_UHF_run_3/fprime-downlink/)               |
 
 See [mission budgets](../architecture/budgets.md#cross-run-comparison) for full run details.

@@ -67,7 +67,7 @@ Quantize the main model file (not the projector):
 After quantization, you should have two files ready for deployment:
 
 - `orion-q4_k_m.gguf`: Quantized language model (Q4_K_M), approximately 730 MB.
-- `orion-mmproj-f16.gguf`: Multimodal projector (FP16), approximately 854 MB.
+- `orion-mmproj-f16.gguf`: Multimodal projector (FP16), approximately 814 MB.
 
 ## Troubleshooting
 
