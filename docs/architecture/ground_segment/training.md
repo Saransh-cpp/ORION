@@ -118,7 +118,11 @@ The same 4-condition protocol can be run against the quantized GGUF model via ll
 
 **Sensor conflict (Condition D):** coordinate-trust failure improves slightly from 16.7% (FP16) to 15.0% (Q4_K_M). Quantization does not degrade GPS robustness.
 
-Accuracy loss on operational conditions (A: −3.3 pp, B: −1.7 pp) is modest, confirming that Q4_K_M quantization retains most of the fine-tuned model's capability. Full per-class logs are in the [Model Card](model-card.md#quantized-gguf-evaluation-evaluatepy---quantized-model).
+Accuracy loss on operational conditions (A: −3.3 pp, B: −1.7 pp) is modest, confirming that Q4_K_M quantization retains most of the fine-tuned model's capability.
+
+The large Condition C drop (−15.0 pp) is expected and benign as it tests coordinate memorization using noise images, which never occurs in deployment. Crucially, GPS robustness (Condition D) slightly _improves_ after quantization, meaning the deployed model is not more susceptible to spoofed telemetry.
+
+Full per-class logs are in the [Model Card](model-card.md#quantized-gguf-evaluation-evaluatepy---quantized-model).
 
 For step-by-step instructions, see the guides for [training](../../guides/training.md), [quantization](../../guides/quantization.md), and [validation/ablation studies](../../guides/studies.md).
 

@@ -30,7 +30,7 @@ This project was born from a real problem flagged on a real mission. Being the F
 
 > _"From experience I recommend thinking about pre-loading software that allows you to check that a picture is worth downloading before you do it."_
 
-<!-- <img src="https://raw.githubusercontent.com/Saransh-cpp/ORION/main/docs/assets/rid.png" alt="ORION" width="300"> -->
+<img src="https://raw.githubusercontent.com/Saransh-cpp/ORION/main/docs/assets/rid.png" alt="ORION" width="300">
 
 for our [NovoViz](https://novoviz.com) Single-photon avalanche diode (camera) payload.
 
@@ -140,7 +140,9 @@ The table below compares the base LFM2.5-VL-1.6B model, the ORION fine-tuned mod
 | B: Vision only (no coords)             | 60.0%      | 65.0%             | 63.3%       | +5.0 pp       | −1.7 pp          |
 | C: Blind LLM (Gaussian noise + coords) | 35.0%      | 43.3%             | 28.3%       | +8.3 pp       | −15.0 pp         |
 
-**Condition D: Sensor conflict (real image, spoofed GPS coords):** coordinate-trust failure drops from 20.0% (base) to 16.7% (fine-tuned FP16) to 15.0% (Q4_K_M GGUF). Quantization does not degrade GPS robustness. Accuracy loss from Q4_K_M quantization on operational conditions (A: −3.3 pp, B: −1.7 pp) is modest, confirming that the deployed GGUF retains most of the fine-tuned model's capability.
+**Condition D: Sensor conflict (real image, spoofed GPS coords):** coordinate-trust failure drops from 20.0% (base) to 16.7% (fine-tuned FP16) to 15.0% (Q4*K_M GGUF). Quantization does not degrade GPS robustness; the deployed model is actually slightly \_more* resistant to spoofed telemetry than the FP16 version.
+
+Accuracy loss from Q4_K_M quantization on operational conditions (A: −3.3 pp, B: −1.7 pp) is modest, confirming that the deployed GGUF retains most of the fine-tuned model's capability. The large Condition C drop (−15.0 pp) is expected and benign: it tests coordinate memorization using noise images, a scenario that never occurs in deployment.
 
 Condition A (nominal, vision + GPS) shows no gain on this dataset. The HIGH category spans five visually heterogeneous sub-types, mega-ports, airports, energy infrastructure, mines, and military facilities, across only 240 training images. That is not enough for the visual encoder to learn a reliable shared boundary. Fine-tuning on a narrower HIGH sub-type with a larger image corpus (1k-5k images per class) would close this gap significantly.
 
