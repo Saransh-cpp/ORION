@@ -62,7 +62,7 @@ ORION builds natively on macOS/Linux for development, and cross-compiles for Ras
 
 ## Architecture
 
-The system is split into a [flight segment](https://Saransh-cpp.github.io/architecture/flight_segment) (6 F-Prime components on Pi 5) and a [ground segment](https://Saransh-cpp.github.io/ORION/architecture/ground_segment/) (receiver, training pipeline, dataset). The flight segment runs an FPP state machine governing four mission modes (IDLE, MEASURE, DOWNLINK, SAFE), with autonomous comm window detection via Haversine distance to the ground station at EPFL. All image buffers are pre-allocated at startup (20-slot static pool), and the VLM model is loaded/unloaded on mode transitions; hence, there is no runtime dynamic allocation. The VLM runs via [llama.cpp](https://github.com/ggml-org/llama.cpp)'s C API (statically linked), and image decoding/resizing uses vendored [stb_image](https://github.com/nothings/stb) headers. The flight and ground segments communicate over two independent links: the standard F-Prime command/telemetry channel (TCP :50000) and a custom [ORIO frame protocol](https://Saransh-cpp.github.io/ORION/architecture/ground_segment/receiver/#orio-frame-protocol) for real-time HIGH-priority image downlink (TCP :50050).
+The system is split into a [flight segment](https://saransh-cpp.github.io/ORION/architecture/flight_segment/components/) (6 F-Prime components on Pi 5) and a [ground segment](https://saransh-cpp.github.io/ORION/architecture/ground_segment/) (receiver, training pipeline, dataset). The flight segment runs an FPP state machine governing four mission modes (IDLE, MEASURE, DOWNLINK, SAFE), with autonomous comm window detection via Haversine distance to the ground station at EPFL. All image buffers are pre-allocated at startup (20-slot static pool), and the VLM model is loaded/unloaded on mode transitions; hence, there is no runtime dynamic allocation. The VLM runs via [llama.cpp](https://github.com/ggml-org/llama.cpp)'s C API (statically linked), and image decoding/resizing uses vendored [stb_image](https://github.com/nothings/stb) headers. The flight and ground segments communicate over two independent links: the standard F-Prime command/telemetry channel (TCP :50000) and a custom [ORIO frame protocol](https://Saransh-cpp.github.io/ORION/architecture/ground_segment/receiver/#orio-frame-protocol) for real-time HIGH-priority image downlink (TCP :50050).
 
 | ORION Component            | Real Satellite Equivalent                 |
 | -------------------------- | ----------------------------------------- |
@@ -81,14 +81,14 @@ The system is split into a [flight segment](https://Saransh-cpp.github.io/archit
 | F-Prime GDS                | Mission control software                  |
 
 - [System overview](https://Saransh-cpp.github.io/ORION/architecture/overview/): Component inventory, rate groups, ground segment
-- [State machine](https://Saransh-cpp.github.io/ORION/architecture/state-machine/): IDLE / MEASURE / DOWNLINK / SAFE transitions
-- [Data flow](https://Saransh-cpp.github.io/ORION/architecture/data-flow/): Capture to downlink pipeline, ORIO frame protocol
+- [State machine](https://saransh-cpp.github.io/ORION/architecture/flight_segment/state-machine/): IDLE / MEASURE / DOWNLINK / SAFE transitions
+- [Data flow](https://saransh-cpp.github.io/ORION/architecture/flight_segment/data-flow//): Capture to downlink pipeline, ORIO frame protocol
 
 ## Results
 
-> Full quantitative breakdown: [Mission Budgets](https://Saransh-cpp.github.io/ORION/architecture/budgets/) · [Ground Segment Budgets](https://Saransh-cpp.github.io/ORION/architecture/ground_segment/budgets/) · [Dataset & target definitions](https://Saransh-cpp.github.io/ORION/architecture/ground_segment/data/)
+> Full quantitative breakdown: [Mission Budgets](https://saransh-cpp.github.io/ORION/architecture/flight_segment/budgets/) · [Ground Segment Budgets](https://Saransh-cpp.github.io/ORION/architecture/ground_segment/budgets/) · [Dataset & target definitions](https://Saransh-cpp.github.io/ORION/architecture/ground_segment/data/)
 
-Unless noted otherwise, all compute numbers below (inference time, duty cycle, frames per eclipse) are derived from the pooled average across 3 end-to-end Pi 5 simulation runs (1,443 frames, ~33 hours total). Per-run breakdowns are in the [measured savings](#measured-savings) section and the [mission budgets](https://Saransh-cpp.github.io/ORION/architecture/budgets/#cross-run-comparison).
+Unless noted otherwise, all compute numbers below (inference time, duty cycle, frames per eclipse) are derived from the pooled average across 3 end-to-end Pi 5 simulation runs (1,443 frames, ~33 hours total). Per-run breakdowns are in the [measured savings](#measured-savings) section and the [mission budgets](https://Saransh-cpp.github.io/ORION/architecture/flight_segment/budgets/#cross-run-comparison).
 
 ### Target definitions
 
@@ -163,7 +163,7 @@ Expected triage distribution on a random LEO track (based on target morphology d
 
 ### Measured savings
 
-Measured triage distribution from continuous Pi 5 runs (no eclipse cycling, for stress-testing; `SET_ECLIPSE` issued once at start). Per-frame metrics (inference time, triage accuracy) are unaffected by eclipse cycling; per-orbit projections in [compute budgets](https://Saransh-cpp.github.io/ORION/architecture/budgets/) use the 35-min eclipse assumption.
+Measured triage distribution from continuous Pi 5 runs (no eclipse cycling, for stress-testing; `SET_ECLIPSE` issued once at start). Per-frame metrics (inference time, triage accuracy) are unaffected by eclipse cycling; per-orbit projections in [compute budgets](https://Saransh-cpp.github.io/ORION/architecture/flight_segment/budgets/) use the 35-min eclipse assumption.
 
 The "Pooled average" column treats all frames across runs as a single dataset (weighted by frame count, not arithmetic mean of percentages). Raw event logs: [Run 1](https://github.com/Saransh-cpp/ORION/tree/main/flight_segment/orion/logs/run_1_2026_05_06-23_28_57/event.log) (10h 23m, 501 frames), [Run 2](https://github.com/Saransh-cpp/ORION/tree/main/flight_segment/orion/logs/run_2_2026_05_07-12_10_33/event.log) (9h 39m, 396 frames), [Run 3](https://github.com/Saransh-cpp/ORION/tree/main/flight_segment/orion/logs/run_3_2026_05_07-22_47_57/event.log) (13h 17m, 546 frames).
 
@@ -183,7 +183,7 @@ The "Pooled average" column treats all frames across runs as a single dataset (w
 
 Across all three runs: HIGH + MEDIUM combined is ~3.9% of all frames; hence over 96% of captured data was discarded on-board. All HIGH frames were queued to disk outside comm windows and flushed automatically on comm window open. MEDIUM files were bulk-downloaded via `FLUSH_MEDIUM_STORAGE` during comm windows. Total comm window time used (~45 min across 5 windows) was more than sufficient for all queued data.
 
-Full per-run breakdowns (inference timing, downlink, run parameters) in the [mission budgets measured results](https://Saransh-cpp.github.io/ORION/architecture/budgets/#measured-results-run-1-10h-23m-pi-5-run-2026-05-07). Raw event logs are in [`flight_segment/orion/logs/`](https://github.com/Saransh-cpp/ORION/tree/main/flight_segment/orion/logs) (channel telemetry logs excluded due to size but available on request). Downlinked images received by the ground segment: [HIGH Run 1 (X-band)](https://github.com/Saransh-cpp/ORION/tree/main/ground_segment/data/downlinked_XBand_run_1), [HIGH Run 2 (X-band)](https://github.com/Saransh-cpp/ORION/tree/main/ground_segment/data/downlinked_XBand_run_2), [HIGH Run 3 (X-band)](https://github.com/Saransh-cpp/ORION/tree/main/ground_segment/data/downlinked_XBand_run_3), [MEDIUM Run 1 (UHF)](https://github.com/Saransh-cpp/ORION/tree/main/ground_segment/data/downlinked_UHF_run_1/fprime-downlink), [MEDIUM Run 2 (UHF)](https://github.com/Saransh-cpp/ORION/tree/main/ground_segment/data/downlinked_UHF_run_2/fprime-downlink), [MEDIUM Run 3 (UHF)](https://github.com/Saransh-cpp/ORION/tree/main/ground_segment/data/downlinked_UHF_run_3/fprime-downlink).
+Full per-run breakdowns (inference timing, downlink, run parameters) in the [mission budgets measured results](https://Saransh-cpp.github.io/ORION/architecture/flight_segment/budgets/#measured-results-run-1-10h-23m-pi-5-run-2026-05-07). Raw event logs are in [`flight_segment/orion/logs/`](https://github.com/Saransh-cpp/ORION/tree/main/flight_segment/orion/logs) (channel telemetry logs excluded due to size but available on request). Downlinked images received by the ground segment: [HIGH Run 1 (X-band)](https://github.com/Saransh-cpp/ORION/tree/main/ground_segment/data/downlinked_XBand_run_1), [HIGH Run 2 (X-band)](https://github.com/Saransh-cpp/ORION/tree/main/ground_segment/data/downlinked_XBand_run_2), [HIGH Run 3 (X-band)](https://github.com/Saransh-cpp/ORION/tree/main/ground_segment/data/downlinked_XBand_run_3), [MEDIUM Run 1 (UHF)](https://github.com/Saransh-cpp/ORION/tree/main/ground_segment/data/downlinked_UHF_run_1/fprime-downlink), [MEDIUM Run 2 (UHF)](https://github.com/Saransh-cpp/ORION/tree/main/ground_segment/data/downlinked_UHF_run_2/fprime-downlink), [MEDIUM Run 3 (UHF)](https://github.com/Saransh-cpp/ORION/tree/main/ground_segment/data/downlinked_UHF_run_3/fprime-downlink).
 
 ### Faults observed
 
@@ -195,7 +195,7 @@ Full per-run breakdowns (inference timing, downlink, run parameters) in the [mis
 - 2–3 frames are **natural features misclassified** as artificial, such as coastlines interpreted as "massive artificial formations," clouds over terrain interpreted as "volcanic eruption," and a lake interpreted as an "artificial anomaly."
 - 2 frames are plausible HIGHs (urban area near Virginia Beach, small town with airstrip).
 
-These false positives do not affect bandwidth savings (HIGH is the rarest category at 0.6%, so false positives waste minimal downlink capacity), but they reveal two model limitations: (1) blank/missing Mapbox tiles at polar latitudes are visually distinct from the ocean and ice sheet tiles in the training set, and (2) natural edge cases (coastlines, cloud cover, geological formations) that resemble trained HIGH morphologies. See the [model card](https://github.com/Saransh-cpp/ORION/tree/main/ground_segment/training/orion_lora_weights/README.md) for mitigation strategies.
+These false positives do not affect bandwidth savings (HIGH is the rarest category at 0.6%, so false positives waste minimal downlink capacity), but they reveal two model limitations: (1) blank/missing Mapbox tiles at polar latitudes are visually distinct from the ocean and ice sheet tiles in the training set, and (2) natural edge cases (coastlines, cloud cover, geological formations) that resemble trained HIGH morphologies. See the [model card](https://saransh-cpp.github.io/ORION/architecture/ground_segment/model-card/) for mitigation strategies.
 
 **Capture rate:** Inference at 51-82 s/frame (mean ~69s) sets a hard floor on the capture interval (85s), limiting throughput to ~24 frames per 35-min eclipse. Burst imaging or sub-minute revisit rates require faster hardware (GPU/NPU) or a smaller model.
 
@@ -352,7 +352,7 @@ Rejected with `GotoRejected` if the transition is not allowed from the current s
 
 Auto-generated API documentation for both the C++ flight segment (via Doxygen) and the Python ground segment (via mkdocstrings).
 
-- [C++ API](https://Saransh-cpp.github.io/ORION/api/cpp/): Classes, namespaces, and source files
+- [C++ API](https://saransh-cpp.github.io/ORION/flight-segment/annotated/): Classes, namespaces, and source files
 - [Python API](https://Saransh-cpp.github.io/ORION/api/python/receiver/): Receiver, training, and data modules
 
 ## Contributing
