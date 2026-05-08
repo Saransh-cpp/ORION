@@ -16,6 +16,19 @@ This loads the base model with the LoRA adapters grafted on, sets the model to e
 
 ## Evaluating the Quantized GGUF Model
 
+The default llama.cpp build (see [Installation](installation.md)) disables the HTTP server since the flight segment doesn't need it. Rebuild with the server enabled before running the GGUF evaluation:
+
+```bash
+cd ground_segment/llama.cpp
+cmake -B build \
+  -DBUILD_SHARED_LIBS=OFF \
+  -DLLAMA_BUILD_TESTS=OFF \
+  -DLLAMA_BUILD_EXAMPLES=OFF \
+  -DLLAMA_BUILD_SERVER=ON
+cmake --build build -j$(nproc)
+cd ../..
+```
+
 Start the llama.cpp HTTP server with the quantized model, then run `evaluate.py` with `--quantized-model`:
 
 ```bash
@@ -27,6 +40,7 @@ cd ground_segment
   -c 4096 -ngl 0
 
 # Terminal 2: run evaluation against the server
+# make sure ground_segment venv is activated
 cd ground_segment/training
 uv run evaluate.py --quantized-model http://localhost:8080
 ```
