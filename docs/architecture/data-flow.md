@@ -17,8 +17,9 @@ sequenceDiagram
 
     CM->>BM: bufferGetOut (786 KB)
     BM-->>CM: Fw::Buffer handle
-    CM->>SS: HTTP GET /mapbox (512x512 RGB)
-    SS-->>CM: Raw pixel data
+    CM->>SS: HTTP GET /mapbox (1280x1280@2x PNG)
+    SS-->>CM: PNG tile
+    Note over CM: stb_image decode + bilinear resize to 512x512 RGB
     CM->>NT: navStateOut (sync)
     NT-->>CM: NavState {lat, lon, alt, inCommWindow}
     CM->>VLM: inferenceRequestOut (buffer, lat, lon)
@@ -44,7 +45,7 @@ sequenceDiagram
 **Component:** CameraManager
 
 1. `CameraManager` checks out a 786,432-byte buffer (512x512x3 RGB) from the `BufferManager` pool.
-2. It issues an HTTP GET to SimSat's Mapbox API endpoint, which returns a satellite tile for the current ground track position. The raw pixel data is written directly into the buffer.
+2. It issues an HTTP GET to SimSat's Mapbox API endpoint, which returns a 1280x1280@2x PNG satellite tile for the current ground track position. The PNG is decoded via `stb_image` and bilinear-resized to 512x512 via `stb_image_resize2` into the pre-allocated buffer. The 512x512 resolution matches what a typical smallsat camera payload would produce and keeps memory usage bounded on the Pi 5; in a real mission, the camera sensor would output frames at its native resolution directly into the buffer with no resize.
 3. If SimSat is unreachable or the position is over open ocean with no tile available, the buffer is returned to the pool and a `SimSatImageUnavailable` event is emitted.
 4. On success, `CameraManager` makes a synchronous call to `NavTelemetry` via the `NavStatePort` to obtain the GPS coordinates (lat, lon) at the exact moment of capture.
 5. The buffer and coordinates are dispatched asynchronously to `VlmInferenceEngine` via the `InferenceRequestPort`. CameraManager then returns to sleep: it does not wait for inference to complete.
