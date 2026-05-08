@@ -103,7 +103,7 @@ The adapter was trained on the **ORION dataset**, 360 curated target locations o
 | Merged FP16 checkpoint   | `orion_merged/`         | ~3.2 GB     | `merge_and_unload()` output          |
 | FP16 GGUF                | `orion-f16.gguf`        | ~3.2 GB     | Intermediate conversion step         |
 | **Q4_K_M GGUF**          | **`orion-q4_k_m.gguf`** | **~730 MB** | **Deployed to Pi 5 (8 GB RAM)**      |
-| Vision projector         | `orion-mmproj-f16.gguf` | ~854 MB     | FP16, deployed alongside Q4 model    |
+| Vision projector         | `orion-mmproj-f16.gguf` | ~814 MB     | FP16, deployed alongside Q4 model    |
 
 **Measured on-device:** Total ORION process RSS during inference on the Pi 5 is ~1,753 MB (model + vision encoder + KV cache + F-Prime flight software + buffer pool).
 

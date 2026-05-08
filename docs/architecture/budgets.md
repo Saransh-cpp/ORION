@@ -96,13 +96,13 @@ This section documents the compute duty cycle.
 ```
 Total Pi 5 RAM:      8,192 MB
 GGUF text model:      ~730 MB (Q4_K_M, loaded in MEASURE)
-mmproj vision enc:    ~854 MB (F16, loaded with model)
+mmproj vision enc:    ~814 MB (F16, loaded with model)
 KV cache (4096 ctx):   ~64 MB (allocated per inference, cleared after)
 Image buffer pool:     ~16 MB (20 x 786 KB, pre-allocated at startup)
 F-Prime framework:     ~20 MB (all components, rate groups, queues)
 Linux + overhead:     ~200 MB
 ---------------------------------
-Total in MEASURE:   ~1,884 MB (estimate)
+Total in MEASURE:   ~1,844 MB (estimate)
                     ~1,753 MB (measured RSS on Pi 5)
 Total in IDLE:       ~236 MB (model unloaded)
 Available headroom: ~6,439 MB (MEASURE) / ~7,956 MB (IDLE)

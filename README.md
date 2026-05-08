@@ -118,11 +118,11 @@ Each class includes deliberately hard sub-types (e.g., coastlines that mimic art
 | Component                              | Size (estimate) |
 | -------------------------------------- | --------------- |
 | Q4_K_M GGUF weights                    | ~730 MB         |
-| F16 vision projector (mmproj)          | ~854 MB         |
+| F16 vision projector (mmproj)          | ~814 MB         |
 | KV cache (4096 ctx, per inference)     | ~64 MB          |
 | Static frame buffer pool (20 × 786 KB) | ~16 MB          |
 | F-Prime framework + Linux              | ~220 MB         |
-| **Total (estimate)**                   | **~1,884 MB**   |
+| **Total (estimate)**                   | **~1,844 MB**   |
 | **Total (measured RSS on Pi 5)**       | **~1,753 MB**   |
 
 No runtime dynamic allocation. All frame memory is pre-allocated at startup; model loads once on MEASURE entry.
