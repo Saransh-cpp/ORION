@@ -66,21 +66,21 @@ ORION builds natively on macOS/Linux for development, and cross-compiles for Ras
 
 The system is split into a [flight segment](https://saransh-cpp.github.io/ORION/architecture/flight_segment/components/) (6 F-Prime components on Pi 5) and a [ground segment](https://saransh-cpp.github.io/ORION/architecture/ground_segment/) (receiver, training pipeline, dataset). The flight segment runs an FPP state machine governing four mission modes (IDLE, MEASURE, DOWNLINK, SAFE), with autonomous comm window detection via Haversine distance to the ground station at EPFL. All image buffers are pre-allocated at startup (20-slot static pool), and the VLM model is loaded/unloaded on mode transitions; hence, there is no runtime dynamic allocation. The VLM runs via [llama.cpp](https://github.com/ggml-org/llama.cpp)'s C API (statically linked), and image decoding/resizing uses vendored [stb_image](https://github.com/nothings/stb) headers. The flight and ground segments communicate over two independent links: the standard F-Prime command/telemetry channel (TCP :50000) and a custom [ORIO frame protocol](https://Saransh-cpp.github.io/ORION/architecture/ground_segment/receiver/#orio-frame-protocol) for real-time HIGH-priority image downlink (TCP :50050).
 
-| ORION Component            | Real Satellite Equivalent                 |
-| -------------------------- | ----------------------------------------- |
-| `EventAction` (C++)        | OBC mode manager / FDIR logic             |
-| `NavTelemetry` (C++)       | GNSS receiver payload                     |
-| `CameraManager` (C++)      | Earth observation camera payload          |
-| `VlmInferenceEngine` (C++) | On-board AI co-processor                  |
-| `TriageRouter` (C++)       | On-board data handling unit               |
-| `GroundCommsDriver` (C++)  | X-band radio transmitter                  |
-| `BufferManager` (F-Prime)  | On-board mass memory                      |
-| `comDriver` (F-Prime)      | UHF radio transceiver                     |
-| Raspberry Pi 5             | On-board computer                         |
-| SimSat                     | GNSS receiver hardware                    |
-| SimSat Mapbox API          | Earth observation camera payload hardware |
-| `receiver.py`              | Ground station X-band receiver            |
-| F-Prime GDS                | Mission control software                  |
+| ORION Component            | Real Satellite Equivalent                                                                    |
+| -------------------------- | -------------------------------------------------------------------------------------------- |
+| `EventAction` (C++)        | OBC (On-Board Computer) mode manager / FDIR (Fault Detection, Isolation, and Recovery) logic |
+| `NavTelemetry` (C++)       | GNSS (Global Navigation Satellite System) receiver payload manager                           |
+| `CameraManager` (C++)      | Earth observation camera payload manager                                                     |
+| `VlmInferenceEngine` (C++) | On-board AI co-processor                                                                     |
+| `TriageRouter` (C++)       | On-board data handling unit                                                                  |
+| `GroundCommsDriver` (C++)  | X-band radio transmitter manager                                                             |
+| `BufferManager` (F-Prime)  | On-board mass memory                                                                         |
+| `comDriver` (F-Prime)      | UHF (Ultra High Frequency) radio transceiver manager                                         |
+| Raspberry Pi 5             | On-board computer                                                                            |
+| SimSat                     | GNSS receiver hardware                                                                       |
+| SimSat Mapbox API          | Earth observation camera payload hardware                                                    |
+| `receiver.py`              | Ground station X-band receiver                                                               |
+| F-Prime GDS                | Mission control software                                                                     |
 
 - [System overview](https://Saransh-cpp.github.io/ORION/architecture/overview/): Component inventory, rate groups, ground segment
 - [State machine](https://saransh-cpp.github.io/ORION/architecture/flight_segment/state-machine/): IDLE / MEASURE / DOWNLINK / SAFE transitions
