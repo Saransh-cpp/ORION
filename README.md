@@ -68,14 +68,14 @@ The system is split into a [flight segment](https://saransh-cpp.github.io/ORION/
 
 | ORION Component            | Real Satellite Equivalent                 |
 | -------------------------- | ----------------------------------------- |
-| `EventAction` (C++)        | OBC mode manager / FDIR logic             |
-| `NavTelemetry` (C++)       | GNSS receiver payload                     |
-| `CameraManager` (C++)      | Earth observation camera payload          |
+| `EventAction` (C++)        | OBC (On-Board Computer) mode manager / FDIR (Fault Detection, Isolation, and Recovery) logic             |
+| `NavTelemetry` (C++)       | GNSS (Glabal Navigation Satellite System)  receiver payload manager                     |
+| `CameraManager` (C++)      | Earth observation camera payload manager          |
 | `VlmInferenceEngine` (C++) | On-board AI co-processor                  |
 | `TriageRouter` (C++)       | On-board data handling unit               |
-| `GroundCommsDriver` (C++)  | X-band radio transmitter                  |
+| `GroundCommsDriver` (C++)  | X-band radio transmitter manager                  |
 | `BufferManager` (F-Prime)  | On-board mass memory                      |
-| `comDriver` (F-Prime)      | UHF radio transceiver                     |
+| `comDriver` (F-Prime)      | UHF (Ultra High Frequency) radio transceiver manager                     |
 | Raspberry Pi 5             | On-board computer                         |
 | SimSat                     | GNSS receiver hardware                    |
 | SimSat Mapbox API          | Earth observation camera payload hardware |
