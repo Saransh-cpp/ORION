@@ -15,8 +15,8 @@ An autonomous LEO satellite triage system built using:
 
 - a fine-tuned [Liquid AI LFM2.5-VL-1.6B](https://huggingface.co/collections/LiquidAI/lfm2-vl) vision-language model (for inference),
 - [NASA's F-Prime](https://github.com/nasa/fprime) (for flight software),
-- [SimSat](https://github.com/DPhi-Space/SimSat) (to simulate real payload sensors - GNSS and a camera),
-- a Raspberry Pi 5 (to act as the satellite's OBC).
+- [SimSat](https://github.com/DPhi-Space/SimSat) (to simulate real payload sensors - Global Navigation Satellite System and a camera),
+- a Raspberry Pi 5 (to act as the satellite's On-Board Computer).
 
 ORION solves the orbital bandwidth bottleneck: roughly 71% of Earth's surface is featureless ocean, yet a traditional satellite downlinks every captured frame. By running a fine-tuned (on a custom dataset collected using SimSat) Q4-quantized VLM on-board, ORION classifies each image as HIGH, MEDIUM, or LOW priority and only transmits the most strategically valuable observations in real time. The model runs directly on raw 512×512 RGB pixels and is connected to a real flight software (not a Python wrapper), making it deployable on satellite's On-Board Computer (after rigorous testing and mission-specific tweaks) for any standard camera payload.
 
